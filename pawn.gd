@@ -10,9 +10,10 @@ class_name Piece
 @export var damage: int = 20
 @onready var current_health: int = max_health
 
+var is_charging: bool = false # Trạng thái đang nạp đạn
+var is_grabbed: bool = false
+var grabbed_by: Node2D = null
 var has_moved: bool = false
-var is_grabbed = false
-var grabbed_by = null
 
 func _ready():
 	# Đảm bảo thanh máu khớp với chỉ số khi vừa sinh ra
@@ -38,9 +39,12 @@ func take_damage(amount: int):
 
 # Hàm xử lý khi quân cờ chết
 func die():
-	# Có thể phát âm thanh hoặc tạo hiệu ứng hạt ở đây
-	queue_free() 
-
+	# Gọi hàm xử lý xóa quân cờ từ logicgame.gd
+	var logic_game = get_node("/root/board/logicgame") # Chỉnh lại đường dẫn chuẩn đến logicgame của bạn
+	if logic_game:
+		logic_game.kill_piece(self)
+	else:
+		queue_free()
 func move_to_grid(new_grid_pos: Vector2i, new_world_pos: Vector2):
 	grid_pos = new_grid_pos
 	var tween = create_tween()

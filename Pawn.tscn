@@ -12,7 +12,6 @@ bg_color = Color(0.28209576, 0.6922137, 0.47429025, 1)
 [node name="Pawn" type="Node2D" unique_id=271536388]
 script = ExtResource("1_f14ny")
 max_health = 100
-damage = 25
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=286426425]
 texture = ExtResource("2_iexdo")
