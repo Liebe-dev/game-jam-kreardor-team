@@ -49,7 +49,6 @@ func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 	if team == 2:
 		var sprite = new_unit.get_node("Sprite2D")
 		sprite.modulate = Color(1, 0.4, 0.4)
-		sprite.flip_v = true
 		
 		# Sửa chỗ này cho khớp với tên node bạn đặt (HealthBar hoặc heath)
 		if new_unit.has_node("HealthBar"):
@@ -59,22 +58,19 @@ func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 
 
 func calculate_world_position(grid_pos: Vector2i) -> Vector2:
-	var my_skew = grid_pos.y * 4 
-	return board_origin + Vector2(grid_pos.x * cell_size + my_skew, grid_pos.y * cell_size)
+	var skew = grid_pos.y * 4 
+	return board_origin + Vector2(grid_pos.x * cell_size + skew, grid_pos.y * cell_size)
 func deal_damage(target, amount):
-	if not is_instance_valid(target) or target.health <= 0:
+	if not is_instance_valid(target):
 		return
 		
-	# CHẶN ĐỨNG: Nếu dame quá ảo (ví dụ dame âm hoặc bằng 0) thì bỏ qua
+	# CHẶN ĐỨNG: Nếu dame quá ảo (ví dụ dame âm hoặc bằng 0) thì bỏ qua (Code của đồng đội)
 	if amount <= 0: return
-	target.health -= amount
-	print("DEAL DAME: ", target.name, " mất ", amount, " còn ", target.health)
 	
-	if target.has_node("HealthBar"):
-		target.get_node("HealthBar").value = target.health
-	
-	if target.health <= 0:
-		kill_piece(target)
+	# Gọi hàm take_damage xịn sò để quân cờ tự lo việc trừ máu, chớp đỏ và chết (Code của bạn)
+	if target.has_method("take_damage"):
+		target.take_damage(amount)
+		print("DEAL DAME: ", target.name, " mất ", amount)
 func _input(event):
 	# Nếu đã đi quân chính rồi thì không cho click nữa
 	if has_moved_main_piece:
@@ -220,18 +216,12 @@ func apply_grab_damage():
 				p.is_grabbed = false
 				p.grabbed_by = null
 				p.modulate = Color(1, 1, 1)
+
 	# BƯỚC 2: Thực hiện trừ máu đồng loạt từ danh sách đã lọc
 	for p in damage_map.keys():
-		if is_instance_valid(p) and "health" in p:
-			p.health -= damage_map[p]
-			
-			# Cập nhật thanh máu UI
-			if p.has_node("HealthBar"):
-				p.get_node("HealthBar").value = p.health
-			
-			# Kiểm tra chết an toàn để tránh lỗi "Invalid Access"
-			if p.health <= 0:
-				kill_piece(p)
+		if is_instance_valid(p):
+			# Chỉ cần gọi deal_damage là xong, không cần tính toán lằng nhằng nữa
+			deal_damage(p, damage_map[p])
 func move_team_logic(team_num: int):
 	# --- LƯỢT CỦA VUA ---
 	for p in all_pieces:
@@ -604,7 +594,6 @@ func check_and_execute_grab(pawn):
 			pawn.modulate = Color(0.5, 0.5, 0.5) 
 			target_unit.modulate = Color(0.5, 0.5, 0.5)
 			break
-
 func kill_piece(piece):
 	# Giải phóng cho đối phương nếu đang bị ôm
 	if piece.is_grabbed and is_instance_valid(piece.grabbed_by):
