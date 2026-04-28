@@ -1,3 +1,4 @@
+extends Node2D
 
 @export var pawn_scene: PackedScene 
 @export var king_scene: PackedScene 
