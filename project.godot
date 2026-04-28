@@ -11,8 +11,14 @@ config_version=5
 [application]
 
 config/name="GameJam Kreardor Team"
+run/main_scene="uid://d2w2lo4rs3t78"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
 
 [physics]
 

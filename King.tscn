@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://2jkkrdchccrq"]
+
+[ext_resource type="PackedScene" uid="uid://qtgv1mmnvanv" path="res://Pawn.tscn" id="1_gs1rm"]
+
+[node name="King" unique_id=271536388 instance=ExtResource("1_gs1rm")]
+max_health = 400
+damage = 0

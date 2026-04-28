@@ -1,0 +1,37 @@
+[gd_scene format=3 uid="uid://qtgv1mmnvanv"]
+
+[ext_resource type="Script" uid="uid://dij6nc3syws5q" path="res://pawn.gd" id="1_f14ny"]
+[ext_resource type="Texture2D" uid="uid://chifl843pph40" path="res://icon.svg" id="2_iexdo"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_q4exq"]
+bg_color = Color(0.9607843, 0.2509804, 0.078431375, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i26xp"]
+bg_color = Color(0.28209576, 0.6922137, 0.47429025, 1)
+
+[node name="Pawn" type="Node2D" unique_id=271536388]
+script = ExtResource("1_f14ny")
+damage = 20
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=286426425]
+texture = ExtResource("2_iexdo")
+
+[node name="HealthBar" type="ProgressBar" parent="." unique_id=1792561652]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -47.0
+offset_top = 50.0
+offset_right = 145.0
+offset_bottom = 56.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.5, 0.5)
+size_flags_horizontal = 4
+size_flags_vertical = 8
+theme_override_styles/background = SubResource("StyleBoxFlat_q4exq")
+theme_override_styles/fill = SubResource("StyleBoxFlat_i26xp")
+fill_mode = 1
+show_percentage = false
