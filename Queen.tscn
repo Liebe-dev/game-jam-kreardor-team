@@ -4,4 +4,4 @@
 
 [node name="Pawn" unique_id=271536388 instance=ExtResource("1_wkdk7")]
 max_health = 300
-damage = 50
+damage = 35

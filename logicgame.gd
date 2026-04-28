@@ -56,7 +56,7 @@ func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 
 
 func calculate_world_position(grid_pos: Vector2i) -> Vector2:
-	var skew = grid_pos.y * 4 
+	var my_skew = grid_pos.y * 4 
 	return board_origin + Vector2(grid_pos.x * cell_size + skew, grid_pos.y * cell_size)
 
 func _input(event):
@@ -104,6 +104,11 @@ func move_piece(piece: Piece, target_grid: Vector2i):
 	# Gọi hàm move_to_grid mà bạn đã viết trong pawn.gd (hoặc piece.gd)
 	piece.move_to_grid(target_grid, target_world)
 
+func find_my_king(my_team: int):
+	for p in all_pieces:
+		if is_instance_valid(p) and p.team == my_team and "King" in p.name:
+			return p
+	return null
 
 func _on_attack_pressed():
 	current_command = Command.ATTACK
@@ -133,13 +138,19 @@ func _on_end_turn_pressed() -> void:
 func move_team_logic(team_num: int):
 	for p in all_pieces:
 		if is_instance_valid(p) and p.team == team_num:
-			# CHỖ NÀY: Nếu tên quân cờ có chữ "King", bắt nó đứng yên
-			if "King" in p.name:
-				continue 
+			# Vua luôn đứng yên
+			if "King" in p.name: continue 
 			
-			# Logic tìm mục tiêu và di chuyển cho quân Tốt vẫn giữ nguyên bên dưới
-			var target = find_best_target(p)
+			var target = null
+			
+			# Nếu là phe mình (Team 1) và đang bật chế độ DEFEND/PROTECT
+			if team_num == 1 and current_command == Command.DEFEND:
+				target = find_my_king(1) # Tìm đường về cứu Vua
+			else:
+				target = find_best_target(p) # Chế độ Attack: đi tìm địch
+				
 			if target:
+				# Tính toán ô tiếp theo để tiến về phía mục tiêu
 				var next = get_next_step_towards(p.grid_pos, target.grid_pos)
 				if is_cell_vacant(next):
 					move_piece(p, next)

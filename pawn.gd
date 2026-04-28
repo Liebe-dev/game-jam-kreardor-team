@@ -11,6 +11,8 @@ class_name Piece
 @onready var current_health: int = max_health
 
 var has_moved: bool = false
+var is_grabbed = false
+var grabbed_by = null
 
 func _ready():
 	# Đảm bảo thanh máu khớp với chỉ số khi vừa sinh ra
