@@ -14,6 +14,7 @@ script = ExtResource("1_f14ny")
 max_health = 100
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=286426425]
+position = Vector2(0, -47)
 texture = ExtResource("2_iexdo")
 hframes = 4
 
@@ -24,9 +25,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -47.0
-offset_top = 50.0
+offset_top = 18.0
 offset_right = 145.0
-offset_bottom = 56.0
+offset_bottom = 24.0
 grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(0.5, 0.5)

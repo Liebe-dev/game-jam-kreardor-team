@@ -1,7 +1,8 @@
 extends Node2D
 
 @export var pawn_scene: PackedScene 
-@export var king_scene: PackedScene 
+@export var king_scene: PackedScene
+@onready var grid_points = $"../GridPoints"
 @onready var btn_attack = $"../CanvasLayer/HBoxContainer/Attack"
 @onready var btn_defend = $"../CanvasLayer/HBoxContainer/Defend"
 enum Command { ATTACK, DEFEND }
@@ -25,6 +26,7 @@ func _ready():
 	add_child(piece_layer)
 	
 	spawn_initial_army()
+
 
 func spawn_initial_army():
 	create_piece(Vector2i(4, 7), 1, king_scene)
@@ -58,8 +60,17 @@ func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 
 
 func calculate_world_position(grid_pos: Vector2i) -> Vector2:
-	var skew = grid_pos.y * 4 
-	return board_origin + Vector2(grid_pos.x * cell_size + skew, grid_pos.y * cell_size)
+	# Ghép tọa độ X và Y thành tên node. Ví dụ grid_pos(3, 4) -> "3_4"
+	var marker_name = str(grid_pos.y) + " " + str(grid_pos.x)
+	
+	# Tìm Marker2D có tên đó trong node GridPoints
+	var marker = grid_points.get_node_or_null(marker_name)
+	
+	if marker:
+		return marker.global_position
+	else:
+		print("LỖI: Không tìm thấy ô định vị tên là: ", marker_name)
+		return Vector2.ZERO
 func deal_damage(target, amount):
 	if not is_instance_valid(target):
 		return
@@ -93,13 +104,25 @@ func _input(event):
 				selected_piece = null
 
 func calculate_grid_position(world_pos: Vector2) -> Vector2i:
-	var relative_pos = world_pos - board_origin
-	# Dựa trên công tính toán của bạn ở hàm calculate_world_position
-	var y = int(round(relative_pos.y / cell_size))
-	var x = int(round((relative_pos.x - (y * 4)) / cell_size))
-	return Vector2i(x, y)
-
-# Hàm tìm xem tại ô (x, y) có quân nào đang đứng không
+	var closest_grid = Vector2i(-1, -1)
+	var min_distance = 999999.0 # Khởi tạo một khoảng cách ảo rất lớn
+	
+	# Quét qua toàn bộ 64 ô trên bàn cờ
+	for x in range(8):
+		for y in range(8):
+			var marker_name = str(x) + "_" + str(y)
+			var marker = grid_points.get_node_or_null(marker_name)
+			
+			if marker:
+				# Đo khoảng cách từ điểm click chuột đến tâm của ô này
+				var dist = world_pos.distance_to(marker.global_position)
+				
+				# Nếu tìm thấy ô nào gần hơn, cập nhật lại
+				if dist < min_distance:
+					min_distance = dist
+					closest_grid = Vector2i(x, y)
+					
+	return closest_grid
 func get_piece_at(grid_pos: Vector2i):
 	for p in all_pieces:
 		if is_instance_valid(p) and p.grid_pos == grid_pos:

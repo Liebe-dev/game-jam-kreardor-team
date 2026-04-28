@@ -49,7 +49,197 @@ text = "ENDTURN"
 
 [node name="GridPoints" type="Node2D" parent="." unique_id=715706376]
 
-[node name="Marker2D" type="Marker2D" parent="GridPoints" unique_id=1051627033]
+[node name="0 0" type="Marker2D" parent="GridPoints" unique_id=1051627033]
+position = Vector2(562, 136)
+
+[node name="0 1" type="Marker2D" parent="GridPoints" unique_id=386470491]
+position = Vector2(672, 136)
+
+[node name="0 2" type="Marker2D" parent="GridPoints" unique_id=1716375806]
+position = Vector2(789, 136)
+
+[node name="0 3" type="Marker2D" parent="GridPoints" unique_id=662121205]
+position = Vector2(904, 136)
+
+[node name="0 4" type="Marker2D" parent="GridPoints" unique_id=869013315]
+position = Vector2(1020, 136)
+
+[node name="0 5" type="Marker2D" parent="GridPoints" unique_id=1528671378]
+position = Vector2(1137, 136)
+
+[node name="0 6" type="Marker2D" parent="GridPoints" unique_id=1790374933]
+position = Vector2(1253, 136)
+
+[node name="0 7" type="Marker2D" parent="GridPoints" unique_id=355156609]
+position = Vector2(1364, 136)
+
+[node name="1 0" type="Marker2D" parent="GridPoints" unique_id=638648809]
+position = Vector2(557, 245)
+
+[node name="1 1" type="Marker2D" parent="GridPoints" unique_id=784931484]
+position = Vector2(671, 245)
+
+[node name="1 2" type="Marker2D" parent="GridPoints" unique_id=137420302]
+position = Vector2(786, 245)
+
+[node name="1 3" type="Marker2D" parent="GridPoints" unique_id=678554320]
+position = Vector2(902, 245)
+
+[node name="1 4" type="Marker2D" parent="GridPoints" unique_id=1243485587]
+position = Vector2(1019, 245)
+
+[node name="1 5" type="Marker2D" parent="GridPoints" unique_id=327313443]
+position = Vector2(1135, 245)
+
+[node name="1 6" type="Marker2D" parent="GridPoints" unique_id=1081481828]
+position = Vector2(1253, 245)
+
+[node name="1 7" type="Marker2D" parent="GridPoints" unique_id=1056593574]
+position = Vector2(1368, 245)
+
+[node name="2 0" type="Marker2D" parent="GridPoints" unique_id=754725693]
+position = Vector2(550, 358)
+
+[node name="2 1" type="Marker2D" parent="GridPoints" unique_id=624366014]
+position = Vector2(668, 358)
+
+[node name="2 2" type="Marker2D" parent="GridPoints" unique_id=1659224917]
+position = Vector2(787, 358)
+
+[node name="2 3" type="Marker2D" parent="GridPoints" unique_id=1641751459]
+position = Vector2(904, 358)
+
+[node name="2 4" type="Marker2D" parent="GridPoints" unique_id=588063845]
+position = Vector2(1021, 358)
+
+[node name="2 5" type="Marker2D" parent="GridPoints" unique_id=1725859247]
+position = Vector2(1138, 358)
+
+[node name="2 6" type="Marker2D" parent="GridPoints" unique_id=958295054]
+position = Vector2(1258, 358)
+
+[node name="2 7" type="Marker2D" parent="GridPoints" unique_id=1151766368]
+position = Vector2(1376, 358)
+
+[node name="3 0" type="Marker2D" parent="GridPoints" unique_id=1246808242]
+position = Vector2(542, 476)
+
+[node name="3 1" type="Marker2D" parent="GridPoints" unique_id=1421332542]
+position = Vector2(661, 476)
+
+[node name="3 2" type="Marker2D" parent="GridPoints" unique_id=379679565]
+position = Vector2(783, 476)
+
+[node name="3 3" type="Marker2D" parent="GridPoints" unique_id=1119211186]
+position = Vector2(898, 476)
+
+[node name="3 4" type="Marker2D" parent="GridPoints" unique_id=868791050]
+position = Vector2(1023, 476)
+
+[node name="3 5" type="Marker2D" parent="GridPoints" unique_id=781699856]
+position = Vector2(1142, 476)
+
+[node name="3 6" type="Marker2D" parent="GridPoints" unique_id=41078630]
+position = Vector2(1259, 476)
+
+[node name="3 7" type="Marker2D" parent="GridPoints" unique_id=1489738513]
+position = Vector2(1384, 476)
+
+[node name="4 0" type="Marker2D" parent="GridPoints" unique_id=720410708]
+position = Vector2(538, 597)
+
+[node name="4 1" type="Marker2D" parent="GridPoints" unique_id=1106589301]
+position = Vector2(658, 597)
+
+[node name="4 2" type="Marker2D" parent="GridPoints" unique_id=1928956557]
+position = Vector2(779, 597)
+
+[node name="4 3" type="Marker2D" parent="GridPoints" unique_id=1061247193]
+position = Vector2(901, 597)
+
+[node name="4 4" type="Marker2D" parent="GridPoints" unique_id=752715103]
+position = Vector2(1024, 597)
+
+[node name="4 5" type="Marker2D" parent="GridPoints" unique_id=898744078]
+position = Vector2(1147, 597)
+
+[node name="4 6" type="Marker2D" parent="GridPoints" unique_id=333662159]
+position = Vector2(1270, 597)
+
+[node name="4 7" type="Marker2D" parent="GridPoints" unique_id=1211343421]
+position = Vector2(1392, 597)
+
+[node name="5 0" type="Marker2D" parent="GridPoints" unique_id=647301910]
+position = Vector2(529, 725)
+
+[node name="5 1" type="Marker2D" parent="GridPoints" unique_id=1922112033]
+position = Vector2(654, 725)
+
+[node name="5 2" type="Marker2D" parent="GridPoints" unique_id=2096237846]
+position = Vector2(780, 725)
+
+[node name="5 3" type="Marker2D" parent="GridPoints" unique_id=400583108]
+position = Vector2(901, 725)
+
+[node name="5 4" type="Marker2D" parent="GridPoints" unique_id=1621978957]
+position = Vector2(1023, 725)
+
+[node name="5 5" type="Marker2D" parent="GridPoints" unique_id=1802363955]
+position = Vector2(1149, 725)
+
+[node name="5 6" type="Marker2D" parent="GridPoints" unique_id=1525069290]
+position = Vector2(1273, 725)
+
+[node name="5 7" type="Marker2D" parent="GridPoints" unique_id=925047627]
+position = Vector2(1404, 725)
+
+[node name="6 0" type="Marker2D" parent="GridPoints" unique_id=2117041859]
+position = Vector2(528, 851)
+
+[node name="6 1" type="Marker2D" parent="GridPoints" unique_id=125975985]
+position = Vector2(648, 851)
+
+[node name="6 2" type="Marker2D" parent="GridPoints" unique_id=653558387]
+position = Vector2(772, 851)
+
+[node name="6 3" type="Marker2D" parent="GridPoints" unique_id=796529925]
+position = Vector2(902, 851)
+
+[node name="6 4" type="Marker2D" parent="GridPoints" unique_id=1105314024]
+position = Vector2(1027, 851)
+
+[node name="6 5" type="Marker2D" parent="GridPoints" unique_id=602852475]
+position = Vector2(1148, 851)
+
+[node name="6 6" type="Marker2D" parent="GridPoints" unique_id=1638421463]
+position = Vector2(1276, 851)
+
+[node name="6 7" type="Marker2D" parent="GridPoints" unique_id=920705027]
+position = Vector2(1405, 851)
+
+[node name="7 0" type="Marker2D" parent="GridPoints" unique_id=604919357]
+position = Vector2(523, 983)
+
+[node name="7 1" type="Marker2D" parent="GridPoints" unique_id=964843572]
+position = Vector2(645, 983)
+
+[node name="7 2" type="Marker2D" parent="GridPoints" unique_id=235125020]
+position = Vector2(773, 983)
+
+[node name="7 3" type="Marker2D" parent="GridPoints" unique_id=525114983]
+position = Vector2(898, 983)
+
+[node name="7 4" type="Marker2D" parent="GridPoints" unique_id=303054373]
+position = Vector2(1025, 983)
+
+[node name="7 5" type="Marker2D" parent="GridPoints" unique_id=1316142811]
+position = Vector2(1150, 983)
+
+[node name="7 6" type="Marker2D" parent="GridPoints" unique_id=56034805]
+position = Vector2(1280, 983)
+
+[node name="7 7" type="Marker2D" parent="GridPoints" unique_id=692311990]
+position = Vector2(1413, 983)
 
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Attack" to="logicgame" method="_on_attack_pressed"]
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Defend" to="logicgame" method="_on_defend_pressed"]
