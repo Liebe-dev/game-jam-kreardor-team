@@ -47,6 +47,10 @@ text = "DEFEND"
 layout_mode = 2
 text = "ENDTURN"
 
+[node name="GridPoints" type="Node2D" parent="." unique_id=715706376]
+
+[node name="Marker2D" type="Marker2D" parent="GridPoints" unique_id=1051627033]
+
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Attack" to="logicgame" method="_on_attack_pressed"]
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Defend" to="logicgame" method="_on_defend_pressed"]
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/EndTurn" to="logicgame" method="_on_end_turn_pressed"]
