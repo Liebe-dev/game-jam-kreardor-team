@@ -60,23 +60,21 @@ func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 
 func calculate_world_position(grid_pos: Vector2i) -> Vector2:
 	var my_skew = grid_pos.y * 4 
-	return board_origin + Vector2(grid_pos.x * cell_size + skew, grid_pos.y * cell_size)
-
+	return board_origin + Vector2(grid_pos.x * cell_size + my_skew, grid_pos.y * cell_size)
 func deal_damage(target, amount):
-	if target == null or not is_instance_valid(target):
+	if not is_instance_valid(target) or target.health <= 0:
 		return
 		
-	# Trừ máu
+	# CHẶN ĐỨNG: Nếu dame quá ảo (ví dụ dame âm hoặc bằng 0) thì bỏ qua
+	if amount <= 0: return
 	target.health -= amount
+	print("DEAL DAME: ", target.name, " mất ", amount, " còn ", target.health)
 	
-	# Cập nhật thanh máu trên giao diện (nếu bạn có node HealthBar trong quân cờ)
 	if target.has_node("HealthBar"):
 		target.get_node("HealthBar").value = target.health
 	
-	# Nếu hết máu thì cho quân cờ "bay màu"
 	if target.health <= 0:
 		kill_piece(target)
-
 func _input(event):
 	# Nếu đã đi quân chính rồi thì không cho click nữa
 	if has_moved_main_piece:
@@ -186,76 +184,97 @@ func _on_defend_pressed():
 	btn_attack.modulate = Color(1, 1, 1)     # Nút kia về bình thường
 	btn_defend.modulate = Color(0.5, 0.5, 1) # Sáng lên khi chọn
 func _on_end_turn_pressed():
-	# 1. Cho các quân kiểm tra xem có ai bên cạnh để ôm không
+	
+	# 1. CHO CÁC PHE DI CHUYỂN TRƯỚC (Tuyệt đối không gây dame giằng co ở đây)
+	move_team_logic(1)
+	
+	await get_tree().create_timer(0.5).timeout
+	
+	move_team_logic(2)
+	
+	await get_tree().create_timer(0.2).timeout # Đợi quân địch đứng yên
+
+	# 2. SAU KHI TẤT CẢ ĐÃ ĐỨNG YÊN, MỚI KIỂM TRA XEM AI ĐANG CẠNH AI
 	for p in all_pieces:
 		if is_instance_valid(p):
 			check_and_execute_grab(p)
 			
-	# 2. Gây sát thương giằng co
+	# 3. GÂY SÁT THƯƠNG GIẰNG CO CUỐI CÙNG (Chỉ một lần duy nhất)
 	apply_grab_damage()
-	# CHO QUÂN TA (TEAM 1) ĐI
-	move_team_logic(1)
 	
-	# Đợi 0.5 giây cho mượt rồi cho quân Địch đi
-	await get_tree().create_timer(0.5).timeout
-	
-	# CHO QUÂN ĐỊCH (TEAM 2) ĐI
-	move_team_logic(2)
-	
-	# Reset để lượt sau có thể dùng chuột di chuyển tiếp
+	# 4. RESET LƯỢT
 	has_moved_main_piece = false
 	selected_piece = null
+func apply_grab_damage():
+	# Dictionary để ghi nhớ: Mỗi thực thể chỉ bị tính dame 1 lần duy nhất
+	var damage_map = {} 
 
-# 2. Hàm xử lý di chuyển cho từng phe
+	# BƯỚC 1: Quét toàn bộ bàn cờ để xác định đối tượng bị ôm
+	for p in all_pieces:
+		if is_instance_valid(p) and p.is_grabbed:
+			# Kiểm tra xem kẻ đang ôm mình còn tồn tại không
+			if is_instance_valid(p.grabbed_by):
+				damage_map[p] = 10 # Gán mức sát thương là 10
+			else:
+				# Tự giải thoát nếu đối tác đã "bay màu"
+				p.is_grabbed = false
+				p.grabbed_by = null
+				p.modulate = Color(1, 1, 1)
+	# BƯỚC 2: Thực hiện trừ máu đồng loạt từ danh sách đã lọc
+	for p in damage_map.keys():
+		if is_instance_valid(p) and "health" in p:
+			p.health -= damage_map[p]
+			
+			# Cập nhật thanh máu UI
+			if p.has_node("HealthBar"):
+				p.get_node("HealthBar").value = p.health
+			
+			# Kiểm tra chết an toàn để tránh lỗi "Invalid Access"
+			if p.health <= 0:
+				kill_piece(p)
 func move_team_logic(team_num: int):
-	# LƯỢT CỦA VUA (Ưu tiên đi trước để tìm chỗ trốn)
+	# --- LƯỢT CỦA VUA ---
 	for p in all_pieces:
 		if is_instance_valid(p) and p.team == team_num and "King" in p.name:
 			var target_pos = king_move_logic(p)
 			if target_pos != p.grid_pos:
 				move_piece(p, target_pos)
 
-	# LƯỢT CỦA CÁC QUÂN CÒN LẠI
+	# --- LƯỢT CỦA CÁC QUÂN CÒN LẠI ---
 	for p in all_pieces:
 		if not is_instance_valid(p) or p.team != team_num or "King" in p.name: 
 			continue
 		
-		# 1. KIỂM TRA TRẠNG THÁI ÔM (GRAB)
-		if p.is_grabbed:
-			# Hậu bị ôm thì phản công lan 35 dame
-			if "Queen" in p.name: queen_grab_counter(p)
-			# Các quân khác (Mã, Tượng, Tốt) sẽ xử lý dame giằng co ở apply_grab_damage()
-			continue 
-
-		# 2. KIỂM TRA TẤN CÔNG (Nếu có địch trong tầm đánh đặc thù)
-		var attack_target = null
-		if "Queen" in p.name: attack_target = find_queen_ranged_target(p)
-		elif "Rook" in p.name: execute_rook_logic(p) # Xe có logic nạp đạn riêng
-		elif "Queen" in p.name:
+		# Nếu quân đang bị ôm, nó sẽ thực hiện phản đòn trong execute_logic và dừng lại
+		var acted = false
+		
+		if "Queen" in p.name:
 			execute_queen_logic(p)
+			acted = true # Hậu luôn ưu tiên bắn hoặc phản đòn
 		elif "Rook" in p.name:
 			execute_rook_logic(p)
+			acted = true # Xe nạp đạn hoặc húc
 		elif "Knight" in p.name:
 			execute_knight_logic(p)
+			acted = true # Mã phản đòn hoặc đá hình L
 		elif "Bishop" in p.name:
 			execute_bishop_logic(p)
-		if attack_target:
-			var damage = 25 if "Queen" in p.name else p.attack_damage
-			deal_damage(attack_target, damage)
-			continue # Đã tấn công thì không di chuyển nữa
-
-		# 3. DI CHUYỂN (Nếu không có ai để đánh)
+			acted = true # Tượng bắn dấu X hoặc rút lui
+			
+		# Nếu là quân đặc biệt đã thực hiện chiêu thức thì bỏ qua phần đi bộ
+		if acted: continue
+		# 3. DI CHUYỂN (Dành cho Tốt hoặc các quân chưa làm gì)
 		var target = null
 		if team_num == 1 and current_command == Command.DEFEND:
 			target = find_my_king(1)
 		else:
-			target = find_best_target(p) # Dùng hàm có sẵn của bạn
+			target = find_best_target(p)
 			
 		if target:
 			var next = get_next_step_towards(p.grid_pos, target.grid_pos)
 			if is_cell_vacant(next):
 				move_piece(p, next)
-# 3. Hàm tìm mục tiêu (Đây là "Bộ não" của AI)
+				# Sau khi Tốt đi xong, cho nó thử ôm địch luôn
 func find_best_target(for_piece: Piece):
 	var enemy_king = null
 	var enemy_soldiers = []
@@ -539,7 +558,7 @@ func execute_bishop_logic(bishop):
 			if is_within_board(land_pos) and is_cell_vacant(land_pos):
 				move_piece(grabber, land_pos)
 			else:
-				deal_damage(grabber, 5) # Va chạm
+				deal_damage(grabber, 10) # Va chạm
 			
 			# 2. Giải phóng Grab
 			bishop.is_grabbed = false
@@ -585,33 +604,7 @@ func check_and_execute_grab(pawn):
 			pawn.modulate = Color(0.5, 0.5, 0.5) 
 			target_unit.modulate = Color(0.5, 0.5, 0.5)
 			break
-func apply_grab_damage():
-	var damage_list = [] # Lưu danh sách những quân sẽ bị trừ máu
 
-	# BƯỚC 1: Quét và ghi nhận những ai đang bị ôm
-	for p in all_pieces:
-		if is_instance_valid(p) and p.is_grabbed:
-			if is_instance_valid(p.grabbed_by):
-				damage_list.append(p)
-			else:
-				# Tự giải thoát nếu đối tác không còn tồn tại
-				p.is_grabbed = false
-				p.grabbed_by = null
-				p.modulate = Color(1, 1, 1)
-
-	# BƯỚC 2: Thực hiện trừ máu đồng loạt
-	for p in damage_list:
-		if is_instance_valid(p) and "health" in p:
-			p.health -= 20
-			print(p.name, " còn ", p.health, " máu do giằng co")
-			
-			# Cập nhật UI
-			if p.has_node("HealthBar"):
-				p.get_node("HealthBar").value = p.health
-			
-			# Chỉ kiểm tra chết sau khi tất cả đã được tính toán
-			if p.health <= 0:
-				kill_piece(p)
 func kill_piece(piece):
 	# Giải phóng cho đối phương nếu đang bị ôm
 	if piece.is_grabbed and is_instance_valid(piece.grabbed_by):
