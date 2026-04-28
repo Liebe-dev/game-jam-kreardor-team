@@ -1,3 +1,4 @@
+extends Node2D
 
 @export var pawn_scene: PackedScene 
 @export var king_scene: PackedScene 
@@ -48,7 +49,6 @@ func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 	if team == 2:
 		var sprite = new_unit.get_node("Sprite2D")
 		sprite.modulate = Color(1, 0.4, 0.4)
-		sprite.flip_v = true
 		
 		# Sửa chỗ này cho khớp với tên node bạn đặt (HealthBar hoặc heath)
 		if new_unit.has_node("HealthBar"):
@@ -58,23 +58,18 @@ func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 
 
 func calculate_world_position(grid_pos: Vector2i) -> Vector2:
-	var my_skew = grid_pos.y * 4 
+	var skew = grid_pos.y * 4 
 	return board_origin + Vector2(grid_pos.x * cell_size + skew, grid_pos.y * cell_size)
 
 func deal_damage(target, amount):
 	if target == null or not is_instance_valid(target):
 		return
 		
-	# Trừ máu
-	target.health -= amount
+	# Báo cho quân cờ tự nhận sát thương (nếu nó có hàm take_damage)
+	if target.has_method("take_damage"):
+		target.take_damage(amount)
 	
-	# Cập nhật thanh máu trên giao diện (nếu bạn có node HealthBar trong quân cờ)
-	if target.has_node("HealthBar"):
-		target.get_node("HealthBar").value = target.health
 	
-	# Nếu hết máu thì cho quân cờ "bay màu"
-	if target.health <= 0:
-		kill_piece(target)
 
 func _input(event):
 	# Nếu đã đi quân chính rồi thì không cho click nữa
@@ -238,6 +233,14 @@ func move_team_logic(team_num: int):
 			execute_knight_logic(p)
 		elif "Bishop" in p.name:
 			execute_bishop_logic(p)
+		else:
+			# DÀNH CHO QUÂN TỐT: Kiểm tra xem có địch đứng sát bên không (kể cả chéo)
+			var target = find_best_target(p)
+			if target:
+				var dist_x = abs(target.grid_pos.x - p.grid_pos.x)
+				var dist_y = abs(target.grid_pos.y - p.grid_pos.y)
+				if dist_x <= 1 and dist_y <= 1:
+					attack_target = target
 		if attack_target:
 			var damage = 25 if "Queen" in p.name else p.attack_damage
 			deal_damage(attack_target, damage)
@@ -600,17 +603,11 @@ func apply_grab_damage():
 
 	# BƯỚC 2: Thực hiện trừ máu đồng loạt
 	for p in damage_list:
-		if is_instance_valid(p) and "health" in p:
-			p.health -= 20
-			print(p.name, " còn ", p.health, " máu do giằng co")
+		if is_instance_valid(p):
+			# Dùng hàm có sẵn thay vì tự tính toán lại
+			deal_damage(p, 20)
 			
-			# Cập nhật UI
-			if p.has_node("HealthBar"):
-				p.get_node("HealthBar").value = p.health
-			
-			# Chỉ kiểm tra chết sau khi tất cả đã được tính toán
-			if p.health <= 0:
-				kill_piece(p)
+
 func kill_piece(piece):
 	# Giải phóng cho đối phương nếu đang bị ôm
 	if piece.is_grabbed and is_instance_valid(piece.grabbed_by):
