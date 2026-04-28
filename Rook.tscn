@@ -3,3 +3,4 @@
 [ext_resource type="PackedScene" uid="uid://qtgv1mmnvanv" path="res://Pawn.tscn" id="1_k1fmh"]
 
 [node name="Pawn" unique_id=271536388 instance=ExtResource("1_k1fmh")]
+max_health = 200

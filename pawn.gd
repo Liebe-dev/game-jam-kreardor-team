@@ -6,8 +6,8 @@ class_name Piece
 @export var grid_pos: Vector2i = Vector2i.ZERO
 
 # --- THÔNG SỐ CHIẾN ĐẤU ---
-@export var max_health: int = 100
-@export var damage: int = 25 
+@export var max_health: int = 250
+@export var damage: int = 20
 @onready var current_health: int = max_health
 
 var has_moved: bool = false
