@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://qtgv1mmnvanv"]
 
 [ext_resource type="Script" uid="uid://dij6nc3syws5q" path="res://pawn.gd" id="1_f14ny"]
-[ext_resource type="Texture2D" uid="uid://chifl843pph40" path="res://icon.svg" id="2_iexdo"]
+[ext_resource type="Texture2D" uid="uid://kbxifnxtlcwm" path="res://pawn-sheet.png" id="2_iexdo"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_q4exq"]
 bg_color = Color(0.9607843, 0.2509804, 0.078431375, 1)
@@ -15,6 +15,7 @@ max_health = 100
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=286426425]
 texture = ExtResource("2_iexdo")
+hframes = 4
 
 [node name="HealthBar" type="ProgressBar" parent="." unique_id=1792561652]
 anchors_preset = 8
