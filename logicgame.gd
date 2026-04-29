@@ -4,6 +4,7 @@ extends Node2D
 @export var king_scene: PackedScene
 @export var knight_scene: PackedScene 
 @export var rook_scene: PackedScene   
+@export var enemy_pawn_scene: PackedScene   
 @export var bishop_scene: PackedScene 
 @export var queen_scene: PackedScene
 @onready var grid_points = $"../GridPoints"
@@ -38,7 +39,7 @@ func spawn_initial_army():
 		create_piece(Vector2i(i+4, 6), 1, pawn_scene)
 	create_piece(Vector2i(3, 0), 2, king_scene)
 	#for i in range(8):
-	create_piece(Vector2i(4, 1), 2, bishop_scene)
+	create_piece(Vector2i(4, 1), 2, rook_scene)
 
 func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 	if scene == null: return # Tránh crash nếu quên kéo scene
@@ -70,7 +71,6 @@ func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 	if team == 1:
 		sprite.frame = 3
 	elif team == 2:
-		sprite.modulate = Color(1, 0.4, 0.4)
 		sprite.frame = 0
 		if new_unit.has_node("HealthBar"):
 			new_unit.get_node("HealthBar").modulate = Color(1, 0, 0)
@@ -521,30 +521,42 @@ func execute_rook_logic(rook):
 		if is_cell_vacant(next_step):
 			move_piece(rook, next_step)
 func execute_knight_logic(knight):
-	# TRƯỜNG HỢP 1: NẾU ĐANG BỊ GRAB (Phản đòn)
+# --- TRƯỜNG HỢP 1: NẾU ĐANG BỊ GRAB (Phản đòn) ---
 	if knight.is_grabbed:
 		var grabber = knight.grabbed_by
 		if is_instance_valid(grabber):
 			# 1. Gây 15 dame phản đòn
 			deal_damage(grabber, 15)
 			
+			# Xác định hướng đá văng
 			var push_dir = (grabber.grid_pos - knight.grid_pos).sign()
-			var hit = apply_knockback(grabber, push_dir, 2, 20)
 			
-			if hit:
-				deal_damage(knight, 10)
-				
-			# 3. GIẢI PHÓNG TRẠNG THÁI (Đồng bộ màu sắc)
+			# --- BỔ SUNG: QUAY MẶT NHÌN THẲNG MẶT ĐỊCH TRƯỚC KHI ĐÁ ---
+			var sprite = knight.get_node_or_null("Sprite2D")
+			if sprite:
+				if push_dir.x > 0: sprite.frame = 1      # Nhìn Phải
+				elif push_dir.x < 0: sprite.frame = 2    # Nhìn Trái
+				elif push_dir.y > 0: sprite.frame = 0    # Nhìn Xuống
+				elif push_dir.y < 0: sprite.frame = 3    # Nhìn Lên
+			
+			# 2. GIẢI THOÁT TRẠNG THÁI TRƯỚC! (Mấu chốt để không bị kẹt)
 			knight.is_grabbed = false
 			grabber.is_grabbed = false
 			knight.grabbed_by = null
 			grabber.grabbed_by = null
 			
-			# Trả về màu bình thường
+			# Trả lại màu sắc bình thường
 			knight.modulate = Color(1, 1, 1)
-			grabber.modulate = Color(1, 1, 1)
+			grabber.update_visuals()
+			
+			# 3. MỚI GỌI HÀM ĐẨY LÙI (Đá văng 2 ô, đụng tường mất 20 dame)
+			var hit = apply_knockback(grabber, push_dir, 2, 20)
+			
+			# Phản lực: Nếu đá trúng tường/quân khác, Mã cũng đau
+			if hit:
+				deal_damage(knight, 10) 
+				
 		return
-
 	# TRƯỜNG HỢP 2: TẤN CÔNG HÌNH L & RÚT LUI
 	var target = find_best_target(knight)
 	if target:
@@ -561,44 +573,42 @@ func execute_knight_logic(knight):
 				move_piece(knight, safe_pos)
 			return
 
-	# TRƯỜNG HỢP 3: DI CHUYỂN ÁP SÁT (Nếu chưa đánh được ai)
-	var next_step = get_next_step_towards(knight.grid_pos, target.grid_pos)
-	if is_cell_vacant(next_step):
-		move_piece(knight, next_step)
-func king_move_logic(king):
-	# Yêu cầu 1: Vua luôn miễn nhiễm với trạng thái bị ôm (Grab)
-	king.is_grabbed = false 
+# --- TRƯỜNG HỢP 3: DI CHUYỂN ÁP SÁT (ĐI CHUẨN HÌNH L) ---
+	# Khai báo 8 hướng nhảy chữ L chuẩn của cờ vua
+	var l_moves = [
+		Vector2i(1, 2), Vector2i(2, 1), Vector2i(-1, 2), Vector2i(-2, 1),
+		Vector2i(1, -2), Vector2i(2, -1), Vector2i(-1, -2), Vector2i(-2, -1)
+	]
 	
-	# Yêu cầu 2: Chỉ di chuyển khi có địch xung quanh
-	var possible_moves = get_surrounding_cells(king.grid_pos, 1)
-	var enemies_nearby = []
+	var best_pos = knight.grid_pos
+	var min_dist = 9999
 	
-	# Tìm tất cả quân địch trong 8 ô xung quanh
-	for cell in possible_moves:
-		var p = get_piece_at(cell)
-		if p and p.team != king.team:
-			enemies_nearby.append(p)
-			
-	# Nếu không có địch thì đứng yên
-	if enemies_nearby.size() == 0:
-		return king.grid_pos
+	# AI: Thử từng bước nhảy L, xem bước nào an toàn và gần địch nhất
+	for move in l_moves:
+		var test_pos = knight.grid_pos + move
 		
-	# Nếu có địch, tìm ô an toàn nhất trong 8 ô
-	var best_move = king.grid_pos
-	var max_safety_score = -1.0
-	
-	for move in possible_moves:
-		if is_cell_vacant(move):
-			# Điểm an toàn = Tổng khoảng cách tới tất cả các quân địch ở gần
-			var safety_score = 0.0
-			for enemy in enemies_nearby:
-				safety_score += move.distance_to(enemy.grid_pos)
+		# Phải nằm trong bàn cờ và ô đó chưa có ai đứng
+		if is_within_board(test_pos) and is_cell_vacant(test_pos):
+			# Tính khoảng cách từ vị trí thử nghiệm đến mục tiêu
+			var dist = abs(target.grid_pos.x - test_pos.x) + abs(target.grid_pos.y - test_pos.y)
 			
-			if safety_score > max_safety_score:
-				max_safety_score = safety_score
-				best_move = move
+			if dist < min_dist:
+				min_dist = dist
+				best_pos = test_pos
 				
-	return best_move
+	# --- BỔ SUNG QUAY MẶT KHI NHẢY L ---
+	var sprite = knight.get_node_or_null("Sprite2D")
+	if sprite and best_pos != knight.grid_pos:
+		var dir = best_pos - knight.grid_pos
+		# Mã nhảy L (2 dọc 1 ngang hoặc 1 dọc 2 ngang). Nhìn theo chiều nhảy xa hơn (2 ô)
+		if abs(dir.x) > abs(dir.y):
+			sprite.frame = 1 if dir.x > 0 else 2 # Nhìn Phải/Trái
+		else:
+			sprite.frame = 0 if dir.y > 0 else 3 # Nhìn Xuống/Lên
+			
+	# Thực hiện bước nhảy
+	if best_pos != knight.grid_pos:
+		move_piece(knight, best_pos)
 func find_safest_pos(piece):
 	var best_pos = piece.grid_pos
 	var max_score = -1.0
@@ -772,7 +782,7 @@ func break_grab(piece):
 	# 1. Tự giải thoát cho bản thân
 	piece.is_grabbed = false
 	piece.grabbed_by = null
-	piece.modulate = Color(1, 1, 1) if piece.team == 1 else Color(1, 0.4, 0.4)
+	piece.update_visuals()
 	
 	# 2. Tìm TẤT CẢ những kẻ đang bám lấy quân này và đá văng chúng ra
 	for p in all_pieces:
@@ -780,7 +790,7 @@ func break_grab(piece):
 			p.is_grabbed = false
 			p.grabbed_by = null
 			# Trả lại màu Trắng cho phe ta, màu Đỏ cho phe địch
-			p.modulate = Color(1, 1, 1) if p.team == 1 else Color(1, 0.4, 0.4)
+			p.update_visuals()
 
 func kill_piece(piece):
 	# Giải phóng cho TẤT CẢ đối phương đang ôm quân này
@@ -788,7 +798,7 @@ func kill_piece(piece):
 		if is_instance_valid(p) and p.grabbed_by == piece:
 			p.is_grabbed = false
 			p.grabbed_by = null
-			p.modulate = Color(1, 1, 1) if p.team == 1 else Color(1, 0.4, 0.4)
+			p.update_visuals()
 	
 	# Xóa khỏi mảng quản lý và tiêu hủy
 	if piece in all_pieces:

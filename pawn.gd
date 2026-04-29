@@ -25,18 +25,17 @@ func _ready():
 func take_damage(amount: int):
 	current_health -= amount
 	
-	# Cập nhật thanh máu (Kiểm tra an toàn xem node có tồn tại không)
 	if has_node("HealthBar"):
 		$HealthBar.value = current_health
 	
-	# Hiệu ứng nhấp nháy đỏ khi trúng đòn (tùy chọn)
 	var t = create_tween()
 	t.tween_property(self, "modulate", Color.RED, 0.1)
-	t.tween_property(self, "modulate", Color.WHITE, 0.1)
+	
+	# SỬA Ở ĐÂY: Trả về trạng thái màu hiện tại (Cam nạp đạn, Xám bị ôm, hoặc Trắng bình thường)
+	t.tween_callback(update_visuals)
 	
 	if current_health <= 0:
 		die()
-
 # Hàm xử lý khi quân cờ chết
 func die():
 	# Gọi hàm xử lý xóa quân cờ từ logicgame.gd
@@ -69,10 +68,9 @@ func move_to_grid(new_grid_pos: Vector2i, new_world_pos: Vector2):
 	await tween.finished
 func update_visuals():
 	if is_grabbed:
-		modulate = Color(0.5, 0.5, 0.5)
+		modulate = Color(0.5, 0.5, 0.5) # Vẫn giữ màu xám khi bị ôm
 	elif "is_charging" in self and is_charging:
-		# Màu cam rực rỡ báo hiệu "đã lên nòng"
-		modulate = Color(2.0, 1.2, 0.5) 
+		modulate = Color(2.0, 1.2, 0.5) # Màu cam rực rỡ khi nạp đạn
 	else:
-		# Màu bình thường khi đang rỗng đạn
-		modulate = Color(1, 1, 1) if team == 1 else Color(1, 0.4, 0.4)
+		# SỬA Ở ĐÂY: Xóa bỏ việc chia team. Trả tất cả về màu gốc của ảnh (Trắng)
+		modulate = Color(1, 1, 1)

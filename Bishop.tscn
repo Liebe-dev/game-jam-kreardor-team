@@ -1,7 +1,12 @@
 [gd_scene format=3 uid="uid://bbbveha64twp6"]
 
 [ext_resource type="PackedScene" uid="uid://qtgv1mmnvanv" path="res://Pawn.tscn" id="1_n4auy"]
+[ext_resource type="Texture2D" uid="uid://cyaime1fw8wgx" path="res://bishop_sheet.png" id="2_wqw4l"]
 
 [node name="Pawn" unique_id=271536388 instance=ExtResource("1_n4auy")]
 max_health = 75
 damage = 35
+
+[node name="Sprite2D" parent="." index="0" unique_id=286426425]
+texture = ExtResource("2_wqw4l")
+frame = 0
