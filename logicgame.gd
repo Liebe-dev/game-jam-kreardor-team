@@ -254,68 +254,86 @@ func _on_end_turn_pressed():
 	has_moved_main_piece = false
 	selected_piece = null
 func apply_grab_damage():
-	# Dictionary để ghi nhớ: Mỗi thực thể chỉ bị tính dame 1 lần duy nhất
 	var damage_map = {} 
 
-	# BƯỚC 1: Quét toàn bộ bàn cờ để xác định đối tượng bị ôm
+	# BƯỚC 1: Quét xem ai đang ôm ai, cộng dồn sát thương cho nạn nhân
 	for p in all_pieces:
 		if is_instance_valid(p) and p.is_grabbed:
-			# Kiểm tra xem kẻ đang ôm mình còn tồn tại không
-			if is_instance_valid(p.grabbed_by):
-				damage_map[p] = 10 # Gán mức sát thương là 10
+			var target = p.grabbed_by
+			
+			if is_instance_valid(target):
+				# P đang bám lấy target -> Nạn nhân (target) bị cộng 10 sát thương
+				if target in damage_map:
+					damage_map[target] += 10
+				else:
+					damage_map[target] = 10
 			else:
-				# Tự giải thoát nếu đối tác đã "bay màu"
+				# Nạn nhân đã bay màu -> Tự buông tay
 				p.is_grabbed = false
 				p.grabbed_by = null
-				p.modulate = Color(1, 1, 1)
+				p.modulate = Color(1, 1, 1) if p.team == 1 else Color(1, 0.4, 0.4)
 
-	# BƯỚC 2: Thực hiện trừ máu đồng loạt từ danh sách đã lọc
-	for p in damage_map.keys():
-		if is_instance_valid(p):
-			# Chỉ cần gọi deal_damage là xong, không cần tính toán lằng nhằng nữa
-			deal_damage(p, damage_map[p])
+	# BƯỚC 2: Trừ máu đồng loạt
+	for target in damage_map.keys():
+		if is_instance_valid(target) and damage_map[target] > 0:
+			deal_damage(target, damage_map[target])
 func move_team_logic(team_num: int):
+	# --- LƯỢT CỦA VUA ---
+	# Vua đứng im, không làm gì cả, chờ người chơi tự điều khiển
+
 	# --- LƯỢT CỦA CÁC QUÂN CÒN LẠI ---
 	for p in all_pieces:
 		if not is_instance_valid(p) or p.team != team_num or "King" in p.name: 
 			continue
+		
+		# Bỏ qua nếu người chơi đã tự tay dùng chuột điều khiển quân này chạy trước rồi
 		if p.has_moved:
 			continue
-		# Nếu quân đang bị ôm, nó sẽ thực hiện phản đòn trong execute_logic và dừng lại
+			
+		# --- CHỈ THỊ 1: RÚT LUI PHÒNG THỦ (Ưu tiên Tối cao cho phe ta) ---
+		if team_num == 1 and current_command == Command.DEFEND:
+			if p.is_grabbed:
+				break_grab(p) # Đá văng tất cả địch đang ôm mình ra để mở đường máu
+				
+			var king_target = find_my_king(1)
+			if king_target:
+				var next = get_next_step_towards(p.grid_pos, king_target.grid_pos)
+				if is_cell_vacant(next):
+					move_piece(p, next)
+			continue # Đã chạy về bảo vệ Vua thì không làm hành động nào khác bên dưới nữa
+
+		# --- CHỈ THỊ 2: KẸT CHIẾN ĐẤU (Bị ôm thì không thể đi bộ tiếp) ---
+		if p.is_grabbed:
+			continue 
+
+		# --- CHỈ THỊ 3: KÍCH HOẠT KỸ NĂNG (Dành cho quân đặc biệt) ---
 		var acted = false
-		
 		if "Queen" in p.name:
 			execute_queen_logic(p)
-			acted = true # Hậu luôn ưu tiên bắn hoặc phản đòn
+			acted = true 
 		elif "Rook" in p.name:
 			execute_rook_logic(p)
-			acted = true # Xe nạp đạn hoặc húc
+			acted = true 
 		elif "Knight" in p.name:
 			execute_knight_logic(p)
-			acted = true # Mã phản đòn hoặc đá hình L
+			acted = true 
 		elif "Bishop" in p.name:
 			execute_bishop_logic(p)
-			acted = true # Tượng bắn dấu X hoặc rút lui
+			acted = true 
 			
-		# Nếu là quân đặc biệt đã thực hiện chiêu thức thì bỏ qua phần đi bộ
 		if acted: continue
-		# 3. DI CHUYỂN (Dành cho Tốt hoặc các quân chưa làm gì)
-		var target = null
-		if team_num == 1 and current_command == Command.DEFEND:
-			target = find_my_king(1)
-		else:
-			target = find_best_target(p)
-			
+		
+		# --- CHỈ THỊ 4: DI CHUYỂN TẤN CÔNG (Dành cho Tốt hoặc lính thường) ---
+		var target = find_best_target(p)
 		if target:
 			var next = get_next_step_towards(p.grid_pos, target.grid_pos)
 			if is_cell_vacant(next):
 				move_piece(p, next)
-				# Sau khi Tốt đi xong, cho nó thử ôm địch luôn
 func find_best_target(for_piece: Piece):
 	var enemy_king = null
 	var enemy_soldiers = []
 	
-	# Tìm xem đối phương có những ai
+	# Phân loại kẻ địch trên bàn cờ
 	for p in all_pieces:
 		if is_instance_valid(p) and p.team != for_piece.team:
 			if "King" in p.name: 
@@ -323,16 +341,19 @@ func find_best_target(for_piece: Piece):
 			else:
 				enemy_soldiers.append(p)
 				
-	# TƯ DUY:
-	if for_piece.team == 1: # Quân ta: Tìm lính trước, hết lính mới đánh Vua
+	# --- TƯ DUY DI CHUYỂN TÁCH BIỆT ---
+	
+	if for_piece.team == 1:
+		# LÍNH PHE TA: Dọn dẹp tàn quân địch trước, hết lính mới đánh Vua địch
 		if enemy_soldiers.size() > 0:
 			return get_closest(for_piece, enemy_soldiers)
 		return enemy_king
-	else: # Quân địch: Lao thẳng vào Vua của bạn
-		if enemy_king: return enemy_king
+		
+	else:
+		# KẺ ĐỊCH (TEAM 2): Bất chấp tất cả, mục tiêu tối thượng để bước đi là VUA
+		if enemy_king: 
+			return enemy_king
 		return get_closest(for_piece, enemy_soldiers)
-
-# 4. Các hàm hỗ trợ tính toán (Dán vào cuối file)
 func get_closest(for_piece, list):
 	var closest = null
 	var min_dist = 9999
@@ -621,50 +642,78 @@ func execute_bishop_logic(bishop):
 	if is_cell_vacant(next_step):
 		move_piece(bishop, next_step)
 func check_and_execute_grab(pawn):
-	if "King" in pawn.name: return
+	# Vua không chủ động ôm ai, và đang bận ôm rồi thì thôi
+	if "King" in pawn.name: return 
 	if pawn.is_grabbed: return 
 	
-	# Kiểm tra 4 ô xung quanh
 	var directions = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
+	var possible_targets = []
+	
+	# 1. Tìm tất cả các mục tiêu lân cận
 	for dir in directions:
 		var target_pos = pawn.grid_pos + dir
 		var target_unit = get_piece_at(target_pos)
 		
-		# Điều kiện: Có địch, khác team, không phải Vua
-		if target_unit and target_unit.team != pawn.team and not "King" in target_unit.name:
-			pawn.is_grabbed = true
-			pawn.grabbed_by = target_unit
-			target_unit.is_grabbed = true
-			target_unit.grabbed_by = pawn
+		# Khác phe là ôm được (Cho phép ôm chung 1 mục tiêu đang bị kẻ khác ôm)
+		if target_unit and target_unit.team != pawn.team:
+			possible_targets.append(target_unit)
 			
-			# Hiệu ứng đổi màu để biết là đã Grab thành công
-			pawn.modulate = Color(0.5, 0.5, 0.5) 
-			target_unit.modulate = Color(0.5, 0.5, 0.5)
-			break
-# Hàm bẻ khóa trạng thái Grab khi người chơi chủ động di chuyển
+	if possible_targets.size() == 0: return
+	
+	# 2. Ưu tiên Lính > Vua. Nếu có nhiều lính, CHỌN NGẪU NHIÊN 1 lính
+	var soldier_targets = []
+	for t in possible_targets:
+		if not "King" in t.name:
+			soldier_targets.append(t)
+			
+	var chosen_target = null
+	if soldier_targets.size() > 0:
+		chosen_target = soldier_targets.pick_random() # Bốc thăm ngẫu nhiên
+	else:
+		chosen_target = possible_targets.pick_random() # Bốc thăm ngẫu nhiên (chỉ có Vua)
+		
+	# 3. Thực hiện khóa mục tiêu
+	pawn.is_grabbed = true
+	pawn.grabbed_by = chosen_target
+	pawn.modulate = Color(0.5, 0.5, 0.5)
+	
+	# --- LOGIC QUAY MẶT VỀ PHÍA KẺ BỊ ÔM ---
+	var face_dir = chosen_target.grid_pos - pawn.grid_pos
+	var sprite = pawn.get_node("Sprite2D")
+	if sprite:
+		if face_dir.x > 0: sprite.frame = 1     # Nhìn Phải
+		elif face_dir.x < 0: sprite.frame = 2   # Nhìn Trái
+		elif face_dir.y > 0: sprite.frame = 0   # Nhìn Xuống
+		elif face_dir.y < 0: sprite.frame = 3   # Nhìn Lên
+		
+	# 4. Báo cho mục tiêu biết là đang bị đánh hội đồng
+	chosen_target.is_grabbed = true
+	# Chỉ gán grabbed_by nếu nó chưa ôm ai (để giữ nguyên mục tiêu ban đầu của nó)
+	if chosen_target.grabbed_by == null:
+		chosen_target.grabbed_by = pawn
+	chosen_target.modulate = Color(0.5, 0.5, 0.5)
 func break_grab(piece):
-	if not piece.is_grabbed: return
-	
-	var partner = piece.grabbed_by
-	
-	# 1. Trả lại trạng thái tự do cho quân của mình
+	# 1. Tự giải thoát cho bản thân
 	piece.is_grabbed = false
 	piece.grabbed_by = null
-	piece.modulate = Color(1, 1, 1) # Trả về màu gốc (Trắng)
+	piece.modulate = Color(1, 1, 1) if piece.team == 1 else Color(1, 0.4, 0.4)
 	
-	# 2. Trả lại trạng thái tự do cho kẻ địch đang ôm mình (nếu nó còn sống)
-	if is_instance_valid(partner):
-		partner.is_grabbed = false
-		partner.grabbed_by = null
-		partner.modulate = Color(1, 0.4, 0.4) # Trả về màu gốc của địch (Đỏ)
+	# 2. Tìm TẤT CẢ những kẻ đang bám lấy quân này và đá văng chúng ra
+	for p in all_pieces:
+		if is_instance_valid(p) and p.grabbed_by == piece:
+			p.is_grabbed = false
+			p.grabbed_by = null
+			# Trả lại màu Trắng cho phe ta, màu Đỏ cho phe địch
+			p.modulate = Color(1, 1, 1) if p.team == 1 else Color(1, 0.4, 0.4)
 func kill_piece(piece):
-	# Giải phóng cho đối phương nếu đang bị ôm
-	if piece.is_grabbed and is_instance_valid(piece.grabbed_by):
-		var partner = piece.grabbed_by
-		partner.is_grabbed = false
-		partner.grabbed_by = null
+	# Giải phóng cho TẤT CẢ đối phương đang ôm quân này
+	for p in all_pieces:
+		if is_instance_valid(p) and p.grabbed_by == piece:
+			p.is_grabbed = false
+			p.grabbed_by = null
+			p.modulate = Color(1, 1, 1) if p.team == 1 else Color(1, 0.4, 0.4)
 	
-	# Xóa khỏi mảng quản lý
+	# Xóa khỏi mảng quản lý và tiêu hủy
 	if piece in all_pieces:
 		all_pieces.erase(piece)
 	
