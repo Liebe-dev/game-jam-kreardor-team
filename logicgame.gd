@@ -45,19 +45,26 @@ func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 	
 	if scene == king_scene:
 		new_unit.name = "King_" + str(team)
+		
 	piece_layer.add_child(new_unit)
 	new_unit.global_position = calculate_world_position(grid_pos)
 	
-	if team == 2:
-		var sprite = new_unit.get_node("Sprite2D")
+	var sprite = new_unit.get_node("Sprite2D")
+	
+	# --- CODE MỚI QUYẾT ĐỊNH HƯỚNG NHÌN BAN ĐẦU ---
+	if team == 1:
+		# Phe ta (ở dưới) -> Lúc đầu phải nhìn Lên (Quay lưng)
+		sprite.frame = 3
+	elif team == 2:
+		# Phe địch (ở trên) -> Nhuộm đỏ và nhìn Xuống (Quay mặt)
 		sprite.modulate = Color(1, 0.4, 0.4)
-		
+		sprite.frame = 0
+
 		# Sửa chỗ này cho khớp với tên node bạn đặt (HealthBar hoặc heath)
 		if new_unit.has_node("HealthBar"):
 			new_unit.get_node("HealthBar").modulate = Color(1, 0, 0)
 			
 	all_pieces.append(new_unit)
-
 
 func calculate_world_position(grid_pos: Vector2i) -> Vector2:
 	# Ghép tọa độ X và Y thành tên node. Ví dụ grid_pos(3, 4) -> "3_4"
@@ -90,19 +97,38 @@ func _input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var click_pos = get_global_mouse_position()
 		var clicked_grid = calculate_grid_position(click_pos)
+		
+		# Bỏ qua nếu người chơi click ra ngoài bàn cờ
+		if not is_within_board(clicked_grid): 
+			return
+			
 		var piece_at_click = get_piece_at(clicked_grid)
 		
 		# Bước 1: Chọn quân của mình (Team 1)
 		if piece_at_click and piece_at_click.team == 1:
 			selected_piece = piece_at_click
+			# Bạn có thể thêm code làm sáng quân cờ được chọn ở đây nếu muốn
 			
 		# Bước 2: Di chuyển quân đã chọn vào ô trống
 		elif selected_piece != null:
 			if is_cell_vacant(clicked_grid):
-				move_piece(selected_piece, clicked_grid)
-				has_moved_main_piece = true # Khóa lại sau khi đi 1 quân
-				selected_piece = null
-
+				
+				# --- KIỂM TRA ĐIỀU KIỆN 8 Ô XUNG QUANH ---
+				var dist_x = abs(clicked_grid.x - selected_piece.grid_pos.x)
+				var dist_y = abs(clicked_grid.y - selected_piece.grid_pos.y)
+				
+				# Nếu khoảng cách trục X và Y đều <= 1, nghĩa là nằm trong 8 ô liền kề
+				if dist_x <= 1 and dist_y <= 1:
+					
+					# Giải thoát trạng thái ôm (nếu có) trước khi di chuyển
+					if selected_piece.is_grabbed:
+						break_grab(selected_piece)
+						
+					# Lệnh di chuyển thực tế
+					move_piece(selected_piece, clicked_grid)
+					selected_piece.has_moved = true
+					has_moved_main_piece = true # Khóa lại sau khi đi 1 quân
+					selected_piece = null
 func calculate_grid_position(world_pos: Vector2) -> Vector2i:
 	var closest_grid = Vector2i(-1, -1)
 	var min_distance = 999999.0 # Khởi tạo một khoảng cách ảo rất lớn
@@ -110,7 +136,7 @@ func calculate_grid_position(world_pos: Vector2) -> Vector2i:
 	# Quét qua toàn bộ 64 ô trên bàn cờ
 	for x in range(8):
 		for y in range(8):
-			var marker_name = str(x) + "_" + str(y)
+			var marker_name = str(y) + " " + str(x)
 			var marker = grid_points.get_node_or_null(marker_name)
 			
 			if marker:
@@ -222,6 +248,9 @@ func _on_end_turn_pressed():
 	apply_grab_damage()
 	
 	# 4. RESET LƯỢT
+	for p in all_pieces:
+		if is_instance_valid(p):
+			p.has_moved = false
 	has_moved_main_piece = false
 	selected_piece = null
 func apply_grab_damage():
@@ -246,18 +275,12 @@ func apply_grab_damage():
 			# Chỉ cần gọi deal_damage là xong, không cần tính toán lằng nhằng nữa
 			deal_damage(p, damage_map[p])
 func move_team_logic(team_num: int):
-	# --- LƯỢT CỦA VUA ---
-	for p in all_pieces:
-		if is_instance_valid(p) and p.team == team_num and "King" in p.name:
-			var target_pos = king_move_logic(p)
-			if target_pos != p.grid_pos:
-				move_piece(p, target_pos)
-
 	# --- LƯỢT CỦA CÁC QUÂN CÒN LẠI ---
 	for p in all_pieces:
 		if not is_instance_valid(p) or p.team != team_num or "King" in p.name: 
 			continue
-		
+		if p.has_moved:
+			continue
 		# Nếu quân đang bị ôm, nó sẽ thực hiện phản đòn trong execute_logic và dừng lại
 		var acted = false
 		
@@ -598,6 +621,7 @@ func execute_bishop_logic(bishop):
 	if is_cell_vacant(next_step):
 		move_piece(bishop, next_step)
 func check_and_execute_grab(pawn):
+	if "King" in pawn.name: return
 	if pawn.is_grabbed: return 
 	
 	# Kiểm tra 4 ô xung quanh
@@ -617,6 +641,22 @@ func check_and_execute_grab(pawn):
 			pawn.modulate = Color(0.5, 0.5, 0.5) 
 			target_unit.modulate = Color(0.5, 0.5, 0.5)
 			break
+# Hàm bẻ khóa trạng thái Grab khi người chơi chủ động di chuyển
+func break_grab(piece):
+	if not piece.is_grabbed: return
+	
+	var partner = piece.grabbed_by
+	
+	# 1. Trả lại trạng thái tự do cho quân của mình
+	piece.is_grabbed = false
+	piece.grabbed_by = null
+	piece.modulate = Color(1, 1, 1) # Trả về màu gốc (Trắng)
+	
+	# 2. Trả lại trạng thái tự do cho kẻ địch đang ôm mình (nếu nó còn sống)
+	if is_instance_valid(partner):
+		partner.is_grabbed = false
+		partner.grabbed_by = null
+		partner.modulate = Color(1, 0.4, 0.4) # Trả về màu gốc của địch (Đỏ)
 func kill_piece(piece):
 	# Giải phóng cho đối phương nếu đang bị ôm
 	if piece.is_grabbed and is_instance_valid(piece.grabbed_by):

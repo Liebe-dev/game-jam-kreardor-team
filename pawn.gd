@@ -46,6 +46,23 @@ func die():
 	else:
 		queue_free()
 func move_to_grid(new_grid_pos: Vector2i, new_world_pos: Vector2):
+	# --- LOGIC QUAY ĐẦU (CODE MỚI ĐÂY) ---
+	
+	# Vectơ hướng di chuyển (Mới - Cũ)
+	var direction_vector = new_grid_pos - grid_pos 
+	
+	# Cập nhật frame dựa theo hướng di chuyển logic (X, Y)
+# Giả sử thứ tự frame sheet của bạn là: 0:Xuống, 1:Phải, 2:Trái, 3:Lên
+	if direction_vector.x > 0:
+		$Sprite2D.frame = 1 # Đi sang ô X+ (Phải)
+	elif direction_vector.x < 0:
+		$Sprite2D.frame = 2 # Đi sang ô X- (Trái)
+	elif direction_vector.y > 0:
+		$Sprite2D.frame = 0 # Đi sang ô Y+ (Hướng Xuống Dưới)
+	elif direction_vector.y < 0:
+		$Sprite2D.frame = 3 # Đi sang ô Y- (Hướng Lên Trên)
+
+	# --- LOGIC DI CHUYỂN (CODE CŨ CỦA BẠN) ---
 	grid_pos = new_grid_pos
 	var tween = create_tween()
 	tween.tween_property(self, "global_position", new_world_pos, 0.3).set_trans(Tween.TRANS_SINE)

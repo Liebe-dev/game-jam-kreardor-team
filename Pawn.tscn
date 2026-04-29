@@ -35,5 +35,4 @@ size_flags_horizontal = 4
 size_flags_vertical = 8
 theme_override_styles/background = SubResource("StyleBoxFlat_q4exq")
 theme_override_styles/fill = SubResource("StyleBoxFlat_i26xp")
-fill_mode = 1
 show_percentage = false
