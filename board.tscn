@@ -5,6 +5,10 @@
 [ext_resource type="Script" uid="uid://daj5j0fbcgft" path="res://logicgame.gd" id="3_jqgjh"]
 [ext_resource type="PackedScene" uid="uid://2jkkrdchccrq" path="res://King.tscn" id="4_jqgjh"]
 [ext_resource type="Texture2D" uid="uid://d1qts2nneiir3" path="res://bg.png" id="5_vf5bc"]
+[ext_resource type="PackedScene" uid="uid://cargwtexh1op" path="res://Knight.tscn" id="6_c4ttu"]
+[ext_resource type="PackedScene" uid="uid://c5rujg24un2lm" path="res://Rook.tscn" id="7_xhrpu"]
+[ext_resource type="PackedScene" uid="uid://bbbveha64twp6" path="res://Bishop.tscn" id="8_nk23n"]
+[ext_resource type="PackedScene" uid="uid://y7uxosjnr4ui" path="res://Queen.tscn" id="9_5qf1t"]
 
 [node name="board" type="Node2D" unique_id=1273165699]
 
@@ -26,6 +30,10 @@ script = ExtResource("1_p0ybc")
 script = ExtResource("3_jqgjh")
 pawn_scene = ExtResource("3_8l818")
 king_scene = ExtResource("4_jqgjh")
+knight_scene = ExtResource("6_c4ttu")
+rook_scene = ExtResource("7_xhrpu")
+bishop_scene = ExtResource("8_nk23n")
+queen_scene = ExtResource("9_5qf1t")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=514856525]
 

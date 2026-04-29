@@ -2,11 +2,15 @@ extends Node2D
 
 @export var pawn_scene: PackedScene 
 @export var king_scene: PackedScene
+@export var knight_scene: PackedScene 
+@export var rook_scene: PackedScene   
+@export var bishop_scene: PackedScene 
+@export var queen_scene: PackedScene
 @onready var grid_points = $"../GridPoints"
 @onready var btn_attack = $"../CanvasLayer/HBoxContainer/Attack"
 @onready var btn_defend = $"../CanvasLayer/HBoxContainer/Defend"
-enum Command { ATTACK, DEFEND }
-var current_command = Command.ATTACK # Mặc định là CÔNG
+enum Command { ATTACK, DEFEND, IDLE }
+var current_command = Command.IDLE # Mặc định là đứng im
 
 var has_moved_main_piece = false # Kiểm tra xem lượt này đã đi quân chính chưa
 var piece_layer: Node2D 
@@ -30,11 +34,11 @@ func _ready():
 
 func spawn_initial_army():
 	create_piece(Vector2i(4, 7), 1, king_scene)
-	for i in range(8):
+	for i in range(2):
 		create_piece(Vector2i(i, 6), 1, pawn_scene)
 	create_piece(Vector2i(3, 0), 2, king_scene)
-	for i in range(8):
-		create_piece(Vector2i(i, 1), 2, pawn_scene)
+	#for i in range(8):
+	create_piece(Vector2i(1, 1), 2, rook_scene)
 
 func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 	if scene == null: return # Tránh crash nếu quên kéo scene
@@ -43,29 +47,35 @@ func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 	new_unit.team = team
 	new_unit.grid_pos = grid_pos
 	
+	# --- ĐẶT TÊN CHO CHUẨN ĐỂ CODE NHẬN DIỆN ---
 	if scene == king_scene:
 		new_unit.name = "King_" + str(team)
+	elif scene == rook_scene:
+		new_unit.name = "Rook_" + str(team)
+	elif scene == queen_scene:
+		new_unit.name = "Queen_" + str(team)
+	elif scene == knight_scene:
+		new_unit.name = "Knight_" + str(team)
+	elif scene == bishop_scene:
+		new_unit.name = "Bishop_" + str(team)
+	else:
+		new_unit.name = "Pawn_" + str(team)
 		
 	piece_layer.add_child(new_unit)
 	new_unit.global_position = calculate_world_position(grid_pos)
 	
 	var sprite = new_unit.get_node("Sprite2D")
 	
-	# --- CODE MỚI QUYẾT ĐỊNH HƯỚNG NHÌN BAN ĐẦU ---
+	# Code quyết định hướng nhìn ban đầu của bạn giữ nguyên
 	if team == 1:
-		# Phe ta (ở dưới) -> Lúc đầu phải nhìn Lên (Quay lưng)
 		sprite.frame = 3
 	elif team == 2:
-		# Phe địch (ở trên) -> Nhuộm đỏ và nhìn Xuống (Quay mặt)
 		sprite.modulate = Color(1, 0.4, 0.4)
 		sprite.frame = 0
-
-		# Sửa chỗ này cho khớp với tên node bạn đặt (HealthBar hoặc heath)
 		if new_unit.has_node("HealthBar"):
 			new_unit.get_node("HealthBar").modulate = Color(1, 0, 0)
 			
 	all_pieces.append(new_unit)
-
 func calculate_world_position(grid_pos: Vector2i) -> Vector2:
 	# Ghép tọa độ X và Y thành tên node. Ví dụ grid_pos(3, 4) -> "3_4"
 	var marker_name = str(grid_pos.y) + " " + str(grid_pos.x)
@@ -76,7 +86,6 @@ func calculate_world_position(grid_pos: Vector2i) -> Vector2:
 	if marker:
 		return marker.global_position
 	else:
-		print("LỖI: Không tìm thấy ô định vị tên là: ", marker_name)
 		return Vector2.ZERO
 func deal_damage(target, amount):
 	if not is_instance_valid(target):
@@ -88,7 +97,6 @@ func deal_damage(target, amount):
 	# Gọi hàm take_damage xịn sò để quân cờ tự lo việc trừ máu, chớp đỏ và chết (Code của bạn)
 	if target.has_method("take_damage"):
 		target.take_damage(amount)
-		print("DEAL DAME: ", target.name, " mất ", amount)
 func _input(event):
 	# Nếu đã đi quân chính rồi thì không cho click nữa
 	if has_moved_main_piece:
@@ -164,9 +172,11 @@ func move_piece(piece: Piece, target_grid: Vector2i):
 	if piece.is_grabbed:
 		return
 	var target_world = calculate_world_position(target_grid)
-	# Gọi hàm move_to_grid mà bạn đã viết trong pawn.gd (hoặc piece.gd)
 	piece.move_to_grid(target_grid, target_world)
-
+	
+	# --- THÊM DÒNG NÀY ---
+	# Sau khi di chuyển xong tọa độ logic, thử ôm ngay lập tức
+	check_and_execute_grab(piece)
 func find_my_king(my_team: int):
 	for p in all_pieces:
 		if is_instance_valid(p) and p.team == my_team and "King" in p.name:
@@ -220,115 +230,117 @@ func find_queen_ranged_target(queen):
 	return closest_target
 
 func _on_attack_pressed():
-	current_command = Command.ATTACK
-	btn_attack.modulate = Color(1, 0.5, 0.5) # Sáng lên khi chọn
-	btn_defend.modulate = Color(1, 1, 1)     # Nút kia về bình thường
+	if current_command == Command.ATTACK:
+		# Nếu đang là Attack mà nhấn lại -> Tắt về IDLE
+		current_command = Command.IDLE
+		btn_attack.modulate = Color(1, 1, 1) 
+	else:
+		# Nếu đang ở trạng thái khác -> Bật Attack
+		current_command = Command.ATTACK
+		btn_attack.modulate = Color(1, 0.5, 0.5) # Sáng lên
+		btn_defend.modulate = Color(1, 1, 1)     # Tắt nút Defend
 
 func _on_defend_pressed():
-	current_command = Command.DEFEND
-	btn_attack.modulate = Color(1, 1, 1)     # Nút kia về bình thường
-	btn_defend.modulate = Color(0.5, 0.5, 1) # Sáng lên khi chọn
+	if current_command == Command.DEFEND:
+		# Nếu đang là Defend mà nhấn lại -> Tắt về IDLE
+		current_command = Command.IDLE
+		btn_defend.modulate = Color(1, 1, 1)
+	else:
+		# Nếu đang ở trạng thái khác -> Bật Defend
+		current_command = Command.DEFEND
+		btn_defend.modulate = Color(0.5, 0.5, 1) # Sáng lên
+		btn_attack.modulate = Color(1, 1, 1)     # Tắt nút Attack
 func _on_end_turn_pressed():
 	
 	# 1. CHO CÁC PHE DI CHUYỂN TRƯỚC (Tuyệt đối không gây dame giằng co ở đây)
 	move_team_logic(1)
 	
-	await get_tree().create_timer(0.5).timeout
+	await get_tree().create_timer(0.3).timeout
 	
 	move_team_logic(2)
 	
 	await get_tree().create_timer(0.2).timeout # Đợi quân địch đứng yên
 
-	# 2. SAU KHI TẤT CẢ ĐÃ ĐỨNG YÊN, MỚI KIỂM TRA XEM AI ĐANG CẠNH AI
+# 2. KIỂM TRA ÔM (Để khóa chân nhau trước khi tính dame)
 	for p in all_pieces:
 		if is_instance_valid(p):
 			check_and_execute_grab(p)
 			
-	# 3. GÂY SÁT THƯƠNG GIẰNG CO CUỐI CÙNG (Chỉ một lần duy nhất)
-	apply_grab_damage()
-	
+	# 3. GÂY SÁT THƯƠNG RIÊNG BIỆT (Thay thế apply_grab_damage)
+	execute_all_combat_logic()
 	# 4. RESET LƯỢT
 	for p in all_pieces:
 		if is_instance_valid(p):
 			p.has_moved = false
 	has_moved_main_piece = false
 	selected_piece = null
-func apply_grab_damage():
-	var damage_map = {} 
-
-	# BƯỚC 1: Quét xem ai đang ôm ai, cộng dồn sát thương cho nạn nhân
+func execute_all_combat_logic():
 	for p in all_pieces:
-		if is_instance_valid(p) and p.is_grabbed:
-			var target = p.grabbed_by
-			
-			if is_instance_valid(target):
-				# P đang bám lấy target -> Nạn nhân (target) bị cộng 10 sát thương
-				if target in damage_map:
-					damage_map[target] += 10
-				else:
-					damage_map[target] = 10
-			else:
-				# Nạn nhân đã bay màu -> Tự buông tay
-				p.is_grabbed = false
-				p.grabbed_by = null
-				p.modulate = Color(1, 1, 1) if p.team == 1 else Color(1, 0.4, 0.4)
-
-	# BƯỚC 2: Trừ máu đồng loạt
-	for target in damage_map.keys():
-		if is_instance_valid(target) and damage_map[target] > 0:
-			deal_damage(target, damage_map[target])
-func move_team_logic(team_num: int):
-	# --- LƯỢT CỦA VUA ---
-	# Vua đứng im, không làm gì cả, chờ người chơi tự điều khiển
-
-	# --- LƯỢT CỦA CÁC QUÂN CÒN LẠI ---
-	for p in all_pieces:
-		if not is_instance_valid(p) or p.team != team_num or "King" in p.name: 
-			continue
+		if not is_instance_valid(p): continue
 		
-		# Bỏ qua nếu người chơi đã tự tay dùng chuột điều khiển quân này chạy trước rồi
-		if p.has_moved:
-			continue
-			
-		# --- CHỈ THỊ 1: RÚT LUI PHÒNG THỦ (Ưu tiên Tối cao cho phe ta) ---
-		if team_num == 1 and current_command == Command.DEFEND:
-			if p.is_grabbed:
-				break_grab(p) # Đá văng tất cả địch đang ôm mình ra để mở đường máu
-				
-			var king_target = find_my_king(1)
-			if king_target:
-				var next = get_next_step_towards(p.grid_pos, king_target.grid_pos)
-				if is_cell_vacant(next):
-					move_piece(p, next)
-			continue # Đã chạy về bảo vệ Vua thì không làm hành động nào khác bên dưới nữa
-
-		# --- CHỈ THỊ 2: KẸT CHIẾN ĐẤU (Bị ôm thì không thể đi bộ tiếp) ---
+		# KHI BỊ ÔM
 		if p.is_grabbed:
-			continue 
-
-		# --- CHỈ THỊ 3: KÍCH HOẠT KỸ NĂNG (Dành cho quân đặc biệt) ---
-		var acted = false
-		if "Queen" in p.name:
-			execute_queen_logic(p)
-			acted = true 
-		elif "Rook" in p.name:
-			execute_rook_logic(p)
-			acted = true 
-		elif "Knight" in p.name:
-			execute_knight_logic(p)
-			acted = true 
-		elif "Bishop" in p.name:
-			execute_bishop_logic(p)
-			acted = true 
-			
-		if acted: continue
+			if "Queen" in p.name:
+				execute_queen_logic(p) 
+			elif "Knight" in p.name:
+				execute_knight_logic(p) 
+			elif "Pawn" in p.name or "King" in p.name:
+				if is_instance_valid(p.grabbed_by):
+					deal_damage(p.grabbed_by, 10)
 		
-		# --- CHỈ THỊ 4: DI CHUYỂN TẤN CÔNG (Dành cho Tốt hoặc lính thường) ---
-		var target = find_best_target(p)
-		if target:
-			var next = get_next_step_towards(p.grid_pos, target.grid_pos)
-			if is_cell_vacant(next):
-				move_piece(p, next)
+		# KHI TỰ DO (Được dùng chiêu)
+		else:
+			if "Rook" in p.name:
+				# Tự gọi hàm check xung quanh và khai hỏa của Xe
+				execute_rook_logic(p)
+			elif "Bishop" in p.name:
+				execute_bishop_logic(p)
+func move_team_logic(team_num: int):
+	for p in all_pieces:
+		if not is_instance_valid(p) or p.team != team_num: continue
+		if p.is_grabbed or "King" in p.name: continue 
+		if p.has_moved: continue
+
+		# --- 1. LOGIC NẠP ĐẠN CHO XE ---
+		if "Rook" in p.name:
+			if not p.is_charging:
+				p.is_charging = true
+				p.has_moved = true # Đánh dấu dùng lượt để nạp
+				if p.has_method("update_visuals"):
+					p.update_visuals()
+				continue
+
+		# --- 2. LOGIC DI CHUYỂN CỦA PHE TA (TEAM 1) ---
+		if team_num == 1:
+			if current_command == Command.IDLE: continue 
+			elif current_command == Command.DEFEND:
+				var king_target = find_my_king(1)
+				if king_target:
+					var next = get_next_step_towards(p.grid_pos, king_target.grid_pos)
+					if is_cell_vacant(next): move_piece(p, next)
+				continue
+
+		# --- 3. LOGIC TẤN CÔNG (Team 2 hoặc Team 1 Attack) ---
+		if (team_num == 1 and current_command == Command.ATTACK) or team_num == 2:
+			var acted = false 
+			
+			if "Queen" in p.name:
+				execute_queen_logic(p)
+				acted = true 
+			elif "Knight" in p.name:
+				execute_knight_logic(p)
+				acted = true 
+			elif "Bishop" in p.name:
+				execute_bishop_logic(p)
+				acted = true 
+				
+			if acted: continue
+			
+			# Lính thường (Pawn) mới được chạy đi tìm mục tiêu
+			var target = find_best_target(p)
+			if target:
+				var next = get_next_step_towards(p.grid_pos, target.grid_pos)
+				if is_cell_vacant(next): move_piece(p, next)
 func find_best_target(for_piece: Piece):
 	var enemy_king = null
 	var enemy_soldiers = []
@@ -456,41 +468,34 @@ func execute_rook_attack(rook, target_unit):
 		# Sau lưng trống trải -> Bị lùi lại
 		move_piece(rook, back_pos)
 func execute_rook_logic(rook):
-	# 1. Tìm danh sách địch trong 8 ô xung quanh
-	var neighbors = get_surrounding_cells(rook.grid_pos, 1)
-	var enemies = []
-	for cell in neighbors:
-		var p = get_piece_at(cell)
-		if p and p.team != rook.team:
-			enemies.append(p)
-			
-	# Nếu không có địch xung quanh, hủy nạp đạn và đứng yên
-	if enemies.size() == 0:
-		rook.is_charging = false
+	if not rook.is_charging:
 		return
-	# 2. Nếu đã nạp đạn xong từ lượt trước -> KHAI HỎA
-	if rook.is_charging:
-		# Chọn mục tiêu ưu tiên:
-		var target = null
 		
-		# Ưu tiên 1: Kẻ đang Grab mình
-		if rook.is_grabbed and is_instance_valid(rook.grabbed_by):
-			target = rook.grabbed_by
-		else:
-			# Ưu tiên 2: Kẻ ít máu nhất
-			enemies.sort_custom(func(a, b): return a.health < b.health)
-			target = enemies[0]
+	# Tầm nhìn hình dấu + (Lên, Xuống, Trái, Phải)
+	var directions = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
+	
+	for dir in directions:
+		# Xe quét xa 3 ô theo đường thẳng (vì đòn đánh của bạn lan 3 ô)
+		for i in range(1, 4):
+			var check_pos = rook.grid_pos + (dir * i)
 			
-		# Thực hiện đòn đánh (Hàm húc càn và giật lùi đã viết ở câu trước)
-		execute_rook_attack(rook, target)
-		rook.is_charging = false # Bắn xong thì hết nạp đạn
-		
-	# 3. Nếu chưa nạp đạn -> Bắt đầu nạp đạn
-	else:
-		rook.is_charging = true
-		# Bạn có thể thêm hiệu ứng đổi màu để người chơi biết Xe sắp bắn
-		if rook.has_node("Sprite2D"):
-			rook.get_node("Sprite2D").modulate = Color(2, 1, 1) # Chuyển sang sắc đỏ rực
+			if not is_within_board(check_pos):
+				break # Đụng tường thì dừng quét hướng này
+				
+			var target = get_piece_at(check_pos)
+			if target:
+				if target.team != rook.team:
+					# TÌM THẤY ĐỊCH -> KHAI HỎA NGAY VÀ LUÔN!
+					execute_rook_attack(rook, target)
+					
+					# Bắn xong thì mất đạn và reset trạng thái
+					rook.is_charging = false
+					if rook.has_method("update_visuals"):
+						rook.update_visuals()
+					return # Chỉ tấn công 1 lần mỗi lượt
+				else:
+					# Nếu đụng quân mình cản đường đạn -> Không bắn xuyên qua đồng đội được
+					break
 func execute_knight_logic(knight):
 	# TRƯỜNG HỢP 1: NẾU ĐANG BỊ GRAB (Phản đòn)
 	if knight.is_grabbed:
@@ -505,7 +510,6 @@ func execute_knight_logic(knight):
 			
 			if is_within_board(land_pos) and is_cell_vacant(land_pos):
 				move_piece(grabber, land_pos)
-				print("Mã đá văng kẻ ôm!")
 			else:
 				# VA CHẠM: Gây thêm 10 dame cho cả 2 nếu va tường/đơn vị khác
 				deal_damage(grabber, 10)
@@ -672,10 +676,18 @@ func check_and_execute_grab(pawn):
 	else:
 		chosen_target = possible_targets.pick_random() # Bốc thăm ngẫu nhiên (chỉ có Vua)
 		
-	# 3. Thực hiện khóa mục tiêu
+# 3. Thực hiện khóa mục tiêu
 	pawn.is_grabbed = true
 	pawn.grabbed_by = chosen_target
-	pawn.modulate = Color(0.5, 0.5, 0.5)
+	
+	# 4. Báo cho mục tiêu biết là đang bị ôm
+	chosen_target.is_grabbed = true
+	if chosen_target.grabbed_by == null:
+		chosen_target.grabbed_by = pawn
+	
+	# --- SỬA TÊN BIẾN Ở ĐÂY ---
+	pawn.update_visuals()
+	chosen_target.update_visuals() # Dùng chosen_target thay vì target_unit
 	
 	# --- LOGIC QUAY MẶT VỀ PHÍA KẺ BỊ ÔM ---
 	var face_dir = chosen_target.grid_pos - pawn.grid_pos

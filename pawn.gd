@@ -67,3 +67,12 @@ func move_to_grid(new_grid_pos: Vector2i, new_world_pos: Vector2):
 	var tween = create_tween()
 	tween.tween_property(self, "global_position", new_world_pos, 0.3).set_trans(Tween.TRANS_SINE)
 	await tween.finished
+func update_visuals():
+	if is_grabbed:
+		modulate = Color(0.5, 0.5, 0.5)
+	elif "is_charging" in self and is_charging:
+		# Màu cam rực rỡ báo hiệu "đã lên nòng"
+		modulate = Color(2.0, 1.2, 0.5) 
+	else:
+		# Màu bình thường khi đang rỗng đạn
+		modulate = Color(1, 1, 1) if team == 1 else Color(1, 0.4, 0.4)
