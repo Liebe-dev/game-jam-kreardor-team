@@ -35,10 +35,10 @@ func _ready():
 func spawn_initial_army():
 	create_piece(Vector2i(4, 7), 1, king_scene)
 	for i in range(2):
-		create_piece(Vector2i(i, 6), 1, pawn_scene)
+		create_piece(Vector2i(i+4, 6), 1, pawn_scene)
 	create_piece(Vector2i(3, 0), 2, king_scene)
 	#for i in range(8):
-	create_piece(Vector2i(1, 1), 2, rook_scene)
+	create_piece(Vector2i(4, 1), 2, bishop_scene)
 
 func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 	if scene == null: return # Tránh crash nếu quên kéo scene
@@ -284,6 +284,8 @@ func execute_all_combat_logic():
 				execute_queen_logic(p) 
 			elif "Knight" in p.name:
 				execute_knight_logic(p) 
+			elif "Bishop" in p.name:         
+				execute_bishop_logic(p)
 			elif "Pawn" in p.name or "King" in p.name:
 				if is_instance_valid(p.grabbed_by):
 					deal_damage(p.grabbed_by, 10)
@@ -305,11 +307,14 @@ func move_team_logic(team_num: int):
 		if "Rook" in p.name:
 			if not p.is_charging:
 				p.is_charging = true
-				p.has_moved = true # Đánh dấu dùng lượt để nạp
-				if p.has_method("update_visuals"):
-					p.update_visuals()
+				p.has_moved = true
+				
+				# --- DÒNG MỚI BỔ SUNG ---
+				# Gắn 1 cái mác ảo báo hiệu Xe vừa nạp đạn trong chính lượt này
+				p.set_meta("just_charged", true) 
+				
+				if p.has_method("update_visuals"): p.update_visuals()
 				continue
-
 		# --- 2. LOGIC DI CHUYỂN CỦA PHE TA (TEAM 1) ---
 		if team_num == 1:
 			if current_command == Command.IDLE: continue 
@@ -333,7 +338,8 @@ func move_team_logic(team_num: int):
 			elif "Bishop" in p.name:
 				execute_bishop_logic(p)
 				acted = true 
-				
+			elif "Rook" in p.name:
+				acted = true
 			if acted: continue
 			
 			# Lính thường (Pawn) mới được chạy đi tìm mục tiêu
@@ -433,19 +439,23 @@ func execute_rook_attack(rook, target_unit):
 	var forward = Vector2i(sign(dir.x), sign(dir.y))
 	var side = Vector2i(-forward.y, forward.x) # Vector vuông góc để tìm 2 bên
 	
+	# --- BỔ SUNG CODE QUAY MẶT TRƯỚC KHI BẮN ---
+	var sprite = rook.get_node_or_null("Sprite2D")
+	if sprite:
+		if forward.x > 0: sprite.frame = 1      # Bắn sang Phải
+		elif forward.x < 0: sprite.frame = 2    # Bắn sang Trái
+		elif forward.y > 0: sprite.frame = 0    # Bắn xuống Dưới
+		elif forward.y < 0: sprite.frame = 3    # Bắn lên Trên
+		
 	# --- 1. TẤN CÔNG 3 Ô ĐẰNG TRƯỚC (Gây 20 dame + Đẩy lùi 3 ô) ---
 	for i in range(1, 4):
 		var pos = rook.grid_pos + forward * i
 		var unit = get_piece_at(pos)
 		if unit and unit.team != rook.team:
 			deal_damage(unit, 20)
-			# Đẩy lùi kẻ địch 3 ô
-			var push_pos = unit.grid_pos + forward * 3
-			if is_within_board(push_pos) and is_cell_vacant(push_pos):
-				move_piece(unit, push_pos)
-			else:
-				deal_damage(unit, 10) # Sát thương va chạm nếu không đẩy được
-	
+			
+			# Gọi hàm đẩy lùi (Ví dụ: Đẩy 3 ô, dame va đập 15)
+			apply_knockback(unit, forward, 3, 15)
 	# --- 2. TẤN CÔNG 2 Ô BÊN CẠNH (Gây 10 dame, không bật lùi) ---
 	var sides = [rook.grid_pos + side, rook.grid_pos - side]
 	for s_pos in sides:
@@ -471,11 +481,16 @@ func execute_rook_logic(rook):
 	if not rook.is_charging:
 		return
 		
+	# Nếu vừa nạp đạn lượt này -> Gỡ mác ảo ra, nhịn không bắn, chờ lượt sau
+	if rook.has_meta("just_charged") and rook.get_meta("just_charged") == true:
+		rook.set_meta("just_charged", false)
+		return
+		
 	# Tầm nhìn hình dấu + (Lên, Xuống, Trái, Phải)
 	var directions = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
 	
 	for dir in directions:
-		# Xe quét xa 3 ô theo đường thẳng (vì đòn đánh của bạn lan 3 ô)
+		# Xe quét xa 3 ô theo đường thẳng
 		for i in range(1, 4):
 			var check_pos = rook.grid_pos + (dir * i)
 			
@@ -492,10 +507,19 @@ func execute_rook_logic(rook):
 					rook.is_charging = false
 					if rook.has_method("update_visuals"):
 						rook.update_visuals()
-					return # Chỉ tấn công 1 lần mỗi lượt
+						
+					# Đã bắn thì không đi bộ nữa -> Kết thúc hàm
+					return 
 				else:
-					# Nếu đụng quân mình cản đường đạn -> Không bắn xuyên qua đồng đội được
-					break
+					# Nếu đụng quân mình cản đường đạn -> Dừng quét hướng này
+					break 
+
+	# --- BỔ SUNG CHỖ NÀY: NẾU QUÉT 4 HƯỚNG MÀ KHÔNG CÓ AI ĐỂ BẮN -> ĐI BỘ ÁP SÁT ---
+	var best_target = find_best_target(rook)
+	if best_target:
+		var next_step = get_next_step_towards(rook.grid_pos, best_target.grid_pos)
+		if is_cell_vacant(next_step):
+			move_piece(rook, next_step)
 func execute_knight_logic(knight):
 	# TRƯỜNG HỢP 1: NẾU ĐANG BỊ GRAB (Phản đòn)
 	if knight.is_grabbed:
@@ -504,22 +528,12 @@ func execute_knight_logic(knight):
 			# 1. Gây 15 dame phản đòn
 			deal_damage(grabber, 15)
 			
-			# 2. Tính toán đẩy lùi
 			var push_dir = (grabber.grid_pos - knight.grid_pos).sign()
-			var land_pos = grabber.grid_pos + (push_dir * 2)
+			var hit = apply_knockback(grabber, push_dir, 2, 20)
 			
-			if is_within_board(land_pos) and is_cell_vacant(land_pos):
-				move_piece(grabber, land_pos)
-			else:
-				# VA CHẠM: Gây thêm 10 dame cho cả 2 nếu va tường/đơn vị khác
-				deal_damage(grabber, 10)
-				deal_damage(knight, 10) # Va chạm mạnh, Mã cũng đau
+			if hit:
+				deal_damage(knight, 10)
 				
-				# Kiểm tra an toàn trước khi gây dame cho vật cản (tránh lỗi hình 3e317f)
-				var obstacle = get_piece_at(land_pos)
-				if is_instance_valid(obstacle) and "health" in obstacle:
-					deal_damage(obstacle, 10)
-			
 			# 3. GIẢI PHÓNG TRẠNG THÁI (Đồng bộ màu sắc)
 			knight.is_grabbed = false
 			grabber.is_grabbed = false
@@ -607,44 +621,94 @@ func find_safest_pos(piece):
 					
 	return best_pos
 func execute_bishop_logic(bishop):
-	# TRƯỜNG HỢP 1: NẾU ĐANG BỊ GRAB
+# --- TRƯỜNG HỢP 1: BỊ ÔM (Giải thoát trước, đẩy lùi sau) ---
 	if bishop.is_grabbed:
 		var grabber = bishop.grabbed_by
 		if is_instance_valid(grabber):
-			# 1. Đòn đánh bật lùi (như đã bàn)
-			deal_damage(grabber, 10)
+			# 1. Gây 10 dame cho kẻ tóm mình
+			deal_damage(grabber, 10) 
+			
 			var push_dir = (grabber.grid_pos - bishop.grid_pos).sign()
-			var land_pos = grabber.grid_pos + push_dir
 			
-			if is_within_board(land_pos) and is_cell_vacant(land_pos):
-				move_piece(grabber, land_pos)
-			else:
-				deal_damage(grabber, 10) # Va chạm
-			
-			# 2. Giải phóng Grab
+			# 2. GIẢI THOÁT TRẠNG THÁI TRƯỚC! (Mấu chốt nằm ở đây)
 			bishop.is_grabbed = false
 			grabber.is_grabbed = false
 			bishop.grabbed_by = null
 			grabber.grabbed_by = null
 			
-			# 3. DI CHUYỂN ĐẾN VỊ TRÍ AN TOÀN NHẤT
-			var safe_pos = find_safest_pos(bishop)
-			if safe_pos != bishop.grid_pos:
-				move_piece(bishop, safe_pos)
+			# 3. MỚI GỌI HÀM ĐẨY LÙI SAU CÙNG
+			apply_knockback(grabber, push_dir, 1, 5)
+			
 		return
+	# --- TRƯỜNG HỢP 2: KHAI HỎA (Quét 4 hướng chéo, Tầm xa 2 ô, Không xuyên lính) ---
+	var diag_dirs = [Vector2i(1,1), Vector2i(1,-1), Vector2i(-1,1), Vector2i(-1,-1)]
+	var attacked = false
+	
+	for dir in diag_dirs:
+		# Quét xa tối đa 2 ô chéo
+		for i in range(1, 3): 
+			var check_pos = bishop.grid_pos + (dir * i)
+			
+			if not is_within_board(check_pos): 
+				break # Đụng viền bản đồ -> Dừng tia đạn
+				
+			var unit = get_piece_at(check_pos)
+			if unit:
+				# Nếu đụng trúng quân bất kỳ (dù ta hay địch), tia đạn bị chặn lại
+				if unit.team != bishop.team:
+					# Nếu là ĐỊCH -> Bắn!
+					create_projectile_effect(bishop.global_position, unit.global_position)
+					deal_damage(unit, 35)
+					attacked = true
+					
+					# Quay mặt khi bắn
+					var sprite = bishop.get_node_or_null("Sprite2D")
+					if sprite:
+						if dir.x > 0: sprite.frame = 1
+						elif dir.x < 0: sprite.frame = 2
+						elif dir.y > 0: sprite.frame = 0
+						elif dir.y < 0: sprite.frame = 3
+				
+				# Gặp bất kỳ ai cũng `break` vòng lặp của hướng này (Đạn không xuyên)
+				break 
+				
+		if attacked: return # Chỉ bắn 1 viên/lượt rồi nghỉ
 
-	# TRƯỜNG HỢP 2: TẤN CÔNG TẦM XA (Dấu X)
+	# --- TRƯỜNG HỢP 3: KHÔNG CÓ AI TRONG TẦM BẮN 2 Ô -> ĐI BỘ LÁCH GÓC ---
 	var target = find_best_target(bishop)
-	if target:
-		var diff = target.grid_pos - bishop.grid_pos
-		if abs(diff.x) == abs(diff.y):
-			deal_damage(target, 35)
-			return 
-
-	# TRƯỜNG HỢP 3: DI CHUYỂN BÌNH THƯỜNG
-	var next_step = get_next_step_towards(bishop.grid_pos, target.grid_pos)
-	if is_cell_vacant(next_step):
-		move_piece(bishop, next_step)
+	if not target: return
+	
+	var possible_moves = []
+	for step in diag_dirs:
+		var test_pos = bishop.grid_pos + step
+		if is_within_board(test_pos) and is_cell_vacant(test_pos):
+			possible_moves.append(test_pos)
+			
+	var best_move = bishop.grid_pos
+	var best_score = 9999
+	
+	# Tính toán ô để chui vào đường chéo
+	for move in possible_moves:
+		var test_diff = target.grid_pos - move
+		var deviation = abs(abs(test_diff.x) - abs(test_diff.y)) 
+		var dist = abs(test_diff.x) + abs(test_diff.y)
+		var score = (deviation * 10) + dist 
+		
+		if score < best_score:
+			best_score = score
+			best_move = move
+			
+	# Cập nhật quay mặt khi đi bộ
+	var step_dir = best_move - bishop.grid_pos
+	var sprite = bishop.get_node_or_null("Sprite2D")
+	if sprite:
+		if step_dir.x > 0: sprite.frame = 1
+		elif step_dir.x < 0: sprite.frame = 2
+		elif step_dir.y > 0: sprite.frame = 0
+		elif step_dir.y < 0: sprite.frame = 3
+		
+	if best_move != bishop.grid_pos:
+		move_piece(bishop, best_move)
 func check_and_execute_grab(pawn):
 	# Vua không chủ động ôm ai, và đang bận ôm rồi thì thôi
 	if "King" in pawn.name: return 
@@ -717,6 +781,7 @@ func break_grab(piece):
 			p.grabbed_by = null
 			# Trả lại màu Trắng cho phe ta, màu Đỏ cho phe địch
 			p.modulate = Color(1, 1, 1) if p.team == 1 else Color(1, 0.4, 0.4)
+
 func kill_piece(piece):
 	# Giải phóng cho TẤT CẢ đối phương đang ôm quân này
 	for p in all_pieces:
@@ -730,3 +795,57 @@ func kill_piece(piece):
 		all_pieces.erase(piece)
 	
 	piece.queue_free()
+
+# Thêm biến impact_damage (sát thương va đập) vào cuối
+func apply_knockback(unit, push_dir: Vector2i, max_dist: int, impact_damage: int) -> bool:
+	if not is_instance_valid(unit): return false
+	
+	var current_grid = unit.grid_pos
+	var hit_obstacle = false
+	
+	for i in range(1, max_dist + 1):
+		var next_grid = current_grid + push_dir
+		
+		# 1. Đụng tường (Biên bàn cờ)
+		if not is_within_board(next_grid):
+			hit_obstacle = true
+			break
+			
+		# 2. Đụng vật cản (Có quân cờ khác đứng chặn)
+		if not is_cell_vacant(next_grid):
+			hit_obstacle = true
+			var obstacle = get_piece_at(next_grid)
+			# Gây sát thương va đập cho kẻ cản đường
+			if is_instance_valid(obstacle):
+				deal_damage(obstacle, impact_damage) # SỬA Ở ĐÂY
+			break
+			
+		# Nếu ô tiếp theo trống, ghi nhận vị trí mới
+		current_grid = next_grid
+		
+	# Dịch chuyển nạn nhân đến ô trống xa nhất trước khi đụng tường/vật cản
+	if current_grid != unit.grid_pos:
+		move_piece(unit, current_grid)
+		
+	# Nếu có va đập, nạn nhân cũng bị chịu sát thương tương ứng
+	if hit_obstacle:
+		deal_damage(unit, impact_damage) # SỬA Ở ĐÂY
+		
+	return hit_obstacle
+
+# Hàm tạo viên đạn bay (Dùng chung cho Tượng, Hậu hoặc các quân đánh xa sau này)
+func create_projectile_effect(start_pos: Vector2, end_pos: Vector2):
+	var bullet = ColorRect.new()
+	bullet.color = Color.YELLOW # Màu đạn (Tượng xài đạn vàng)
+	bullet.size = Vector2(15, 15)
+	
+	# Căn giữa viên đạn vào vị trí người bắn
+	bullet.global_position = start_pos - (bullet.size / 2)
+	add_child(bullet)
+	
+	# Dùng Tween để tạo hiệu ứng đạn bay cực nhanh (0.2 giây)
+	var t = create_tween()
+	t.tween_property(bullet, "global_position", end_pos - (bullet.size / 2), 0.2)
+	
+	# Bay đến nơi thì xóa viên đạn đi
+	t.tween_callback(bullet.queue_free)
