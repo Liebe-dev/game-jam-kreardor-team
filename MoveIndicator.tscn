@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://cwxvmhw7jfr5c"]
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_jgvun"]
+
+[node name="MoveIndicator" type="Sprite2D" unique_id=178833595]
+modulate = Color(0.64953136, 0.8404803, 0.91241497, 0.4862745)
+scale = Vector2(20, 20)
+texture = SubResource("CanvasTexture_jgvun")

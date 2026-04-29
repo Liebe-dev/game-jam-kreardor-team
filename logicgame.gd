@@ -1,5 +1,6 @@
 extends Node2D
-
+@export var move_indicator_scene: PackedScene
+var active_indicators = [] # Mảng quản lý các ô đang hiện trên màn hình
 @export var pawn_scene: PackedScene 
 @export var king_scene: PackedScene
 @export var knight_scene: PackedScene 
@@ -39,7 +40,7 @@ func spawn_initial_army():
 		create_piece(Vector2i(i+4, 6), 1, pawn_scene)
 	create_piece(Vector2i(3, 0), 2, king_scene)
 	#for i in range(8):
-	create_piece(Vector2i(4, 1), 2, rook_scene)
+	create_piece(Vector2i(4, 1), 2, queen_scene)
 
 func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 	if scene == null: return # Tránh crash nếu quên kéo scene
@@ -98,45 +99,38 @@ func deal_damage(target, amount):
 	if target.has_method("take_damage"):
 		target.take_damage(amount)
 func _input(event):
-	# Nếu đã đi quân chính rồi thì không cho click nữa
-	if has_moved_main_piece:
-		return
+	if has_moved_main_piece: return
 
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var click_pos = get_global_mouse_position()
 		var clicked_grid = calculate_grid_position(click_pos)
 		
-		# Bỏ qua nếu người chơi click ra ngoài bàn cờ
-		if not is_within_board(clicked_grid): 
-			return
+		if not is_within_board(clicked_grid): return
 			
 		var piece_at_click = get_piece_at(clicked_grid)
 		
-		# Bước 1: Chọn quân của mình (Team 1)
+		# Chọn quân mình
 		if piece_at_click and piece_at_click.team == 1:
 			selected_piece = piece_at_click
-			# Bạn có thể thêm code làm sáng quân cờ được chọn ở đây nếu muốn
+			show_highlights(selected_piece) # HIỆN Ô SÁNG
 			
-		# Bước 2: Di chuyển quân đã chọn vào ô trống
+		# Di chuyển
 		elif selected_piece != null:
-			if is_cell_vacant(clicked_grid):
-				
-				# --- KIỂM TRA ĐIỀU KIỆN 8 Ô XUNG QUANH ---
-				var dist_x = abs(clicked_grid.x - selected_piece.grid_pos.x)
-				var dist_y = abs(clicked_grid.y - selected_piece.grid_pos.y)
-				
-				# Nếu khoảng cách trục X và Y đều <= 1, nghĩa là nằm trong 8 ô liền kề
-				if dist_x <= 1 and dist_y <= 1:
-					
-					# Giải thoát trạng thái ôm (nếu có) trước khi di chuyển
-					if selected_piece.is_grabbed:
-						break_grab(selected_piece)
+			var valid_moves = get_valid_moves(selected_piece)
+			if clicked_grid in valid_moves:
+				if selected_piece.is_grabbed:
+					break_grab(selected_piece)
 						
-					# Lệnh di chuyển thực tế
-					move_piece(selected_piece, clicked_grid)
-					selected_piece.has_moved = true
-					has_moved_main_piece = true # Khóa lại sau khi đi 1 quân
-					selected_piece = null
+				move_piece(selected_piece, clicked_grid)
+				selected_piece.has_moved = true
+				has_moved_main_piece = true
+				
+				clear_highlights() # XÓA Ô SÁNG SAU KHI ĐI
+				selected_piece = null
+			else:
+				# Click vào ô không đi được -> Hủy chọn
+				clear_highlights()
+				selected_piece = null
 func calculate_grid_position(world_pos: Vector2) -> Vector2i:
 	var closest_grid = Vector2i(-1, -1)
 	var min_distance = 999999.0 # Khởi tạo một khoảng cách ảo rất lớn
@@ -859,3 +853,66 @@ func create_projectile_effect(start_pos: Vector2, end_pos: Vector2):
 	
 	# Bay đến nơi thì xóa viên đạn đi
 	t.tween_callback(bullet.queue_free)
+func get_valid_moves(piece: Piece) -> Array:
+	var moves = []
+	var directions = []
+	var max_dist = 1 # Mặc định là 1 ô (Tốt, Vua)
+
+	# Định nghĩa tầm xa và hướng dựa trên loại quân
+	if "Knight" in piece.name:
+		var l_moves = [Vector2i(1,2), Vector2i(2,1), Vector2i(-1,2), Vector2i(-2,1),
+					   Vector2i(1,-2), Vector2i(2,-1), Vector2i(-1,-2), Vector2i(-2,-1)]
+		for m in l_moves:
+			var target = piece.grid_pos + m
+			if is_within_board(target) and is_cell_vacant(target): moves.append(target)
+		return moves # Mã nhảy đặc biệt nên return luôn
+
+	if "Rook" in piece.name:
+		directions = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
+		max_dist = 3 # Xe đi thẳng 3 ô
+	elif "Bishop" in piece.name:
+		directions = [Vector2i(1,1), Vector2i(1,-1), Vector2i(-1,1), Vector2i(-1,-1)]
+		max_dist = 2 # Tượng đi chéo 2 ô
+	elif "Queen" in piece.name:
+		directions = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT,
+					  Vector2i(1,1), Vector2i(1,-1), Vector2i(-1,1), Vector2i(-1,-1)]
+		max_dist = 8 # Hậu đi full bàn (hoặc tùy bạn chỉnh)
+	else: # Pawn hoặc King
+		directions = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT,
+					  Vector2i(1,1), Vector2i(1,-1), Vector2i(-1,1), Vector2i(-1,-1)]
+		max_dist = 1
+
+	# Quét các hướng (Dành cho quân đi đường thẳng/chéo)
+	for d in directions:
+		for i in range(1, max_dist + 1):
+			var target = piece.grid_pos + d * i
+			if is_within_board(target) and is_cell_vacant(target):
+				moves.append(target)
+			else:
+				break # Bị chặn bởi quân khác hoặc biên thì dừng hướng đó
+	return moves
+func clear_highlights():
+	# Xóa các ô tròn xanh
+	for indicator in active_indicators:
+		indicator.queue_free()
+	active_indicators.clear()
+	
+	# Tắt viền sáng của quân cũ (nếu có)
+	for p in all_pieces:
+		if is_instance_valid(p) and p.has_node("Selector"):
+			p.get_node("Selector").visible = false
+
+func show_highlights(piece: Piece):
+	clear_highlights()
+	
+	# 1. Hiện viền sáng (Bạn cần thêm 1 Sprite tên "Selector" vào trong Piece.tscn và để ẩn đi)
+	if piece.has_node("Selector"):
+		piece.get_node("Selector").visible = true
+		
+	# 2. Hiện các ô có thể đi
+	var moves = get_valid_moves(piece)
+	for m_pos in moves:
+		var indicator = move_indicator_scene.instantiate()
+		add_child(indicator)
+		indicator.global_position = calculate_world_position(m_pos)
+		active_indicators.append(indicator)
