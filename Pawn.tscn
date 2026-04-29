@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://qtgv1mmnvanv"]
 
 [ext_resource type="Script" uid="uid://dij6nc3syws5q" path="res://pawn.gd" id="1_f14ny"]
-[ext_resource type="Texture2D" uid="uid://kbxifnxtlcwm" path="res://pawn-sheet.png" id="2_iexdo"]
+[ext_resource type="Texture2D" uid="uid://dbaiawuo1f62y" path="res://pawn_sheet.png" id="2_iexdo"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_q4exq"]
 bg_color = Color(0.9607843, 0.2509804, 0.078431375, 1)

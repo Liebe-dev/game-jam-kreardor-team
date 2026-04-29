@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://kbxifnxtlcwm"
-path="res://.godot/imported/pawn-sheet.png-5f5cf7afa6d5efc2ae39747420930e0c.ctex"
+uid="uid://dbaiawuo1f62y"
+path="res://.godot/imported/pawn_sheet.png-d4d0397510ed33f61d6793f8ac9933a9.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://pawn-sheet.png"
-dest_files=["res://.godot/imported/pawn-sheet.png-5f5cf7afa6d5efc2ae39747420930e0c.ctex"]
+source_file="res://pawn_sheet.png"
+dest_files=["res://.godot/imported/pawn_sheet.png-d4d0397510ed33f61d6793f8ac9933a9.ctex"]
 
 [params]
 
