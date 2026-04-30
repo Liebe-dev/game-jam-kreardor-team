@@ -10,6 +10,7 @@ bg_color = Color(0.9607843, 0.2509804, 0.078431375, 1)
 bg_color = Color(0.28209576, 0.6922137, 0.47429025, 1)
 
 [node name="Pawn" type="Node2D" unique_id=271536388]
+y_sort_enabled = true
 script = ExtResource("1_f14ny")
 max_health = 500
 
@@ -25,9 +26,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -47.0
-offset_top = 18.0
+offset_top = 30.0
 offset_right = 145.0
-offset_bottom = 24.0
+offset_bottom = 36.0
 grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(0.5, 0.5)

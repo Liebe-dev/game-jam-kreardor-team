@@ -29,6 +29,7 @@ columns = 8
 script = ExtResource("1_p0ybc")
 
 [node name="logicgame" type="Node2D" parent="." unique_id=542120282]
+y_sort_enabled = true
 script = ExtResource("3_jqgjh")
 move_indicator_scene = ExtResource("4_nk23n")
 pawn_scene = ExtResource("3_8l818")
@@ -60,6 +61,7 @@ layout_mode = 2
 text = "ENDTURN"
 
 [node name="GridPoints" type="Node2D" parent="." unique_id=715706376]
+position = Vector2(0, 125)
 
 [node name="0 0" type="Marker2D" parent="GridPoints" unique_id=1051627033]
 position = Vector2(562, 136)

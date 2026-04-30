@@ -11,3 +11,7 @@ damage = 35
 position = Vector2(4, -47)
 texture = ExtResource("2_wqw4l")
 frame = 3
+
+[node name="HealthBar" parent="." index="1" unique_id=1792561652]
+offset_top = 34.0
+offset_bottom = 40.0
