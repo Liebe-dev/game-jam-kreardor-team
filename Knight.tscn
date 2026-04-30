@@ -8,5 +8,5 @@ max_health = 100
 damage = 30
 
 [node name="Sprite2D" parent="." index="0" unique_id=286426425]
+position = Vector2(-6, -47)
 texture = ExtResource("2_ii6qd")
-frame = 0

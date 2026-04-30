@@ -17,7 +17,6 @@ max_health = 500
 position = Vector2(0, -47)
 texture = ExtResource("2_iexdo")
 hframes = 4
-frame = 3
 
 [node name="HealthBar" type="ProgressBar" parent="." unique_id=1792561652]
 anchors_preset = 8

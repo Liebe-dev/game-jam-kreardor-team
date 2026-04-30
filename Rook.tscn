@@ -7,5 +7,6 @@
 max_health = 200
 
 [node name="Sprite2D" parent="." index="0" unique_id=286426425]
+position = Vector2(-7, -47)
 texture = ExtResource("2_tl03q")
-frame = 0
+frame = 3
