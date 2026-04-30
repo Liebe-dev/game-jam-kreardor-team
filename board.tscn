@@ -61,7 +61,6 @@ layout_mode = 2
 text = "ENDTURN"
 
 [node name="GridPoints" type="Node2D" parent="." unique_id=715706376]
-position = Vector2(0, 125)
 
 [node name="0 0" type="Marker2D" parent="GridPoints" unique_id=1051627033]
 position = Vector2(562, 136)
