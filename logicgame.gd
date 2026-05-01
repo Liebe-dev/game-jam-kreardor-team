@@ -11,6 +11,9 @@ var active_indicators = [] # Mảng quản lý các ô đang hiện trên màn h
 @onready var grid_points = $"../GridPoints"
 @onready var btn_attack = $"../CanvasLayer/HBoxContainer/Attack"
 @onready var btn_defend = $"../CanvasLayer/HBoxContainer/Defend"
+var current_turn = 1
+@onready var wave_label = $"../CanvasLayer/WaveLabel"
+@onready var turn_label = $"../CanvasLayer/TurnLabel"
 enum Command { ATTACK, DEFEND, IDLE }
 var current_command = Command.IDLE # Mặc định là đứng im
 
@@ -26,6 +29,10 @@ func is_within_board(pos: Vector2i) -> bool:
 	return pos.x >= 0 and pos.x < 8 and pos.y >= 0 and pos.y < 8
 
 func _ready():
+	# Hàm này tự động chạy 1 lần duy nhất khi màn chơi vừa load xong
+	if wave_label:
+		# Lấy biến current_wave từ file Global đắp vào Label
+		wave_label.text = "Wave: " + str(Global.current_wave)
 	# Tạo một Node2D làm lớp chứa quân cờ nếu chưa có
 	piece_layer = Node2D.new()
 	piece_layer.name = "PieceLayer"
@@ -177,6 +184,22 @@ func find_my_king(my_team: int):
 			return p
 	return null
 func queen_grab_counter(queen):
+	# Biến chứa kẻ địch đang ôm/đứng sát Hậu
+	var grabber = queen.grabbed_by 
+	
+	if is_instance_valid(grabber):
+		# --- CHÈN THÊM ĐOẠN QUAY MẶT NÀY VÀO TRƯỚC KHI CHÉM ---
+		var aim_dir = grabber.grid_pos - queen.grid_pos
+		var sprite = queen.get_node_or_null("Sprite2D")
+		if sprite:
+			if abs(aim_dir.x) > abs(aim_dir.y):
+				sprite.frame = 1 if aim_dir.x > 0 else 2 # Nhìn Phải/Trái
+			else:
+				sprite.frame = 0 if aim_dir.y > 0 else 3 # Nhìn Xuống/Lên
+		# --------------------------------------------------------
+		
+		# (Code cũ của bạn ở dưới giữ nguyên nhé)
+		# deal_damage(grabber, 15)
 	var target_to_hit = queen.grabbed_by
 	if not is_instance_valid(target_to_hit): return
 	
@@ -268,6 +291,9 @@ func _on_end_turn_pressed():
 			p.has_moved = false
 	has_moved_main_piece = false
 	selected_piece = null
+	current_turn += 1
+	if turn_label:
+		turn_label.text = "Turn: " + str(current_turn)
 func execute_all_combat_logic():
 	for p in all_pieces:
 		if not is_instance_valid(p): continue
@@ -389,7 +415,7 @@ func get_next_step_towards(start: Vector2i, target: Vector2i) -> Vector2i:
 		
 	return start + step
 func execute_queen_logic(queen):
-	# TRƯỜNG HỢP 1: ĐANG BỊ GRAB (Đánh gần cực mạnh)
+	# TRƯỜNG HỢP 1: ĐANG BỊ GRAB
 	if queen.is_grabbed:
 		queen_grab_counter(queen)
 		return # Bị ôm thì không di chuyển được
@@ -397,14 +423,28 @@ func execute_queen_logic(queen):
 	# TRƯỜNG HỢP 2: KHÔNG BỊ GRAB
 	var target = find_queen_ranged_target(queen)
 	if target:
-		# Tấn công tầm xa 25 dame
+		# --- QUAY MẶT VÀO KẺ ĐỊCH ---
+		var aim_dir = target.grid_pos - queen.grid_pos
+		var sprite = queen.get_node_or_null("Sprite2D")
+		if sprite:
+			print(">>> Đã tìm thấy hình Hậu! Hướng địch: ", aim_dir)
+			if abs(aim_dir.x) > abs(aim_dir.y):
+				sprite.frame = 1 if aim_dir.x > 0 else 2 # Nhìn Phải/Trái
+				print(">>> Ép quay Ngang. Đổi thành Frame: ", sprite.frame)
+			else:
+				sprite.frame = 0 if aim_dir.y > 0 else 3 # Nhìn Xuống/Lên
+				print(">>> Ép quay Dọc. Đổi thành Frame: ", sprite.frame)
+		else:
+				print(">>> LỖI CĂNG: Không tìm thấy Node nào tên là 'Sprite2D' bên trong con Hậu!")
+		# --- BẮN ĐẠN VÀ GÂY SÁT THƯƠNG ---
+		create_projectile_effect(queen.global_position, target.global_position)
 		deal_damage(target, 25)
+		
 	else:
-		# TRƯỜNG HỢP 3: KHÔNG CÓ ĐỊCH TRONG TẦM (Di chuyển như Cờ Vua)
+		# TRƯỜNG HỢP 3: KHÔNG CÓ ĐỊCH TRONG TẦM (Di chuyển tìm Vua)
 		var move_pos = get_queen_move_towards_king(queen)
 		if move_pos != queen.grid_pos:
 			move_piece(queen, move_pos)
-
 # Hàm di chuyển thông minh cho Hậu khi không có mục tiêu
 func get_queen_move_towards_king(queen):
 	var enemy_king = find_best_target(queen)
