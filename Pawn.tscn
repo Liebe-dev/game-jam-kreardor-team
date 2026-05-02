@@ -13,6 +13,7 @@ bg_color = Color(0.28209576, 0.6922137, 0.47429025, 1)
 y_sort_enabled = true
 script = ExtResource("1_f14ny")
 max_health = 500
+damage = 200
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=286426425]
 position = Vector2(0, -47)
