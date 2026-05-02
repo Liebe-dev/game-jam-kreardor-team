@@ -14,6 +14,11 @@ var is_charging: bool = false # Trạng thái đang nạp đạn
 var is_grabbed: bool = false
 var grabbed_by: Node2D = null
 var has_moved: bool = false
+# --- BIẾN QUẢN LÝ ĐẠN ---
+var max_ammo = 3
+var current_ammo = 3
+var is_reloading = false
+var reload_turns_left = 0
 
 func _ready():
 	# Đảm bảo thanh máu khớp với chỉ số khi vừa sinh ra

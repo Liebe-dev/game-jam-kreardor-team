@@ -1,13 +1,13 @@
 extends Node2D
 @export var move_indicator_scene: PackedScene
 var active_indicators = [] # Mảng quản lý các ô đang hiện trên màn hình
-@export var pawn_scene: PackedScene 
-@export var king_scene: PackedScene
-@export var knight_scene: PackedScene 
-@export var rook_scene: PackedScene   
-@export var enemy_pawn_scene: PackedScene   
-@export var bishop_scene: PackedScene 
-@export var queen_scene: PackedScene
+var player_pawn_scene = preload("res://Pawn.tscn")
+var player_king_scene = preload("res://PlayerKing.tscn")
+var enemy_pawn_scene = preload("res://Enemy_pawn.tscn")
+var enemy_knight_scene = preload("res://Knight.tscn") 
+var enemy_bishop_scene = preload("res://Bishop.tscn")
+var enemy_rook_scene = preload("res://Rook.tscn")
+var enemy_queen_scene = preload("res://Queen.tscn")
 @onready var grid_points = $"../GridPoints"
 @onready var btn_attack = $"../CanvasLayer/HBoxContainer/Attack"
 @onready var btn_defend = $"../CanvasLayer/HBoxContainer/Defend"
@@ -28,6 +28,76 @@ func is_within_board(pos: Vector2i) -> bool:
 	# Giả sử bàn cờ của bạn là 8x8 (từ ô 0 đến 7)
 	return pos.x >= 0 and pos.x < 8 and pos.y >= 0 and pos.y < 8
 
+# --- CƠ CHẾ WAVE ---
+
+# 1. Hàm đếm số địch còn sống trên bàn cờ
+func count_enemies_alive() -> int:
+	var enemy_count = 0
+	for p in all_pieces:
+		# Nếu quân cờ còn tồn tại và tên có chữ "enemy"
+		if is_instance_valid(p) and "enemy" in p.name.to_lower():
+			enemy_count += 1
+	return enemy_count
+
+# 2. Hàm kiểm tra điều kiện qua màn / Thắng game
+# --- HÀM 1: CHUYỂN WAVE VÀ BƠM MÁU/HỒI SINH ---
+func transition_to_next_wave():
+	# 1. Tăng số Wave và cập nhật chữ trên màn hình
+	Global.current_wave += 1
+	if wave_label:
+		wave_label.text = "Wave: " + str(Global.current_wave)
+		
+	
+	# 2. Xử lý quân ta (Hồi máu cho kẻ sống)
+	var alive_pawns_count = 0
+	# (Giả sử 8 con Tốt ta xuất phát ở hàng Y = 6)
+	var default_spawn_positions = [Vector2(0,6), Vector2(1,6), Vector2(2,6), Vector2(3,6), Vector2(4,6), Vector2(5,6), Vector2(6,6), Vector2(7,6)]
+	
+	for p in all_pieces:
+		if is_instance_valid(p) and not ("enemy" in p.name.to_lower()):
+			if "Pawn" in p.name:
+				alive_pawns_count += 1
+				p.hp += 30 # Sống sót qua wave: Hồi 30 máu
+				# (Tùy chọn) Giới hạn không cho máu vượt quá tối đa (VD: 50)
+				if p.hp > 50: p.hp = 50 
+				
+				if p.has_node("HealthBar"):
+					p.get_node("HealthBar").value = p.hp
+					
+	# 3. Hồi sinh kẻ chết
+	var dead_pawns_count = 8 - alive_pawns_count
+	if dead_pawns_count > 0:
+		for pos in default_spawn_positions:
+			if dead_pawns_count <= 0: break
+			
+			# Kiểm tra xem cái ô xuất phát đó có bị thằng Tốt nào đứng chiếm chỗ không
+			if is_cell_empty(pos): 
+				var new_pawn = player_pawn_scene.instantiate()
+				piece_layer.add_child(new_pawn)
+				all_pieces.append(new_pawn)
+				
+				new_pawn.grid_pos = pos
+				if has_method("grid_to_pixel"): new_pawn.position = grid_to_pixel(pos)
+				
+				new_pawn.hp = 20 # Chết đi sống lại: 20 máu
+				if new_pawn.has_node("HealthBar"):
+					new_pawn.get_node("HealthBar").max_value = 50 # Hoặc máu max của bạn
+					new_pawn.get_node("HealthBar").value = 20
+					
+				dead_pawns_count -= 1
+				
+	# 4. Gọi lính địch ra
+	spawn_enemy_wave()
+
+# --- HÀM 2: CÔNG TẮC KIỂM TRA ĐIỀU KIỆN ---
+func check_and_trigger_next_wave():
+	if Global.current_wave >= 5:
+		if game_over_menu:
+			game_over_menu.visible = true
+		return 
+		
+	# Thay vì gọi reload_scene, ta gọi hàm bơm máu ở trên
+	transition_to_next_wave()
 func _ready():
 	# Hàm này tự động chạy 1 lần duy nhất khi màn chơi vừa load xong
 	if wave_label:
@@ -42,12 +112,79 @@ func _ready():
 
 
 func spawn_initial_army():
-	create_piece(Vector2i(4, 7), 1, king_scene)
-	for i in range(2):
-		create_piece(Vector2i(i+4, 6), 1, pawn_scene)
-	create_piece(Vector2i(3, 0), 2, king_scene)
-	#for i in range(8):
-	create_piece(Vector2i(4, 1), 2, queen_scene)
+	if Global.current_wave == 1:
+		# 1. Khởi tạo 8 con Tốt ta ở hàng ngang số 6
+		for i in range(8):
+			var pawn = player_pawn_scene.instantiate()
+			piece_layer.add_child(pawn)
+			all_pieces.append(pawn)
+			pawn.grid_pos = Vector2(i, 6)
+			if has_method("grid_to_pixel"): pawn.position = grid_to_pixel(Vector2(i, 6))
+			
+		# 2. Khởi tạo 1 con Vua đứng ở giữa hàng ngang số 7 (bảo kê đằng sau)
+		if player_king_scene:
+			var king = player_king_scene.instantiate()
+			piece_layer.add_child(king)
+			all_pieces.append(king)
+			# Đặt Vua ở tọa độ X=3, Y=7 (Hoặc X=4 tùy bạn chọn)
+			king.grid_pos = Vector2(3, 7) 
+			if has_method("grid_to_pixel"): king.position = grid_to_pixel(Vector2(3, 7))
+
+		# 3. Gọi lính địch Wave 1 ra
+		spawn_enemy_wave()
+func spawn_enemy_wave():
+	var wave_setup = []
+	
+	match Global.current_wave:
+		1: # Wave 1: 4 Tốt đan xen
+			wave_setup = [
+				{"scene": enemy_pawn_scene, "pos": Vector2(1, 1)},
+				{"scene": enemy_pawn_scene, "pos": Vector2(3, 1)},
+				{"scene": enemy_pawn_scene, "pos": Vector2(5, 1)},
+				{"scene": enemy_pawn_scene, "pos": Vector2(7, 1)}
+			]
+		2: # Wave 2: 8 Tốt
+			for i in range(8):
+				wave_setup.append({"scene": enemy_pawn_scene, "pos": Vector2(i, 1)})
+		3: # Wave 3: 2 Tượng, 2 Mã
+			wave_setup = [
+				{"scene": enemy_bishop_scene, "pos": Vector2(2, 0)},
+				{"scene": enemy_bishop_scene, "pos": Vector2(5, 0)},
+				{"scene": enemy_knight_scene, "pos": Vector2(3, 0)},
+				{"scene": enemy_knight_scene, "pos": Vector2(4, 0)}
+			]
+		4: # Wave 4: 2 Xe, 4 Tốt
+			wave_setup = [
+				{"scene": enemy_rook_scene, "pos": Vector2(0, 0)},
+				{"scene": enemy_rook_scene, "pos": Vector2(7, 0)},
+				{"scene": enemy_pawn_scene, "pos": Vector2(2, 1)},
+				{"scene": enemy_pawn_scene, "pos": Vector2(3, 1)},
+				{"scene": enemy_pawn_scene, "pos": Vector2(4, 1)},
+				{"scene": enemy_pawn_scene, "pos": Vector2(5, 1)}
+			]
+		5: # Wave 5: 2 Hậu, 2 Xe, 2 Mã, 2 Tượng, 2 Tốt (trước 2 Tượng)
+			wave_setup = [
+				{"scene": enemy_queen_scene, "pos": Vector2(3, 0)},
+				{"scene": enemy_queen_scene, "pos": Vector2(4, 0)},
+				{"scene": enemy_rook_scene, "pos": Vector2(0, 0)},
+				{"scene": enemy_rook_scene, "pos": Vector2(7, 0)},
+				{"scene": enemy_knight_scene, "pos": Vector2(1, 0)},
+				{"scene": enemy_knight_scene, "pos": Vector2(6, 0)},
+				{"scene": enemy_bishop_scene, "pos": Vector2(2, 0)},
+				{"scene": enemy_bishop_scene, "pos": Vector2(5, 0)},
+				{"scene": enemy_pawn_scene, "pos": Vector2(2, 1)}, # Tốt trước Tượng trái
+				{"scene": enemy_pawn_scene, "pos": Vector2(5, 1)}  # Tốt trước Tượng phải
+			]
+			
+	# Vòng lặp đẻ quân địch (Giữ nguyên như cũ)
+	for data in wave_setup:
+		if data["scene"] == null: continue
+		var enemy = data["scene"].instantiate()
+		piece_layer.add_child(enemy)
+		all_pieces.append(enemy)
+		enemy.grid_pos = data["pos"]
+		if has_method("grid_to_pixel"):
+			enemy.position = grid_to_pixel(data["pos"])
 
 func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 	if scene == null: return # Tránh crash nếu quên kéo scene
@@ -294,6 +431,7 @@ func _on_end_turn_pressed():
 	current_turn += 1
 	if turn_label:
 		turn_label.text = "Turn: " + str(current_turn)
+	process_ammo_reloads()
 func execute_all_combat_logic():
 	for p in all_pieces:
 		if not is_instance_valid(p): continue
@@ -415,50 +553,34 @@ func get_next_step_towards(start: Vector2i, target: Vector2i) -> Vector2i:
 		
 	return start + step
 func execute_queen_logic(queen):
-	# TRƯỜNG HỢP 1: ĐANG BỊ GRAB
-	if queen.is_grabbed:
-		queen_grab_counter(queen)
-		return # Bị ôm thì không di chuyển được
-		
-	# TRƯỜNG HỢP 2: KHÔNG BỊ GRAB
-	var target = find_queen_ranged_target(queen)
-	if target:
-		# --- QUAY MẶT VÀO KẺ ĐỊCH ---
-		var aim_dir = target.grid_pos - queen.grid_pos
-		var sprite = queen.get_node_or_null("Sprite2D")
-		if sprite:
-			print(">>> Đã tìm thấy hình Hậu! Hướng địch: ", aim_dir)
-			if abs(aim_dir.x) > abs(aim_dir.y):
-				sprite.frame = 1 if aim_dir.x > 0 else 2 # Nhìn Phải/Trái
-				print(">>> Ép quay Ngang. Đổi thành Frame: ", sprite.frame)
-			else:
-				sprite.frame = 0 if aim_dir.y > 0 else 3 # Nhìn Xuống/Lên
-				print(">>> Ép quay Dọc. Đổi thành Frame: ", sprite.frame)
-		else:
-				print(">>> LỖI CĂNG: Không tìm thấy Node nào tên là 'Sprite2D' bên trong con Hậu!")
-		# --- BẮN ĐẠN VÀ GÂY SÁT THƯƠNG ---
-		create_projectile_effect(queen.global_position, target.global_position)
-		deal_damage(target, 25)
-		
-	else:
-		# TRƯỜNG HỢP 3: KHÔNG CÓ ĐỊCH TRONG TẦM (Di chuyển tìm Vua)
-		var move_pos = get_queen_move_towards_king(queen)
-		if move_pos != queen.grid_pos:
-			move_piece(queen, move_pos)
-# Hàm di chuyển thông minh cho Hậu khi không có mục tiêu
-func get_queen_move_towards_king(queen):
-	var enemy_king = find_best_target(queen)
-	if not enemy_king: return queen.grid_pos
-	
-	# Tìm hướng tốt nhất (Dọc, Ngang, Chéo) để áp sát Vua địch
-	var diff = enemy_king.grid_pos - queen.grid_pos
-	var step = Vector2i(sign(diff.x), sign(diff.y))
-	var target_cell = queen.grid_pos + step
-	
-	if is_cell_vacant(target_cell) and is_within_board(target_cell):
-		return target_cell
-	return queen.grid_pos
+	# 1. Kiểm tra xem Hậu có đang bận nạp đạn không
+	if queen.is_reloading:
+		return # Bỏ qua, không làm gì cả trong lượt này
 
+	# 2. Tìm mục tiêu (Code cũ của bạn)
+	var target = find_queen_ranged_target(queen) 
+	
+	if target:
+		
+		# (Code quay mặt sprite giữ nguyên...)
+				
+		# Bắn đạn 
+		create_projectile_effect(queen.global_position, target.global_position)
+		await get_tree().create_timer(0.2).timeout 
+		
+		if is_instance_valid(target):
+			deal_damage(target, 25)
+
+		# --- 3. TRỪ ĐẠN SAU KHI BẮN ---
+		queen.current_ammo -= 1
+		# Cập nhật thanh màu vàng trên đầu Hậu
+		if queen.has_node("AmmoBar"):
+			queen.get_node("AmmoBar").value = queen.current_ammo
+			
+		# Nếu bắn hết 3 viên -> Kích hoạt trạng thái nạp đạn
+		if queen.current_ammo <= 0:
+			queen.is_reloading = true
+			queen.reload_turns_left = 2 # Cần 2 turn để nạp đầy
 func get_surrounding_cells(pos: Vector2i, dist: int) -> Array:
 	var cells = []
 	for x in range(-dist, dist + 1):
@@ -956,3 +1078,18 @@ func show_highlights(piece: Piece):
 		add_child(indicator)
 		indicator.global_position = calculate_world_position(m_pos)
 		active_indicators.append(indicator)
+func process_ammo_reloads():
+	for p in all_pieces:
+		if is_instance_valid(p) and "Queen" in p.name:
+			if p.is_reloading:
+				# Trừ đi 1 turn chờ đợi
+				p.reload_turns_left -= 1
+				
+				# Nếu đã chờ đủ 2 turn
+				if p.reload_turns_left <= 0:
+					p.is_reloading = false
+					p.current_ammo = p.max_ammo # Nạp đầy 3 viên
+					
+					# Làm đầy lại thanh màu vàng
+					if p.has_node("AmmoBar"):
+						p.get_node("AmmoBar").value = p.current_ammo
