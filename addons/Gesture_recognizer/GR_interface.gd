@@ -223,7 +223,7 @@ func _is_valid_filename(name: String) -> bool:
 	return true
 
 func _test():
-	recognizer.LoadTest(test_path, "res://addons/Gesture_recognizer/resources/testers_NP32_LS32/")
+	recognizer.LoadTest()
 	var new_type_name = text_new_name.text.strip_edges()
 	if new_type_name != "":
 		var flattened_points = _get_flattened_points()

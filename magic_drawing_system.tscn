@@ -1,6 +1,8 @@
 [gd_scene format=3 uid="uid://ctte4mualqncs"]
 
 [ext_resource type="Script" uid="uid://cutk255mh0tqh" path="res://magic_drawing_system.gd" id="1_eigxu"]
+[ext_resource type="Texture2D" uid="uid://c0g3bln6bcxpt" path="res://gameplay 2.png" id="2_d0abt"]
+[ext_resource type="Texture2D" uid="uid://b6hcex5r2vkgg" path="res://circle.png" id="2_yc3uf"]
 
 [node name="MagicDrawingSystem" type="CanvasLayer" unique_id=1222554842]
 script = ExtResource("1_eigxu")
@@ -13,35 +15,67 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Background" type="ColorRect" parent="." unique_id=388534523]
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="SpellScroll" type="ColorRect" parent="UI_Container" unique_id=388534523]
+unique_name_in_owner = true
+clip_contents = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 371.0
+offset_top = 552.0
+offset_right = -900.0
+offset_bottom = -33.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="MagicCircleGuide" type="TextureRect" parent="." unique_id=795506052]
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="MagicCircleImage" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=795506052]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 101.0
+offset_right = 599.0
+offset_bottom = 498.0
+pivot_offset = Vector2(270, 221)
+texture = ExtResource("2_yc3uf")
 
-[node name="LinesContainer" type="Node2D" parent="." unique_id=1916018457]
+[node name="LinesContainer" type="Node2D" parent="UI_Container/SpellScroll" unique_id=1916018457]
+unique_name_in_owner = true
 
-[node name="CurrentLine" type="Line2D" parent="." unique_id=1367213323]
+[node name="CurrentLine" type="Line2D" parent="UI_Container/SpellScroll" unique_id=1367213323]
+unique_name_in_owner = true
+width = 3.0
+default_color = Color(0, 0, 0, 1)
 
 [node name="ResourceUI" type="VBoxContainer" parent="." unique_id=1918446056]
 offset_right = 40.0
 offset_bottom = 40.0
 
 [node name="PaperLabel" type="Label" parent="ResourceUI" unique_id=731252920]
+unique_name_in_owner = true
 layout_mode = 2
 
 [node name="InkBar" type="ProgressBar" parent="ResourceUI" unique_id=851355291]
+unique_name_in_owner = true
 layout_mode = 2
 
 [node name="EndTurnButton" type="Button" parent="." unique_id=125429919]
-offset_right = 8.0
-offset_bottom = 8.0
+offset_left = 1063.0
+offset_top = 566.0
+offset_right = 1186.0
+offset_bottom = 680.0
+pivot_offset = Vector2(485, 297)
 
 [node name="UndoButton" type="Button" parent="." unique_id=904154048]
 offset_right = 8.0
 offset_bottom = 8.0
 
+[node name="TextureRect" type="TextureRect" parent="." unique_id=452280271]
+visible = false
+modulate = Color(1, 1, 1, 0.29803923)
+offset_right = 1920.0
+offset_bottom = 1080.0
+texture = ExtResource("2_d0abt")
+
+[connection signal="gui_input" from="UI_Container/SpellScroll" to="." method="_on_spell_scroll_gui_input"]
 [connection signal="pressed" from="EndTurnButton" to="." method="_on_end_turn_button_pressed"]
 [connection signal="pressed" from="UndoButton" to="." method="_on_undo_button_pressed"]
