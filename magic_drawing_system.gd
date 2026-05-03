@@ -87,14 +87,36 @@ func _on_undo_button_pressed():
 		
 		# LƯU Ý: Không cộng lại biến current_ink (luật không hoàn mực)
 
+# Trong magic_drawing_system.gd
+
 func _on_end_turn_button_pressed():
-	paper_count -= 1
-	update_ui()
+# Trừ 1 tờ giấy ngay khi nhấn kết thúc
+	Global.paper_count -= 1 
+	# Mực đã bị trừ trong lúc vẽ rồi nên không cần trừ thêm ở đây
 	
-	print("Bắt đầu xử lý tính toán phép thuật...")
-	# Bước tiếp theo: Đưa mảng 'strokes' vào thuật toán nhận diện
-	evaluate_magic()
-	# Hàm cập nhật số lượng Giấy và thanh Mực trên UI
+	update_ui() # Cập nhật lại nhãn hiển thị số giấy còn lại
+	# 2. Lấy kết quả nhận diện từ plugin
+	var gesture_result = $GestureRecognizer.get_recognized_gesture()
+	
+	# 3. Kiểm tra xem có nhận diện được Ấn nào không
+	var element = SpellDictionary.Element.NONE
+	match gesture_result:
+		"Fire": element = SpellDictionary.Element.FIRE
+		"Water": element = SpellDictionary.Element.WATER
+		"Earth": element = SpellDictionary.Element.EARTH
+		"Wind": element = SpellDictionary.Element.WIND
+
+	# 4. Xử lý kết quả
+	if element == SpellDictionary.Element.NONE:
+		# TRƯỜNG HỢP VẼ SAI:
+		play_fizzle_effect() # Hiện hiệu ứng khói xịt hoặc rung màn hình
+	else:
+		# TRƯỜNG HỢP VẼ ĐÚNG:
+		# Gọi sang board để bắn phép như bình thường
+		get_parent().cast_spell(element) 
+	
+	# Đóng bảng vẽ sau khi kết thúc lượt
+	self.hide()
 func update_ui():
 	# Kiểm tra xem các node UI đã được gán đúng chưa trước khi cập nhật
 	if paper_label:
@@ -111,3 +133,15 @@ func evaluate_magic():
 	# Bạn có thể xóa phần reset này đi khi bắt đầu làm logic chuyển lượt (turn)
 	# current_ink = max_ink 
 	# update_ui()
+func play_fizzle_effect():
+	# 1. Rung màn hình nhẹ (nếu bạn có hệ thống camera shake)
+	# 2. Đổi màu toàn bộ nét vẽ thành màu xám tối rồi biến mất
+	if has_node("UI_Container/LinesContainer"):
+		for line in $UI_Container/LinesContainer.get_children():
+			line.default_color = Color(0.3, 0.3, 0.3, 1) # Màu xám tối
+			
+	# 3. Tạo hiệu ứng khói (nếu có GPUParticles2D)
+	# spawn_smoke_particle() 
+	
+	# Đợi 0.5 giây để người chơi thấy hiệu ứng rồi mới ẩn bảng
+	await get_tree().create_timer(0.5).timeout

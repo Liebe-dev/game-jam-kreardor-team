@@ -1055,3 +1055,35 @@ func clear_old_enemies():
 		if is_instance_valid(p) and p.team == 2: # Nếu là lính địch (Team 2)
 			all_pieces.remove_at(i) # Xóa khỏi danh sách quản lý
 			p.queue_free() # Xóa khỏi màn hình
+
+
+func cast_spell(element_type):
+	# 1. Tìm tên file scene cần load từ Dictionary
+	var scene_name = SpellDictionary.get_spell_scene_name(element_type)
+	
+	# 2. Load file .tscn tương ứng
+	var spell_path = "res://spells/" + scene_name + ".tscn"
+	var spell_resource = load(spell_path)
+	
+	if spell_resource:
+		var spell_instance = spell_resource.instantiate()
+		
+		# 3. Đặt vị trí xuất phát (vị trí người chơi hoặc tọa độ đã vẽ)
+		spell_instance.position = $Player.position 
+		
+		# 4. Thêm phép vào bàn cờ
+		add_child(spell_instance)
+		
+		# 5. Áp dụng hiệu ứng dựa trên thiết kế của bạn
+		apply_spell_effects(element_type, spell_instance)
+
+func apply_spell_effects(element, instance):
+	match element:
+		SpellDictionary.Element.FIRE:
+			print("Gây sát thương 1 lần lên 1 ô")
+		SpellDictionary.Element.WATER:
+			print("Hồi máu và nhận 1 mực")
+		SpellDictionary.Element.EARTH:
+			print("Miễn nhiễm sát thương và nhận 3 giấy")
+		SpellDictionary.Element.WIND:
+			print("Mục tiêu tấn công 2 lần vào lượt sau")
