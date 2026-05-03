@@ -3,6 +3,9 @@
 [ext_resource type="PackedScene" uid="uid://qtgv1mmnvanv" path="res://Pawn.tscn" id="1_wkdk7"]
 [ext_resource type="Texture2D" uid="uid://dned8wkqao70" path="res://queen_sheet.png" id="2_6r3y7"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6r3y7"]
+bg_color = Color(0.67800784, 0.60354114, 0, 1)
+
 [node name="Pawn" unique_id=271536388 instance=ExtResource("1_wkdk7")]
 max_health = 300
 damage = 35
@@ -11,3 +14,15 @@ damage = 35
 position = Vector2(-5, -47)
 texture = ExtResource("2_6r3y7")
 frame = 3
+
+[node name="AmmoBar" type="ProgressBar" parent="." index="2" unique_id=2002497187]
+offset_left = -47.0
+offset_top = 34.0
+offset_right = 49.0
+offset_bottom = 38.0
+theme_override_styles/background = SubResource("StyleBoxFlat_6r3y7")
+max_value = 3.0
+step = 1.0
+value = 3.0
+fill_mode = 1
+show_percentage = false

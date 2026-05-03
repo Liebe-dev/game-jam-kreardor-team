@@ -3,6 +3,9 @@
 [ext_resource type="PackedScene" uid="uid://qtgv1mmnvanv" path="res://Pawn.tscn" id="1_k1fmh"]
 [ext_resource type="Texture2D" uid="uid://clm17lk3bi5p5" path="res://rook_sheet.png" id="2_tl03q"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tl03q"]
+bg_color = Color(0.67800784, 0.60354114, 0, 1)
+
 [node name="Pawn" unique_id=271536388 instance=ExtResource("1_k1fmh")]
 max_health = 200
 
@@ -10,3 +13,15 @@ max_health = 200
 position = Vector2(-7, -47)
 texture = ExtResource("2_tl03q")
 frame = 3
+
+[node name="AmmoBar" type="ProgressBar" parent="." index="2" unique_id=465388895]
+offset_left = -47.0
+offset_top = 34.0
+offset_right = 49.0
+offset_bottom = 38.0
+theme_override_styles/background = SubResource("StyleBoxFlat_tl03q")
+max_value = 3.0
+step = 1.0
+value = 3.0
+fill_mode = 1
+show_percentage = false

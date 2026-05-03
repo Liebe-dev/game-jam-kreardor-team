@@ -1,16 +1,9 @@
 [gd_scene format=3 uid="uid://d2w2lo4rs3t78"]
 
 [ext_resource type="Script" uid="uid://cb8rqtbqvwvi4" path="res://grid_container.gd" id="1_p0ybc"]
-[ext_resource type="PackedScene" uid="uid://qtgv1mmnvanv" path="res://Pawn.tscn" id="3_8l818"]
 [ext_resource type="Script" uid="uid://daj5j0fbcgft" path="res://logicgame.gd" id="3_jqgjh"]
-[ext_resource type="PackedScene" uid="uid://2jkkrdchccrq" path="res://PlayerKing.tscn" id="4_jqgjh"]
 [ext_resource type="PackedScene" uid="uid://cwxvmhw7jfr5c" path="res://MoveIndicator.tscn" id="4_nk23n"]
 [ext_resource type="Texture2D" uid="uid://d1qts2nneiir3" path="res://bg.png" id="5_vf5bc"]
-[ext_resource type="PackedScene" uid="uid://cargwtexh1op" path="res://Knight.tscn" id="6_c4ttu"]
-[ext_resource type="PackedScene" uid="uid://c5rujg24un2lm" path="res://Rook.tscn" id="7_xhrpu"]
-[ext_resource type="PackedScene" uid="uid://bbbveha64twp6" path="res://Bishop.tscn" id="8_nk23n"]
-[ext_resource type="PackedScene" uid="uid://cx3xgcdrm7brq" path="res://enemy_pawn.tscn" id="8_xhrpu"]
-[ext_resource type="PackedScene" uid="uid://y7uxosjnr4ui" path="res://Queen.tscn" id="9_5qf1t"]
 
 [node name="board" type="Node2D" unique_id=1273165699]
 
@@ -20,8 +13,10 @@ offset_bottom = 1080.0
 texture = ExtResource("5_vf5bc")
 
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=1222878674]
-offset_right = 1150.0
-offset_bottom = 652.0
+offset_left = 481.0
+offset_top = 103.0
+offset_right = 1461.0
+offset_bottom = 1053.0
 
 [node name="board" type="GridContainer" parent="CenterContainer" unique_id=283387603]
 layout_mode = 2
@@ -32,13 +27,6 @@ script = ExtResource("1_p0ybc")
 y_sort_enabled = true
 script = ExtResource("3_jqgjh")
 move_indicator_scene = ExtResource("4_nk23n")
-pawn_scene = ExtResource("3_8l818")
-king_scene = ExtResource("4_jqgjh")
-knight_scene = ExtResource("6_c4ttu")
-rook_scene = ExtResource("7_xhrpu")
-enemy_pawn_scene = ExtResource("8_xhrpu")
-bishop_scene = ExtResource("8_nk23n")
-queen_scene = ExtResource("9_5qf1t")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=514856525]
 
@@ -271,6 +259,9 @@ position = Vector2(1280, 983)
 
 [node name="7 7" type="Marker2D" parent="GridPoints" unique_id=692311990]
 position = Vector2(1413, 983)
+
+[node name="StartPoint" type="Marker2D" parent="." unique_id=285780854]
+position = Vector2(562, 136)
 
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Attack" to="logicgame" method="_on_attack_pressed"]
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Defend" to="logicgame" method="_on_defend_pressed"]
