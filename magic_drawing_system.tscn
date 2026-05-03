@@ -1,0 +1,47 @@
+[gd_scene format=3 uid="uid://ctte4mualqncs"]
+
+[ext_resource type="Script" uid="uid://cutk255mh0tqh" path="res://magic_drawing_system.gd" id="1_eigxu"]
+
+[node name="MagicDrawingSystem" type="CanvasLayer" unique_id=1222554842]
+script = ExtResource("1_eigxu")
+
+[node name="UI_Container" type="Control" parent="." unique_id=638788640]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Background" type="ColorRect" parent="." unique_id=388534523]
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="MagicCircleGuide" type="TextureRect" parent="." unique_id=795506052]
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="LinesContainer" type="Node2D" parent="." unique_id=1916018457]
+
+[node name="CurrentLine" type="Line2D" parent="." unique_id=1367213323]
+
+[node name="ResourceUI" type="VBoxContainer" parent="." unique_id=1918446056]
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="PaperLabel" type="Label" parent="ResourceUI" unique_id=731252920]
+layout_mode = 2
+
+[node name="InkBar" type="ProgressBar" parent="ResourceUI" unique_id=851355291]
+layout_mode = 2
+
+[node name="EndTurnButton" type="Button" parent="." unique_id=125429919]
+offset_right = 8.0
+offset_bottom = 8.0
+
+[node name="UndoButton" type="Button" parent="." unique_id=904154048]
+offset_right = 8.0
+offset_bottom = 8.0
+
+[connection signal="pressed" from="EndTurnButton" to="." method="_on_end_turn_button_pressed"]
+[connection signal="pressed" from="UndoButton" to="." method="_on_undo_button_pressed"]
