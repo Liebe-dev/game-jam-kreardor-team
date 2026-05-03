@@ -1,11 +1,12 @@
 extends CanvasLayer
 
-@onready var lines_container = $UI_Container/LinesContainer
-@onready var current_line = $UI_Container/CurrentLine
-@onready var ink_bar = $UI_Container/ResourceUI/InkBar
-@onready var paper_label = $UI_Container/ResourceUI/PaperLabel
-
+# Sửa lại thành như thế này cho an toàn
+@onready var lines_container = find_child("LinesContainer")
+@onready var current_line = find_child("CurrentLine")
+@onready var ink_bar = find_child("InkBar")
+@onready var paper_label = find_child("PaperLabel")
 # Tài nguyên
+
 var paper_count : int = 5
 var max_ink : float = 2000.0
 var current_ink : float = 2000.0

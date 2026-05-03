@@ -390,6 +390,9 @@ func _on_end_turn_pressed():
 	await get_tree().create_timer(0.3).timeout
 	move_team_logic(2)
 	await get_tree().create_timer(0.2).timeout 
+func _on_spell_button_pressed():
+	%MagicDrawingSystem.show() # Sửa lại chữ M và D viết hoa
+	# Có thể thêm logic tạm dừng bàn cờ tại đây nếu cần
 
 	for p in all_pieces:
 		if is_instance_valid(p):
@@ -632,7 +635,7 @@ func execute_knight_logic(knight):
 				elif push_dir.x < 0: sprite.frame = 2    
 				elif push_dir.y > 0: sprite.frame = 0    
 				elif push_dir.y < 0: sprite.frame = 3    
-			
+					
 			knight.is_grabbed = false
 			grabber.is_grabbed = false
 			knight.grabbed_by = null
@@ -1032,7 +1035,6 @@ func calculate_world_position(grid_pos: Vector2i) -> Vector2:
 func calculate_grid_position(world_pos: Vector2) -> Vector2i:
 	return pixel_to_grid(world_pos)
 func trigger_game_over():
-	print(">>> VUA ĐÃ CHẾT! GAME OVER! <<<")
 	if endgame_menu:
 		endgame_menu.visible = true
 		if endgame_title:
@@ -1040,7 +1042,6 @@ func trigger_game_over():
 			endgame_title.modulate = Color(1, 0, 0) 
 
 func trigger_victory():
-	print(">>> PHÁ ĐẢO WAVE 5! CHIẾN THẮNG! <<<")
 	if endgame_menu:
 		endgame_menu.visible = true
 		if endgame_title:

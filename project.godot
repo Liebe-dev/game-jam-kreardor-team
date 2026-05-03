@@ -18,6 +18,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 Global="*uid://djcrmtr5rfiy5"
+SpellDictionary="*uid://dt4tbe2q2x1b8"
 
 [display]
 
