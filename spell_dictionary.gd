@@ -40,3 +40,29 @@ func get_spell_scene_name(element_1: Element, element_2: Element = Element.NONE)
 		return spell_combinations[combo]
 	
 	return "fizzle" # Phép thất bại nếu chế ra cái không có trong danh sách
+# res://scripts/spell_dictionary.gd
+const SPELL_DATA = {
+	Element.FIRE: {
+		"name": "Lửa",
+		"damage": 1, 
+		"description": "Gây sát thương lên 1 ô"
+	},
+	Element.WATER: {
+		"name": "Nước",
+		"heal": 1,
+		"ink_reward": 1,
+		"description": "Hồi máu, nhận mực"
+	},
+	Element.EARTH: {
+		"name": "Đất",
+		"buff": "invulnerable_1_time",
+		"paper_reward": 3,
+		"description": "Miễn nhiễm 1 lần ST, nhận 3 giấy (nếu trúng địch thì địch được miễn ST từ đồng minh)"
+	},
+	Element.WIND: {
+		"name": "Gió",
+		"buff": "double_attack_next_turn",
+		"special": "repeat_last_effect",
+		"description": "Lặp lại hiệu ứng trước đó, tấn công 2 lần lượt sau"
+	}
+}

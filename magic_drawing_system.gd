@@ -15,7 +15,7 @@ signal spell_casted(element_type, coordinates, directions_list)
 # Tài nguyên
 var max_ink : float = 2000.0
 var current_ink : float = 2000.0
-var ink_cost_per_pixel : float = 1.5
+var ink_cost_per_pixel : float = 1
 
 # Dữ liệu vẽ
 var is_drawing : bool = false
