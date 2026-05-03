@@ -1,5 +1,5 @@
 extends CanvasLayer
-
+signal spell_casted(element_type, coordinates, directions_list)
 # Sử dụng Unique Name (%) để không bao giờ bị lỗi sai đường dẫn Node nữa
 @onready var lines_container = %LinesContainer
 @onready var current_line = %CurrentLine
@@ -23,6 +23,10 @@ var strokes : Array = [] # Mảng chứa các nét vẽ (mỗi nét là 1 mảng
 var current_stroke : Array = []
 
 func _ready():
+	# Gọi hàm của plugin để bắt nó đọc toàn bộ file mẫu trong thư mục
+	# Lưu ý: Kiểm tra lại xem đường dẫn này đã khớp đúng với thư mục của bạn chưa nhé (nhớ có dấu / ở cuối)
+	$GestureRecognizer.LoadGesturesFromResources("res://addons/Gesture_recognizer/resources/gestures/")
+	
 	update_ui()
 
 # Bắt sự kiện chuột chỉ khi thao tác trên Cuộn Giấy (SpellScroll)
@@ -119,12 +123,12 @@ func _on_end_turn_button_pressed():
 	var element = SpellDictionary.Element.NONE
 	if layer1_strokes.size() > 0:
 		# Gửi các nét ở lõi vào plugin (Bạn cần điều chỉnh hàm nhận của plugin cho phù hợp)
-		var element_gesture = recognize_strokes_with_plugin(layer1_strokes)
+		var element_gesture = recognize_strokes_with_plugin(layer1_strokes, "l1_")
 		match element_gesture:
-			"fire", "fire_hand_1", "fire_hand_2", "fire_hand_3": element = SpellDictionary.Element.FIRE
-			"water", "water_hand_1": element = SpellDictionary.Element.WATER
-			"earth", "earth_hand_1": element = SpellDictionary.Element.EARTH
-			"wind", "wind_hand_1": element = SpellDictionary.Element.WIND
+			"l1_fire_hand_1", "l1_fire_hand_2", "l1_fire_hand_3": element = SpellDictionary.Element.FIRE
+			"l1_water_hand_1": element = SpellDictionary.Element.WATER
+			"l1_earth_hand_1": element = SpellDictionary.Element.EARTH
+			"l1_wind_hand_1": element = SpellDictionary.Element.WIND
 
 	# Nếu không nhận diện được ấn, báo lỗi phép xịt ngay
 	if element == SpellDictionary.Element.NONE:
@@ -140,8 +144,8 @@ func _on_end_turn_button_pressed():
 	var layer2_clusters = cluster_strokes(layer2_strokes, 70.0)
 	
 	for cluster in layer2_clusters:
-		var coord_gesture = recognize_strokes_with_plugin(cluster) # Truyền cả cụm đa nét vào plugin
-		
+	# Bắt buộc kết quả trả về phải bắt đầu bằng "l2_"
+		var coord_gesture = recognize_strokes_with_plugin(cluster, "l2_") 
 		if coord_gesture != "Unknown":
 			var base_char = coord_gesture.split("_")[0].to_upper()
 			if base_char in valid_chars:
@@ -154,7 +158,8 @@ func _on_end_turn_button_pressed():
 	var layer3_clusters = cluster_strokes(layer3_strokes, 100.0) 
 	
 	for cluster in layer3_clusters:
-		var dir_gesture = recognize_strokes_with_plugin(cluster)
+	# Bắt buộc kết quả trả về phải bắt đầu bằng "l3_"
+		var dir_gesture = recognize_strokes_with_plugin(cluster, "l3_")
 		match dir_gesture:
 			"left", "left_hand_1": directions.append(Vector2.LEFT)
 			"right", "right_hand_1": directions.append(Vector2.RIGHT)
@@ -162,19 +167,53 @@ func _on_end_turn_button_pressed():
 			"down", "down_hand_1": directions.append(Vector2.DOWN)
 	# 7. CHUYỂN DỮ LIỆU SANG CHO BÀN CỜ THỰC THI
 	print("Đã niệm phép: ", element, " | Tọa độ: ", target_coords, " | Hướng: ", directions)
-	get_parent().cast_complex_spell(element, target_coords, directions)
+	spell_casted.emit(element, target_coords, directions)
 	
 	self.hide()
 
-# --- Hàm trung gian để gọi Plugin ---
-func recognize_strokes_with_plugin(strokes_to_eval: Array) -> String:
+func recognize_strokes_with_plugin(strokes_to_eval: Array, layer_prefix: String) -> String:
 	if strokes_to_eval.is_empty(): return "Unknown"
 	
-	# TODO: Chèn logic gọi plugin nhận diện của bạn vào đây.
-	# Ví dụ: $GestureRecognizer.set_strokes(strokes_to_eval)
-	# return $GestureRecognizer.get_recognized_gesture()
+	# 1. CHUYỂN ĐỔI DỮ LIỆU TỪ VECTOR2 SANG CLASS POINT CỦA PLUGIN
+	var plugin_points = []
+	var stroke_id = 0
 	
-	return "Unknown" # Placeholder
+	for stroke in strokes_to_eval:
+		for pt in stroke:
+			# Khởi tạo object Point(x, y, id) từ node GestureRecognizer
+			var new_point = $GestureRecognizer.Point.new(pt.x, pt.y, stroke_id)
+			plugin_points.append(new_point)
+		stroke_id += 1 # Tăng ID lên cho nét vẽ tiếp theo (để plugin hiểu là nhấc bút)
+
+	# 2. LỌC DỮ LIỆU THEO NGỮ CẢNH (Context Filter)
+	var all_gestures = $GestureRecognizer._gestures_templates.duplicate() 
+	var filtered_gestures = []
+	
+	for g in all_gestures:
+		if g["name"].begins_with(layer_prefix):
+			filtered_gestures.append(g)
+			
+	# Nếu thư mục mẫu trống (chưa có file l1_, l2_...)
+	if filtered_gestures.is_empty():
+		print("Cảnh báo: Không có template nào chứa tiền tố: ", layer_prefix)
+		return "Unknown"
+			
+	# 3. ÉP PLUGIN CHỈ NHẬN DIỆN TRONG TẬP DỮ LIỆU ĐÃ LỌC
+	$GestureRecognizer._gestures_templates = filtered_gestures
+	
+	# 4. THỰC HIỆN NHẬN DIỆN
+	# Tham số thứ 2 là Ngưỡng điểm (Accuracy limit). Dưới 0.5 (50%) sẽ coi là vẽ sai.
+	# Bạn có thể chỉnh con số 0.5 này lên 0.7 nếu muốn game Hardcore hơn.
+	var result_dict = $GestureRecognizer.Recognize(plugin_points, 0.5) 
+	
+	# 5. TRẢ LẠI DATABASE GỐC CHO PLUGIN
+	$GestureRecognizer._gestures_templates = all_gestures
+	
+	# Xử lý kết quả trả về từ Dictionary
+	if result_dict["name"] == "No Match" or result_dict["name"] == "No Templates":
+		return "Unknown"
+		
+	return result_dict["name"]
 func update_ui():
 	if paper_label:
 		# Đồng bộ hiển thị với biến giấy ở Global

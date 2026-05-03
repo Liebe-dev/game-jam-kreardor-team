@@ -146,11 +146,6 @@ class Gesture:
 	static func _euclidean_distance(p1: Point, p2: Point) -> float:
 		return sqrt(Gesture._squared_euclidean_distance(p1, p2))
 
-#-----------------------------------------------------------------------
-#-------------------- QDollarRecognizer functions ----------------------
-#-----------------------------------------------------------------------
-
-# Identify the closest gesture match using Accuracy score
 func Recognize(original_points: Array, min_score_lim: float) -> Dictionary:
 	if _gestures_templates.size() <= 0:
 		print("No gesture templates available for recognition.")
@@ -160,22 +155,17 @@ func Recognize(original_points: Array, min_score_lim: float) -> Dictionary:
 	var best_score = -INF
 	var best_match = null
 	
-	# Compare the input gesture LUT against all templates LUTs
 	for template in _gestures_templates:
 		var score = AccuracyScore(gesture_LUT, template["LUT"], template["name"])
 		if score > best_score:
 			best_score = score
 			best_match = template["name"]
 	
-	# Return the name of best match if the score is higher then min_dscore_limit, else "No Match"
 	return {"name": best_match, "score": best_score} if best_match and best_score >= min_score_lim else {"name": "No Match", "score": INF}
 
-# Calculate the Accuracy score between two LUTs (difference in matching cells)
 func AccuracyScore(LUT1: Array, LUT2: Array, template_name: String) -> float:
-	var tp = 0  # True Positive
-	var tn = 0  # True Negative
-	#var fp = 0  # False Positive
-	#var fn = 0  # False Negative
+	var tp = 0  
+	var tn = 0  
 	var total = LUTSize ** 2
 	
 	for x in range(LUTSize):
@@ -183,10 +173,8 @@ func AccuracyScore(LUT1: Array, LUT2: Array, template_name: String) -> float:
 			var A = LUT1[x][y]
 			var B = LUT2[x][y]
 			
-			tp += A & B  # True Positive: both A and B are 1
-			tn += (1 - A) & (1 - B)  # True Negative: both A and B are 0
-			#fp += (1 - A) & B  # False Positive: A is 0, but B is 1
-			#fn += A & (1 - B)  # False Negative: A is 1, but B is 0 
+			tp += A & B 
+			tn += (1 - A) & (1 - B)
 	
 	var accuracy = float(tp + tn) / total
 	print("------------------------------\nTemplate:", template_name)
@@ -194,11 +182,6 @@ func AccuracyScore(LUT1: Array, LUT2: Array, template_name: String) -> float:
 	
 	return accuracy
 
-#-----------------------------------------------------------------------
-#-------------------- Loading and Saving gestures ----------------------
-#-----------------------------------------------------------------------
-
-# Add a new gesture template by normalizing points and saving as a resource
 func AddGesture(gestures_path:String, name: String, original_points: Array) -> int:
 	var points = Gesture._normalize_points(original_points.duplicate(true))
 	var LUT = Gesture._compute_LUT(points)
@@ -232,6 +215,7 @@ func AddGesture(gestures_path:String, name: String, original_points: Array) -> i
 	return num
 
 # Load templates from resources to _gestures_templates list on addon startup
+# Load templates from resources to _gestures_templates list on addon startup
 func LoadGesturesFromResources(gestures_path: String) -> void:
 	var dir = DirAccess.open(gestures_path)
 	if dir:
@@ -241,17 +225,21 @@ func LoadGesturesFromResources(gestures_path: String) -> void:
 			if file_name.ends_with(".tres"):
 				var gesture_resource = load(gestures_path + file_name)
 				if gesture_resource is GestureResource:
-					_gestures_templates.append({
-						"name": gesture_resource.gesture_name, 
-						"LUT": gesture_resource.LUT})
-					print("Loaded gesture: " + gesture_resource.gesture_name)
+					
+					# --- BỘ LỌC CHỐNG CRASH ---
+					if gesture_resource.LUT == null or gesture_resource.LUT.size() == 0:
+						printerr("❌ PHÁT HIỆN FILE BỊ HỎNG DỮ LIỆU (Rỗng LUT): ", file_name)
+					else:
+						_gestures_templates.append({
+							"name": gesture_resource.gesture_name, 
+							"LUT": gesture_resource.LUT})
+						print("Loaded gesture: " + gesture_resource.gesture_name)
+					# --------------------------
 					
 			file_name = dir.get_next()
 		dir.list_dir_end()
 	else:
 		print("Failed to open gestures directory.")
-
-# Function to retrieve the unique names of all loaded gesture templates
 func GetGestureNames() -> Array:
 	var gesture_names = []
 	for gest in _gestures_templates:

@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://cutk255mh0tqh" path="res://magic_drawing_system.gd" id="1_eigxu"]
 [ext_resource type="Texture2D" uid="uid://c0g3bln6bcxpt" path="res://gameplay 2.png" id="2_d0abt"]
 [ext_resource type="Texture2D" uid="uid://b6hcex5r2vkgg" path="res://circle.png" id="2_yc3uf"]
+[ext_resource type="Script" uid="uid://cachgqrvecjqi" path="res://addons/Gesture_recognizer/GR_Algorithm.gd" id="4_bkrc7"]
 
 [node name="MagicDrawingSystem" type="CanvasLayer" unique_id=1222554842]
 script = ExtResource("1_eigxu")
@@ -75,6 +76,10 @@ modulate = Color(1, 1, 1, 0.29803923)
 offset_right = 1920.0
 offset_bottom = 1080.0
 texture = ExtResource("2_d0abt")
+
+[node name="GestureRecognizer" type="Node" parent="." unique_id=1019601702]
+script = ExtResource("4_bkrc7")
+metadata/_custom_type_script = "uid://cachgqrvecjqi"
 
 [connection signal="gui_input" from="UI_Container/SpellScroll" to="." method="_on_spell_scroll_gui_input"]
 [connection signal="pressed" from="EndTurnButton" to="." method="_on_end_turn_button_pressed"]

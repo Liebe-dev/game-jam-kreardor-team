@@ -1,9 +1,0 @@
-[gd_resource type="Resource" script_class="GestureResource" format=3 uid="uid://c5r3w7ckumfkd"]
-
-[ext_resource type="Script" uid="uid://c7m5g6ppt3jf1" path="res://addons/Gesture_recognizer/resources/gestures/GestureResource.gd" id="1_b0dpm"]
-
-[resource]
-script = ExtResource("1_b0dpm")
-gesture_name = "water"
-points = [Vector2(100, 0), Vector2(92, 38), Vector2(70, 70), Vector2(38, 92), Vector2(0, 100), Vector2(-38, 92), Vector2(-70, 70), Vector2(-92, 38), Vector2(-100, 0), Vector2(-92, -38), Vector2(-70, -70), Vector2(-38, -92), Vector2(0, -100), Vector2(38, -92), Vector2(70, -70), Vector2(92, -38), Vector2(100, 0)]
-LUT = []
