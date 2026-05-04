@@ -184,10 +184,10 @@ func _on_end_turn_button_pressed():
 				
 			directions.append(final_dir)
 			print("Nhận diện mũi tên thành công tại hướng: ", final_dir)
-			print("Đã niệm phép: ", element, " | Tọa độ: ", target_coords, " | Hướng: ", directions)
-			spell_casted.emit(element, target_coords, directions)
-			clear_all_strokes()
-			close_scroll()
+	print("Đã niệm phép: ", element, " | Tọa độ: ", target_coords, " | Hướng: ", directions)
+	spell_casted.emit(element, target_coords, directions)
+	clear_all_strokes()
+	close_scroll()
 func recognize_strokes_with_plugin(strokes_to_eval: Array, layer_prefix: String) -> String:
 	if strokes_to_eval.is_empty(): return "Unknown"
 	
@@ -326,28 +326,21 @@ func show_scroll():
 	var tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tween.tween_property(%UI_Container, "size:x", max_scroll_width, 0.2) # Kéo ra trong 0.4s
 # Hàm xử lý việc đóng cuộn giấy
+# Hàm xử lý việc đóng cuộn giấy
 func close_scroll():
 	# Tạo hiệu ứng thu hẹp chiều ngang về 0 (Cuộn lại)
 	var tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	tween.tween_property(%UI_Container, "size:x", 0.0, 0.3) # Cuộn vào trong 0.3s
 	
-	# Chờ cuộn xong thì mới dọn dẹp nét vẽ
+	# Chỉ yêu cầu: Chờ cuộn xong thì mới ẩn giao diện (không xóa nét vẽ nữa)
 	tween.finished.connect(_on_close_animation_finished)
-	# Dọn dẹp các nét vẽ cũ nếu người chơi đang vẽ dở mà đóng lại
-	strokes.clear()
-	current_stroke.clear()
-	current_line.clear_points()
-	for line in lines_container.get_children():
-		line.queue_free()
-		
-	# Ẩn hệ thống vẽ đi
-	self.hide()
-	
-	# Phát tín hiệu báo cho Bàn cờ biết để hiện lại cuộn giấy nhỏ
-	scroll_closed.emit()
+
+# -----------------
+# Lưu ý: Đảm bảo 2 hàm bên dưới của bạn vẫn giữ y nguyên thế này nhé:
 func _on_close_animation_finished():
 	self.hide()
 	scroll_closed.emit()
+
 func clear_all_strokes():
 	strokes.clear()
 	current_stroke.clear()

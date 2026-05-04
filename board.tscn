@@ -276,11 +276,11 @@ offset_right = 1920.0
 offset_bottom = 1080.0
 texture = ExtResource("5_vf5bc")
 
-[node name="Char" type="TextureRect" parent="." unique_id=1141935737]
-offset_left = 1314.0
-offset_top = 367.0
-offset_right = 2022.0
-offset_bottom = 1329.0
+[node name="char" type="TextureRect" parent="." unique_id=2000966772]
+offset_left = 1431.0
+offset_top = 438.0
+offset_right = 1953.0
+offset_bottom = 1262.0
 texture = ExtResource("6_mgc1s")
 
 [node name="ClosedScrollButton" type="TextureButton" parent="." unique_id=1439694252]
