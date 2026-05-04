@@ -1,5 +1,6 @@
 extends CanvasLayer
 signal spell_casted(element_type, coordinates, directions_list)
+
 # Sử dụng Unique Name (%) để không bao giờ bị lỗi sai đường dẫn Node nữa
 @onready var lines_container = %LinesContainer
 @onready var current_line = %CurrentLine
@@ -12,6 +13,7 @@ signal spell_casted(element_type, coordinates, directions_list)
 # Cấu hình Bán kính 3 lớp (Tính bằng pixel, bạn có thể chỉnh trong Inspector)
 @export var radius_inner: float = 80.0
 @export var radius_middle: float = 180.0
+
 # Tài nguyên
 var max_ink : float = 2000.0
 var current_ink : float = 2000.0
@@ -23,10 +25,7 @@ var strokes : Array = [] # Mảng chứa các nét vẽ (mỗi nét là 1 mảng
 var current_stroke : Array = []
 
 func _ready():
-	# Gọi hàm của plugin để bắt nó đọc toàn bộ file mẫu trong thư mục
-	# Lưu ý: Kiểm tra lại xem đường dẫn này đã khớp đúng với thư mục của bạn chưa nhé (nhớ có dấu / ở cuối)
 	$GestureRecognizer.LoadGesturesFromResources("res://addons/Gesture_recognizer/resources/gestures/")
-	
 	update_ui()
 
 # Bắt sự kiện chuột chỉ khi thao tác trên Cuộn Giấy (SpellScroll)
@@ -42,9 +41,7 @@ func _on_spell_scroll_gui_input(event):
 		add_point(event.position)
 
 func start_drawing(pos: Vector2):
-	# Chỉ cho phép vẽ nếu còn mực
 	if current_ink <= 0: return
-	
 	is_drawing = true
 	current_stroke = [pos]
 	current_line.clear_points()
@@ -58,12 +55,9 @@ func add_point(pos: Vector2):
 	var last_pos = current_stroke[current_stroke.size() - 1]
 	var distance = last_pos.distance_to(pos)
 	
-	# Chỉ thêm điểm nếu rê chuột đủ xa (tránh lưu quá nhiều điểm thừa)
 	if distance > 5.0: 
 		current_stroke.append(pos)
 		current_line.add_point(pos)
-		
-		# Trừ mực
 		current_ink -= distance * ink_cost_per_pixel
 		update_ui()
 
@@ -72,10 +66,7 @@ func stop_drawing():
 	is_drawing = false
 	
 	if current_stroke.size() > 1:
-		# Lưu nét vẽ lại
 		strokes.append(current_stroke.duplicate())
-		
-		# Tạo một Line2D mới để hiển thị nét vừa vẽ và cho vào LinesContainer
 		var new_line = Line2D.new()
 		new_line.points = current_line.points
 		new_line.width = current_line.width
@@ -86,10 +77,7 @@ func stop_drawing():
 
 func _on_undo_button_pressed():
 	if strokes.size() > 0:
-		# Xóa dữ liệu nét cuối cùng
 		strokes.pop_back()
-		
-		# Xóa Line2D hiển thị cuối cùng
 		var child_count = lines_container.get_child_count()
 		if child_count > 0:
 			var last_line = lines_container.get_child(child_count - 1)
@@ -99,30 +87,25 @@ func _on_end_turn_button_pressed():
 	Global.paper_count -= 1 
 	update_ui() 
 	
-	# 1. Tìm tọa độ tâm của vòng tròn phép (tương đối so với SpellScroll)
+	# 1. Tìm tọa độ tâm
 	var circle_center = magic_circle.position + (magic_circle.size / 2.0)
 	
-	# 2. Tạo 3 mảng để chứa các nét vẽ được phân loại
-	var layer1_strokes = [] # Lõi (Ấn)
-	var layer2_strokes = [] # Giữa (Tọa độ)
-	var layer3_strokes = [] # Rìa (Hướng)
+	# 2. Tạo 3 mảng phân loại
+	var layer1_strokes = []
+	var layer2_strokes = []
+	var layer3_strokes = []
 	
-	# 3. Phân loại nét vẽ dựa vào khoảng cách đến tâm
+	# 3. Phân loại nét vẽ
 	for stroke in strokes:
 		var center_pt = get_stroke_center(stroke)
 		var distance = circle_center.distance_to(center_pt)
-		
-		if distance < radius_inner:
-			layer1_strokes.append(stroke)
-		elif distance < radius_middle:
-			layer2_strokes.append(stroke)
-		else:
-			layer3_strokes.append(stroke)
+		if distance < radius_inner: layer1_strokes.append(stroke)
+		elif distance < radius_middle: layer2_strokes.append(stroke)
+		else: layer3_strokes.append(stroke)
 
-	# 4. NHẬN DIỆN LỚP 1: ẤN CHÚ (Bắt buộc phải có)
+	# 4. NHẬN DIỆN LỚP 1: ẤN CHÚ
 	var element = SpellDictionary.Element.NONE
 	if layer1_strokes.size() > 0:
-		# Gửi các nét ở lõi vào plugin (Bạn cần điều chỉnh hàm nhận của plugin cho phù hợp)
 		var element_gesture = recognize_strokes_with_plugin(layer1_strokes, "l1_")
 		match element_gesture:
 			"l1_fire_hand_1", "l1_fire_hand_2", "l1_fire_hand_3": element = SpellDictionary.Element.FIRE
@@ -130,136 +113,192 @@ func _on_end_turn_button_pressed():
 			"l1_earth_hand_1": element = SpellDictionary.Element.EARTH
 			"l1_wind_hand_1": element = SpellDictionary.Element.WIND
 
-	# Nếu không nhận diện được ấn, báo lỗi phép xịt ngay
 	if element == SpellDictionary.Element.NONE:
 		play_fizzle_effect()
 		self.hide()
 		return
 		
-# 5. NHẬN DIỆN LỚP 2: TỌA ĐỘ (A-H, 1-8)
-	var target_coords = []
-	var valid_chars = ["A", "B", "C", "D", "E", "F", "G", "H", "1", "2", "3", "4", "5", "6", "7", "8"]
-	
-	# GỌI HÀM GOM NHÓM ĐỂ XỬ LÝ NHIỀU NÉT (MULTISTROKE)
+	# 5. NHẬN DIỆN LỚP 2 (ĐÃ ÁP DỤNG LỌC LÙI TOP 1, 2, 3...)
 	var layer2_clusters = cluster_strokes(layer2_strokes, 70.0)
-	
-	for cluster in layer2_clusters:
-	# Bắt buộc kết quả trả về phải bắt đầu bằng "l2_"
-		var coord_gesture = recognize_strokes_with_plugin(cluster, "l2_") 
-		if coord_gesture != "Unknown":
-			var base_char = coord_gesture.split("_")[0].to_upper()
-			if base_char in valid_chars:
-				target_coords.append(base_char)
+	var valid_letters = ["A", "B", "C", "D", "E", "F", "G", "H"]
+	var valid_numbers = ["1", "2", "3", "4", "5", "6", "7", "8"]
+	var target_coords = []
 
-	# 6. NHẬN DIỆN LỚP 3: HƯỚNG (Mũi tên)
+	for cluster in layer2_clusters:
+		var cluster_center = get_cluster_center(cluster)
+		var angle = get_angle_deg(cluster_center)
+		
+		# Xác định luật vùng này: Trục ngang (chữ) hay Trục dọc (số)
+		var is_horizontal = abs(angle) <= 45.0 or abs(angle) >= 135.0
+		var allowed_chars = valid_letters if is_horizontal else valid_numbers
+		
+		# Gọi hàm "Lọc lùi" đặc biệt
+		var final_char = get_valid_gesture_with_fallback(cluster, "l2_", allowed_chars)
+		
+		if final_char != "":
+			target_coords.append(final_char)
+		else:
+			print("Nét vẽ quá xấu hoặc không khớp luật vùng, bỏ qua!")
+
+# 6. NHẬN DIỆN LỚP 3: HƯỚNG
+	var layer3_clusters = cluster_strokes(layer3_strokes, 70.0)
 	var directions = []
 	
-	# Mũi tên thường được vẽ bằng 2-3 nét nhấc bút, nên cũng cần gom nhóm
-	var layer3_clusters = cluster_strokes(layer3_strokes, 100.0) 
-	
 	for cluster in layer3_clusters:
-	# Bắt buộc kết quả trả về phải bắt đầu bằng "l3_"
-		var dir_gesture = recognize_strokes_with_plugin(cluster, "l3_")
-		match dir_gesture:
-			"left", "left_hand_1": directions.append(Vector2.LEFT)
-			"right", "right_hand_1": directions.append(Vector2.RIGHT)
-			"up", "up_hand_1": directions.append(Vector2.UP)
-			"down", "down_hand_1": directions.append(Vector2.DOWN)
-	# 7. CHUYỂN DỮ LIỆU SANG CHO BÀN CỜ THỰC THI
-	print("Đã niệm phép: ", element, " | Tọa độ: ", target_coords, " | Hướng: ", directions)
-	spell_casted.emit(element, target_coords, directions)
-	
-	self.hide()
-
+		var cluster_center = get_cluster_center(cluster)
+		var angle = get_angle_deg(cluster_center)
+		
+		# --- THỦ THUẬT: QUAY NÉT VẼ VỀ 0 ĐỘ ---
+		# Dù người chơi vẽ mũi tên hướng ra ngoài ở bất kỳ góc nào,
+		# ta sẽ bẻ nó về góc 0 độ (hướng sang phải) trước khi cho plugin đọc.
+		var rotated_cluster = []
+		for stroke in cluster:
+			var rotated_stroke = []
+			for pt in stroke:
+				# 1. Đưa điểm về hệ quy chiếu tâm nét vẽ
+				var local_pt = pt - cluster_center
+				# 2. Xoay ngược lại đúng bằng góc lệch (chuyển sang radian)
+				var rotated_pt = local_pt.rotated(deg_to_rad(-angle))
+				# 3. Trả điểm về vị trí cũ
+				rotated_stroke.append(rotated_pt + cluster_center)
+			rotated_cluster.append(rotated_stroke)
+			
+		# Gọi plugin đọc nét vẽ ĐÃ ĐƯỢC XOAY (Nó sẽ khớp hoàn hảo với template mũi tên sang phải)
+		var is_arrow = recognize_strokes_with_plugin(rotated_cluster, "l3_") != "Unknown"
+		
+		if is_arrow:
+			var final_dir = Vector2.ZERO
+			
+			# Chia 360 độ thành 8 vùng (mỗi vùng 45 độ)
+			if angle >= -22.5 and angle < 22.5: final_dir = Vector2(1, 0) # Phải
+			elif angle >= 22.5 and angle < 67.5: final_dir = Vector2(1, 1) # Xuống Phải
+			elif angle >= 67.5 and angle < 112.5: final_dir = Vector2(0, 1) # Xuống
+			elif angle >= 112.5 and angle < 157.5: final_dir = Vector2(-1, 1) # Xuống Trái
+			elif angle >= 157.5 or angle < -157.5: final_dir = Vector2(-1, 0) # Trái
+			elif angle >= -157.5 and angle < -112.5: final_dir = Vector2(-1, -1) # Lên Trái
+			elif angle >= -112.5 and angle < -67.5: final_dir = Vector2(0, -1) # Lên
+			elif angle >= -67.5 and angle < -22.5: final_dir = Vector2(1, -1) # Lên Phải
+				
+			directions.append(final_dir)
+			print("Nhận diện mũi tên thành công tại hướng: ", final_dir)
 func recognize_strokes_with_plugin(strokes_to_eval: Array, layer_prefix: String) -> String:
 	if strokes_to_eval.is_empty(): return "Unknown"
 	
-	# 1. CHUYỂN ĐỔI DỮ LIỆU TỪ VECTOR2 SANG CLASS POINT CỦA PLUGIN
 	var plugin_points = []
 	var stroke_id = 0
-	
 	for stroke in strokes_to_eval:
 		for pt in stroke:
-			# Khởi tạo object Point(x, y, id) từ node GestureRecognizer
-			var new_point = $GestureRecognizer.Point.new(pt.x, pt.y, stroke_id)
-			plugin_points.append(new_point)
-		stroke_id += 1 # Tăng ID lên cho nét vẽ tiếp theo (để plugin hiểu là nhấc bút)
+			plugin_points.append($GestureRecognizer.Point.new(pt.x, pt.y, stroke_id))
+		stroke_id += 1
 
-	# 2. LỌC DỮ LIỆU THEO NGỮ CẢNH (Context Filter)
 	var all_gestures = $GestureRecognizer._gestures_templates.duplicate() 
 	var filtered_gestures = []
+	for g in all_gestures:
+		if g["name"].begins_with(layer_prefix): filtered_gestures.append(g)
+			
+	if filtered_gestures.is_empty(): return "Unknown"
+			
+	$GestureRecognizer._gestures_templates = filtered_gestures
+	var result_dict = $GestureRecognizer.Recognize(plugin_points, 0.7) 
+	$GestureRecognizer._gestures_templates = all_gestures
 	
+	if result_dict["name"] == "No Match" or result_dict["name"] == "No Templates":
+		return "Unknown"
+	return result_dict["name"]
+
+# TÍNH NĂNG MỚI: HÀM TÌM KẾT QUẢ THEO LUẬT (LỌC LÙI TỪ TOP 1 ĐẾN TOP N)
+func get_valid_gesture_with_fallback(strokes_to_eval: Array, layer_prefix: String, allowed_chars: Array) -> String:
+	if strokes_to_eval.is_empty(): return ""
+
+	var plugin_points = []
+	var stroke_id = 0
+	for stroke in strokes_to_eval:
+		for pt in stroke:
+			plugin_points.append($GestureRecognizer.Point.new(pt.x, pt.y, stroke_id))
+		stroke_id += 1
+
+	# Lấy danh sách template gốc
+	var all_gestures = $GestureRecognizer._gestures_templates.duplicate()
+	var filtered_gestures = []
 	for g in all_gestures:
 		if g["name"].begins_with(layer_prefix):
 			filtered_gestures.append(g)
+
+	var best_valid_char = ""
+	
+	# Vòng lặp cho phép sai tối đa 5 lần (xét đến top 5)
+	for attempt in range(5):
+		if filtered_gestures.is_empty(): break
 			
-	# Nếu thư mục mẫu trống (chưa có file l1_, l2_...)
-	if filtered_gestures.is_empty():
-		print("Cảnh báo: Không có template nào chứa tiền tố: ", layer_prefix)
-		return "Unknown"
-			
-	# 3. ÉP PLUGIN CHỈ NHẬN DIỆN TRONG TẬP DỮ LIỆU ĐÃ LỌC
-	$GestureRecognizer._gestures_templates = filtered_gestures
-	
-	# 4. THỰC HIỆN NHẬN DIỆN
-	# Tham số thứ 2 là Ngưỡng điểm (Accuracy limit). Dưới 0.5 (50%) sẽ coi là vẽ sai.
-	# Bạn có thể chỉnh con số 0.5 này lên 0.7 nếu muốn game Hardcore hơn.
-	var result_dict = $GestureRecognizer.Recognize(plugin_points, 0.5) 
-	
-	# 5. TRẢ LẠI DATABASE GỐC CHO PLUGIN
-	$GestureRecognizer._gestures_templates = all_gestures
-	
-	# Xử lý kết quả trả về từ Dictionary
-	if result_dict["name"] == "No Match" or result_dict["name"] == "No Templates":
-		return "Unknown"
+		$GestureRecognizer._gestures_templates = filtered_gestures
+		var result_dict = $GestureRecognizer.Recognize(plugin_points, 0.7)
 		
-	return result_dict["name"]
+		# Nếu không nhận diện được nữa thì dừng
+		if result_dict["name"] == "No Match" or result_dict["name"] == "No Templates":
+			break
+			
+		var gesture_name = result_dict["name"]
+		var parsed_char = gesture_name.split("_")[1].to_upper()
+		
+		# KIỂM TRA LUẬT
+		if parsed_char in allowed_chars:
+			best_valid_char = parsed_char
+			print("Đã chốt '", best_valid_char, "' tại Top ", attempt + 1, " (Template: ", gesture_name, ")")
+			break # Tìm thấy rồi thì thoát vòng lặp
+		else:
+			# NẾU SAI LUẬT: Xóa template này khỏi danh sách và cho máy nhận diện lại
+			for i in range(filtered_gestures.size() - 1, -1, -1):
+				if filtered_gestures[i]["name"] == gesture_name:
+					filtered_gestures.remove_at(i) # Xóa phần tử mảng trong Godot 4
+					break
+
+	# Trả lại dữ liệu gốc cho plugin để không làm hỏng các lượt vẽ sau
+	$GestureRecognizer._gestures_templates = all_gestures
+	return best_valid_char
+
 func update_ui():
-	if paper_label:
-		# Đồng bộ hiển thị với biến giấy ở Global
-		paper_label.text = "Giấy: " + str(Global.paper_count)
-	
-	if ink_bar:
-		ink_bar.value = (current_ink / max_ink) * 100
+	if paper_label: paper_label.text = "Giấy: " + str(Global.paper_count)
+	if ink_bar: ink_bar.value = (current_ink / max_ink) * 100
 
 func play_fizzle_effect():
 	print("Phép xịt! Đang tạo hiệu ứng...")
-	# Sử dụng trực tiếp biến lines_container đã được khai báo ở đầu
 	for line in lines_container.get_children():
-		line.default_color = Color(0.3, 0.3, 0.3, 1) # Màu xám tối
-		
+		line.default_color = Color(0.3, 0.3, 0.3, 1)
 	await get_tree().create_timer(0.5).timeout
-	# Thêm hàm này vào dưới cùng của script
+
 func get_stroke_center(stroke_points: Array) -> Vector2:
 	if stroke_points.is_empty(): return Vector2.ZERO
-	
 	var sum = Vector2.ZERO
-	for pt in stroke_points:
-		sum += pt
+	for pt in stroke_points: sum += pt
 	return sum / stroke_points.size()
-# Hàm gom các nét vẽ gần nhau thành 1 cụm (1 ký tự đa nét)
+
 func cluster_strokes(layer_strokes: Array, threshold_distance: float = 70.0) -> Array:
-	var clusters = [] # Chứa các cụm (mỗi cụm là mảng các nét vẽ)
-	
+	var clusters = []
 	for stroke in layer_strokes:
 		var stroke_center = get_stroke_center(stroke)
 		var added_to_cluster = false
-		
 		for cluster in clusters:
-			# Tìm trọng tâm của cụm hiện tại
 			var cluster_center = Vector2.ZERO
-			for s in cluster:
-				cluster_center += get_stroke_center(s)
+			for s in cluster: cluster_center += get_stroke_center(s)
 			cluster_center /= cluster.size()
-			
-			# Nếu nét vẽ nằm đủ gần cụm, gộp nó vào
 			if stroke_center.distance_to(cluster_center) < threshold_distance:
 				cluster.append(stroke)
 				added_to_cluster = true
 				break
-				
-		# Nếu nét vẽ nằm lẻ loi, tạo một cụm mới cho nó
-		if not added_to_cluster:
-			clusters.append([stroke])
-			
+		if not added_to_cluster: clusters.append([stroke])
 	return clusters
+
+func get_cluster_center(cluster: Array) -> Vector2:
+	var center = Vector2.ZERO
+	var count = 0
+	for stroke in cluster:
+		for point in stroke:
+			center += point
+			count += 1
+	if count == 0: return Vector2.ZERO
+	return center / count
+
+func get_angle_deg(cluster_center: Vector2) -> float:
+	var circle_center = Vector2(715, 800) 
+	var dir_vec = cluster_center - circle_center
+	return rad_to_deg(dir_vec.angle())
