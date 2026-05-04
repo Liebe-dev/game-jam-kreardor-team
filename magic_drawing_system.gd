@@ -1,4 +1,5 @@
 extends CanvasLayer
+signal scroll_closed
 signal spell_casted(element_type, coordinates, directions_list)
 
 # Sử dụng Unique Name (%) để không bao giờ bị lỗi sai đường dẫn Node nữa
@@ -18,7 +19,7 @@ signal spell_casted(element_type, coordinates, directions_list)
 var max_ink : float = 2000.0
 var current_ink : float = 2000.0
 var ink_cost_per_pixel : float = 1
-
+var max_scroll_width: float = 0.0
 # Dữ liệu vẽ
 var is_drawing : bool = false
 var strokes : Array = [] # Mảng chứa các nét vẽ (mỗi nét là 1 mảng Vector2)
@@ -27,7 +28,7 @@ var current_stroke : Array = []
 func _ready():
 	$GestureRecognizer.LoadGesturesFromResources("res://addons/Gesture_recognizer/resources/gestures/")
 	update_ui()
-
+	max_scroll_width = %UI_Container.size.x
 # Bắt sự kiện chuột chỉ khi thao tác trên Cuộn Giấy (SpellScroll)
 func _on_spell_scroll_gui_input(event):
 	if event is InputEventMouseButton:
@@ -115,7 +116,9 @@ func _on_end_turn_button_pressed():
 
 	if element == SpellDictionary.Element.NONE:
 		play_fizzle_effect()
-		self.hide()
+		await get_tree().create_timer(0.5).timeout
+		clear_all_strokes()
+		close_scroll()
 		return
 		
 	# 5. NHẬN DIỆN LỚP 2 (ĐÃ ÁP DỤNG LỌC LÙI TOP 1, 2, 3...)
@@ -181,6 +184,10 @@ func _on_end_turn_button_pressed():
 				
 			directions.append(final_dir)
 			print("Nhận diện mũi tên thành công tại hướng: ", final_dir)
+			print("Đã niệm phép: ", element, " | Tọa độ: ", target_coords, " | Hướng: ", directions)
+			spell_casted.emit(element, target_coords, directions)
+			clear_all_strokes()
+			close_scroll()
 func recognize_strokes_with_plugin(strokes_to_eval: Array, layer_prefix: String) -> String:
 	if strokes_to_eval.is_empty(): return "Unknown"
 	
@@ -299,6 +306,55 @@ func get_cluster_center(cluster: Array) -> Vector2:
 	return center / count
 
 func get_angle_deg(cluster_center: Vector2) -> float:
-	var circle_center = Vector2(715, 800) 
+	var circle_center = Vector2(763, 725) 
 	var dir_vec = cluster_center - circle_center
 	return rad_to_deg(dir_vec.angle())
+
+
+func _on_close_area_button_pressed():
+	close_scroll()
+func show_scroll():
+	self.show()
+	
+	# 1. Đảm bảo vị trí Y bình thường (xóa lỗi nếu bạn đang dùng code trượt dọc cũ)
+	%UI_Container.position.y = 0 
+	
+	# 2. Bắt đầu với chiều rộng = 0 (Cuộn giấy bị thu hẹp hoàn toàn về lề trái)
+	%UI_Container.size.x = 0
+	
+	# 3. Tạo hiệu ứng Tween mượt mà mở rộng chiều ngang ra
+	var tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(%UI_Container, "size:x", max_scroll_width, 0.2) # Kéo ra trong 0.4s
+# Hàm xử lý việc đóng cuộn giấy
+func close_scroll():
+	# Tạo hiệu ứng thu hẹp chiều ngang về 0 (Cuộn lại)
+	var tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.tween_property(%UI_Container, "size:x", 0.0, 0.3) # Cuộn vào trong 0.3s
+	
+	# Chờ cuộn xong thì mới dọn dẹp nét vẽ
+	tween.finished.connect(_on_close_animation_finished)
+	# Dọn dẹp các nét vẽ cũ nếu người chơi đang vẽ dở mà đóng lại
+	strokes.clear()
+	current_stroke.clear()
+	current_line.clear_points()
+	for line in lines_container.get_children():
+		line.queue_free()
+		
+	# Ẩn hệ thống vẽ đi
+	self.hide()
+	
+	# Phát tín hiệu báo cho Bàn cờ biết để hiện lại cuộn giấy nhỏ
+	scroll_closed.emit()
+func _on_close_animation_finished():
+	self.hide()
+	scroll_closed.emit()
+func clear_all_strokes():
+	strokes.clear()
+	current_stroke.clear()
+	current_line.clear_points()
+	for line in lines_container.get_children():
+		line.queue_free()
+		
+	# Reset lại lượng mực
+	current_ink = max_ink
+	update_ui()
