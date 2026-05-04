@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://caaouwpniatvm"]
+
+[ext_resource type="Script" uid="uid://bjxee4k7l1ofv" path="res://earth_wall.gd" id="1_7quyf"]
+
+[node name="EarthWall" type="Node2D" unique_id=337878757]
+script = ExtResource("1_7quyf")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=929677363]
+offset_left = -50.0
+offset_top = -50.0
+offset_right = 50.0
+offset_bottom = 50.0
+color = Color(0.07415178, 0.6150553, 0, 1)

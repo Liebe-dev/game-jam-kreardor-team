@@ -8,11 +8,6 @@
 
 [node name="board" type="Node2D" unique_id=1273165699]
 
-[node name="TextureRect" type="TextureRect" parent="." unique_id=341661218]
-offset_right = 1920.0
-offset_bottom = 1080.0
-texture = ExtResource("5_vf5bc")
-
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=1222878674]
 offset_left = 481.0
 offset_top = 103.0
@@ -263,7 +258,6 @@ position = Vector2(1413, 983)
 
 [node name="MagicDrawingSystem" parent="." unique_id=1222554842 instance=ExtResource("5_mgc1s")]
 unique_name_in_owner = true
-visible = false
 
 [node name="SpellButton" type="Button" parent="." unique_id=1880602071]
 offset_left = 13.0
@@ -271,6 +265,11 @@ offset_top = 754.0
 offset_right = 88.0
 offset_bottom = 813.0
 text = ">_<"
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=341661218]
+offset_right = 1920.0
+offset_bottom = 1080.0
+texture = ExtResource("5_vf5bc")
 
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Attack" to="logicgame" method="_on_attack_pressed"]
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Defend" to="logicgame" method="_on_defend_pressed"]

@@ -48,8 +48,10 @@ width = 3.0
 default_color = Color(0, 0, 0, 1)
 
 [node name="ResourceUI" type="VBoxContainer" parent="." unique_id=1918446056]
-offset_right = 40.0
-offset_bottom = 40.0
+offset_left = 1054.0
+offset_top = 752.0
+offset_right = 1131.0
+offset_bottom = 861.0
 
 [node name="PaperLabel" type="Label" parent="ResourceUI" unique_id=731252920]
 unique_name_in_owner = true

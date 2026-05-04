@@ -631,12 +631,12 @@ func execute_knight_logic(knight):
 			
 			var push_dir = (grabber.grid_pos - knight.grid_pos).sign()
 			
-			var sprite = knight.get_node_or_null("Sprite2D")
-			if sprite:
-				if push_dir.x > 0: sprite.frame = 1      
-				elif push_dir.x < 0: sprite.frame = 2    
-				elif push_dir.y > 0: sprite.frame = 0    
-				elif push_dir.y < 0: sprite.frame = 3    
+			var _sprite = knight.get_node_or_null("Sprite2D")
+			if _sprite:
+				if push_dir.x > 0: _sprite.frame = 1      
+				elif push_dir.x < 0: _sprite.frame = 2    
+				elif push_dir.y > 0: _sprite.frame = 0    
+				elif push_dir.y < 0: _sprite.frame = 3    
 					
 			knight.is_grabbed = false
 			grabber.is_grabbed = false
@@ -747,12 +747,12 @@ func execute_bishop_logic(bishop):
 					deal_damage(unit, 35)
 					attacked = true
 					
-					var sprite = bishop.get_node_or_null("Sprite2D")
-					if sprite:
-						if dir.x > 0: sprite.frame = 1
-						elif dir.x < 0: sprite.frame = 2
-						elif dir.y > 0: sprite.frame = 0
-						elif dir.y < 0: sprite.frame = 3
+					var csprite = bishop.get_node_or_null("Sprite2D")
+					if csprite:
+						if dir.x > 0: csprite.frame = 1
+						elif dir.x < 0: csprite.frame = 2
+						elif dir.y > 0: csprite.frame = 0
+						elif dir.y < 0: csprite.frame = 3
 				break 
 				
 		if attacked: return 
@@ -1096,7 +1096,7 @@ func get_first_unit_in_direction(start_pos: Vector2i, direction: Vector2i, max_r
 		if unit:
 			return unit
 	return null
-func apply_spell_effects(element, instance):
+func apply_spell_effects(element, _instance):
 	match element:
 		SpellDictionary.Element.FIRE:
 			print("Gây sát thương 1 lần lên 1 ô")
@@ -1130,7 +1130,7 @@ func execute_fire_boosted(target_unit):
 		create_tile_effect(target_unit.grid_position, "fire_zone", 2)
 # logicgame.gd
 
-func create_tile_effect(grid_pos: Vector2i, type: String, duration: int, directions: Array = []):
+func create_tile_effect(grid_pos: Vector2i, type: String, duration: int, _directions: Array = []):
 
 	print("Tạo hiệu ứng ", type, " tại ", grid_pos, " tồn tại ", duration, " lượt.")
 
@@ -1290,7 +1290,7 @@ func execute_combined_logic(element, unit, pos, dirs, mult, is_multi, m_range):
 				if unit: unit.add_buff("double_attack", 1)
 # logicgame.gd
 
-func execute_standard_logic(element_type, target_unit, multiplier, is_multi):
+func execute_standard_logic(element_type, target_unit, multiplier, _is_multi):
 	match element_type:
 		SpellDictionary.Element.FIRE:
 			execute_fire_logic(target_unit, multiplier)
@@ -1364,19 +1364,19 @@ func sort_directions_priority(dirs: Array) -> Vector2i:
 	return dirs[0]
 
 # Gây ST diện rộng và đẩy lùi
-func aoe_damage_and_push(center_pos, damage, force):
+func aoe_damage_and_push(center_pos, damage, _force):
 	var neighbors = [Vector2i(0,1), Vector2i(0,-1), Vector2i(1,0), Vector2i(-1,0)]
 	for offset in neighbors:
 		var unit = get_unit_at(center_pos + offset)
 		if unit:
 			unit.take_damage(damage)
 			push_unit(unit, offset) # Hàm đẩy bạn đã viết ở hệ Gió
-func create_moving_aoe(pos: Vector2i, type: String, duration: int, direction: Vector2i):
+func create_moving_aoe(pos: Vector2i, type: String, _duration: int, direction: Vector2i):
 	# Code để tạo một object hiệu ứng có khả năng tự di chuyển mỗi lượt
 	print("Tạo AOE di động: ", type, " tại ", pos, " hướng ", direction)
-func create_static_obstacle(grid_pos: Vector2i, type: String, duration: int):
+func create_static_obstacle(grid_pos: Vector2i, _type: String, duration: int):
 	# Tạo một thực thể ngăn quân cờ đi vào ô này
-	var wall = preload("res://earth_wall.tscn").instantiate() # Giả sử bạn có scene này
+	var wall = preload("res://earth_wall.tscn").instantiate()
 	add_child(wall)
 	wall.grid_position = grid_pos
 	wall.duration = duration
