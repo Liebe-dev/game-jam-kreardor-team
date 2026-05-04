@@ -148,22 +148,31 @@ func spawn_initial_army():
 	if Global.current_wave == 1:
 		for i in range(8):
 			var pawn = player_pawn_scene.instantiate()
-			pawn.team = 1 # <--- THÊM DÒNG NÀY (Để game biết đây là quân ta)
+			pawn.team = 1
 			piece_layer.add_child(pawn)
 			all_pieces.append(pawn)
-			pawn.grid_pos = Vector2(i, 6)
-			if has_method("grid_to_pixel"): pawn.position = grid_to_pixel(Vector2(i, 6))
+			
+			# 1. Sửa thành Vector2i
+			pawn.grid_pos = Vector2i(i, 6) 
+			
+			# 2. BẮT BUỘC dùng global_position thay vì position
+			if has_method("grid_to_pixel"): 
+				pawn.global_position = grid_to_pixel(pawn.grid_pos)
 			
 		if player_king_scene:
 			var king = player_king_scene.instantiate()
-			king.team = 1 # <--- THÊM DÒNG NÀY (Để game biết Vua cũng là quân ta)
+			king.team = 1
 			piece_layer.add_child(king)
 			all_pieces.append(king)
-			king.grid_pos = Vector2(3, 7) 
-			if has_method("grid_to_pixel"): king.position = grid_to_pixel(Vector2(3, 7))
+			
+			# 1. Sửa thành Vector2i
+			king.grid_pos = Vector2i(3, 7) 
+			
+			# 2. BẮT BUỘC dùng global_position
+			if has_method("grid_to_pixel"): 
+				king.global_position = grid_to_pixel(king.grid_pos)
 
 		spawn_enemy_wave()
-
 func spawn_enemy_wave():
 	var wave_setup = []
 	
@@ -211,12 +220,16 @@ func spawn_enemy_wave():
 	for data in wave_setup:
 		if data["scene"] == null: continue
 		var enemy = data["scene"].instantiate()
-		enemy.team = 2 # <--- THÊM DÒNG NÀY (Để game biết đây là quân địch)
+		enemy.team = 2
 		piece_layer.add_child(enemy)
 		all_pieces.append(enemy)
-		enemy.grid_pos = data["pos"]
+		
+		# Chuyển đổi data["pos"] (đang là Vector2) sang Vector2i
+		enemy.grid_pos = Vector2i(data["pos"].x, data["pos"].y)
+		
+		# Dùng global_position
 		if has_method("grid_to_pixel"):
-			enemy.position = grid_to_pixel(data["pos"])
+			enemy.global_position = grid_to_pixel(enemy.grid_pos)
 func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 	if scene == null: return 
 	
@@ -392,10 +405,6 @@ func _on_end_turn_pressed():
 	await get_tree().create_timer(0.3).timeout
 	move_team_logic(2)
 	await get_tree().create_timer(0.2).timeout 
-func _on_spell_button_pressed():
-	%MagicDrawingSystem.show() # Sửa lại chữ M và D viết hoa
-	# Có thể thêm logic tạm dừng bàn cờ tại đây nếu cần
-
 	for p in all_pieces:
 		if is_instance_valid(p):
 			check_and_execute_grab(p)
@@ -410,6 +419,8 @@ func _on_spell_button_pressed():
 	current_turn += 1
 	if turn_label:
 		turn_label.text = "Turn: " + str(current_turn)
+	Global.has_casted_spell = false
+	%ClosedScrollButton.show() # Ép cuộn giấy nhỏ hiện ra lại
 	process_ammo_reloads()
 
 	# Sau khi đánh nhau xong, đếm xem địch còn mống nào không

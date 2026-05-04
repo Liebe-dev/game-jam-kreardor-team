@@ -185,6 +185,7 @@ func _on_end_turn_button_pressed():
 			directions.append(final_dir)
 			print("Nhận diện mũi tên thành công tại hướng: ", final_dir)
 	print("Đã niệm phép: ", element, " | Tọa độ: ", target_coords, " | Hướng: ", directions)
+	Global.has_casted_spell = true
 	spell_casted.emit(element, target_coords, directions)
 	clear_all_strokes()
 	close_scroll()

@@ -90,9 +90,11 @@ offset_bottom = 680.0
 pivot_offset = Vector2(485, 297)
 
 [node name="UndoButton" type="Button" parent="." unique_id=904154048]
-offset_left = -846.0
-offset_right = -838.0
-offset_bottom = 8.0
+offset_left = 301.0
+offset_top = 823.0
+offset_right = 376.0
+offset_bottom = 898.0
+text = "xóa mực"
 
 [node name="TextureRect" type="TextureRect" parent="." unique_id=452280271]
 visible = false

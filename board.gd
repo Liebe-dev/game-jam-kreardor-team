@@ -10,7 +10,8 @@ func _ready():
 
 # Khi nghe thấy tín hiệu, hiện lại nút cuộn giấy ở góc màn hình
 func _on_magic_scroll_closed():
-	closed_scroll_btn.show()
+	if not Global.has_casted_spell:
+		closed_scroll_btn.show()
 func _on_closed_scroll_button_pressed():
 	# Ẩn cuộn giấy nhỏ đi
 	closed_scroll_btn.hide()

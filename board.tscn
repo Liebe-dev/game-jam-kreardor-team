@@ -12,6 +12,18 @@
 [node name="board" type="Node2D" unique_id=1273165699]
 script = ExtResource("1_tngv2")
 
+[node name="BG" type="TextureRect" parent="." unique_id=341661218]
+offset_right = 1920.0
+offset_bottom = 1080.0
+texture = ExtResource("5_vf5bc")
+
+[node name="char" type="TextureRect" parent="." unique_id=2000966772]
+offset_left = 1431.0
+offset_top = 438.0
+offset_right = 1953.0
+offset_bottom = 1262.0
+texture = ExtResource("6_mgc1s")
+
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=1222878674]
 offset_left = 481.0
 offset_top = 103.0
@@ -264,25 +276,6 @@ position = Vector2(1413, 983)
 unique_name_in_owner = true
 visible = false
 
-[node name="SpellButton" type="Button" parent="." unique_id=1880602071]
-offset_left = 13.0
-offset_top = 754.0
-offset_right = 88.0
-offset_bottom = 813.0
-text = ">_<"
-
-[node name="BG" type="TextureRect" parent="." unique_id=341661218]
-offset_right = 1920.0
-offset_bottom = 1080.0
-texture = ExtResource("5_vf5bc")
-
-[node name="char" type="TextureRect" parent="." unique_id=2000966772]
-offset_left = 1431.0
-offset_top = 438.0
-offset_right = 1953.0
-offset_bottom = 1262.0
-texture = ExtResource("6_mgc1s")
-
 [node name="ClosedScrollButton" type="TextureButton" parent="." unique_id=1439694252]
 unique_name_in_owner = true
 offset_left = 35.0
@@ -294,5 +287,4 @@ texture_normal = ExtResource("8_c4ttu")
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Attack" to="logicgame" method="_on_attack_pressed"]
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Defend" to="logicgame" method="_on_defend_pressed"]
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/EndTurn" to="logicgame" method="_on_end_turn_pressed"]
-[connection signal="pressed" from="SpellButton" to="logicgame" method="_on_spell_button_pressed"]
 [connection signal="pressed" from="ClosedScrollButton" to="." method="_on_closed_scroll_button_pressed"]
