@@ -264,11 +264,8 @@ func spawn_enemy_wave():
 		if has_method("grid_to_pixel"):
 			enemy.global_position = grid_to_pixel(enemy.grid_pos)
 	
-	if Global.current_wave == 6:
-		spawn_final_boss()
-	else:
-		# Code spawn lính thường cũ của bạn
-		pass
+	#if Global.current_wave == 6:
+		#spawn_final_boss()
 
 func spawn_final_boss():
 	boss.hp = 1000
