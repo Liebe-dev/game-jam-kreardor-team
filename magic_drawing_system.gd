@@ -307,11 +307,10 @@ func get_cluster_center(cluster: Array) -> Vector2:
 	return center / count
 
 func get_angle_deg(cluster_center: Vector2) -> float:
-	var circle_center = Vector2(763, 725) 
+	var circle_center = magic_circle.position + (magic_circle.size / 2.0)
+	
 	var dir_vec = cluster_center - circle_center
 	return rad_to_deg(dir_vec.angle())
-
-
 func _on_close_area_button_pressed():
 	close_scroll()
 func show_scroll():
