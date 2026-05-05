@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://h3recsy7hn1w"]
+
+[ext_resource type="Script" uid="uid://c41r0atufyt7h" path="res://boss_dragon.gd" id="1_5qbq3"]
+[ext_resource type="Texture2D" uid="uid://chifl843pph40" path="res://icon.svg" id="2_ccbyq"]
+
+[node name="BossDragon" type="Node2D" unique_id=2076696082]
+script = ExtResource("1_5qbq3")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=441509716]
+texture = ExtResource("2_ccbyq")

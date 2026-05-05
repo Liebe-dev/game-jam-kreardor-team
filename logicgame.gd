@@ -18,11 +18,12 @@ var dummy_scene = preload("res://TargetDummy.tscn")
 @onready var btn_defend = $"../CanvasLayer/HBoxContainer/Defend"
 @onready var wave_label = $"../CanvasLayer/WaveLabel"
 @onready var turn_label = $"../CanvasLayer/TurnLabel"
-
+var dragon_res = load("res://boss_dragon.tscn") 
+var boss = dragon_res.instantiate()
 var current_turn = 1
 enum Command { ATTACK, DEFEND, IDLE }
 var current_command = Command.IDLE # Mặc định là đứng im
-
+var current_attack_index = 0
 var has_moved_main_piece = false # Kiểm tra xem lượt này đã đi quân chính chưa
 var piece_layer: Node2D 
 var all_pieces = []
@@ -148,7 +149,29 @@ func transition_to_next_wave():
 			# Giả sử hình quay lưng nằm ở tọa độ y = 64 trên Sprite Sheet
 			# Bạn hãy kiểm tra thông số Region trong Inspector của Pawn để điền số đúng
 			sprite.region_rect = Rect2(0, 64, 64, 64)
-
+# Đợi lính load xong
+	await get_tree().process_frame
+	
+	for p in all_pieces:
+		if is_instance_valid(p):
+			# Duyệt qua TẤT CẢ các node con của lính để tìm hình ảnh
+			for child in p.get_children():
+				
+				# Xử lý nếu nó là hình tĩnh (Sprite2D)
+				if child is Sprite2D:
+					if p.team == 1:
+						child.frame = 1 # Quân ta: nhìn lưng
+					else:
+						# QUÂN ĐỊCH: Ép nhìn xuống
+						child.frame = 0 # Đổi thành frame nhìn mặt của mấy con lính mới
+						# child.flip_v = true # (Mở cmt dòng này nếu bạn dùng cách lật ảnh chứ không dùng frame)
+						
+				# Xử lý phòng hờ nếu lính mới là ảnh động (AnimatedSprite2D)
+				elif child is AnimatedSprite2D:
+					if p.team == 1:
+						child.play("up") # Quân ta nhìn lên
+					else:
+						child.play("down") # Quân địch nhìn xuống
 # --- HÀM 2: CÔNG TẮC KIỂM TRA ĐIỀU KIỆN ---
 func check_and_trigger_next_wave():
 	if Global.current_wave >= 5:
@@ -240,6 +263,20 @@ func spawn_enemy_wave():
 		# Dùng global_position
 		if has_method("grid_to_pixel"):
 			enemy.global_position = grid_to_pixel(enemy.grid_pos)
+	
+	if Global.current_wave == 6:
+		spawn_final_boss()
+	else:
+		# Code spawn lính thường cũ của bạn
+		pass
+
+func spawn_final_boss():
+	boss.hp = 1000
+	# Đặt boss vào giữa hàng trên cùng
+	boss.grid_pos = Vector2i(3, 0) 
+	boss.position = grid_to_pixel(boss.grid_pos)
+	piece_layer.add_child(boss)
+	all_pieces.append(boss)
 func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 	if scene == null: return 
 	
@@ -575,7 +612,8 @@ func _on_end_turn_pressed():
 	
 	for p in all_pieces:
 		if is_instance_valid(p):
-			p.has_moved = false
+			if "has_moved" in p:
+				p.has_moved = false
 	has_moved_main_piece = false
 	selected_piece = null
 	current_turn += 1
@@ -620,8 +658,8 @@ func move_team_logic(team_num: int):
 		if not is_instance_valid(p) or p.team != team_num: continue
 		
 		# ---- SỬA DÒNG NÀY: Thêm or "Dummy" in p.name ----
-		if p.is_grabbed or "King" in p.name or "Dummy" in p.name: continue 
-		
+		if p.get("is_grabbed") == true or "King" in p.name or "Dummy" in p.name or "boss" in p.name.to_lower() or "dragon" in p.name.to_lower(): 
+			continue
 		if p.has_moved: continue
 
 		if "Rook" in p.name:
@@ -965,7 +1003,50 @@ func execute_bishop_logic(bishop):
 		
 	if best_move != bishop.grid_pos:
 		move_piece(bishop, best_move)
+func execute_boss_turn():
+	match current_attack_index:
+		0: scream_pushback()
+		1: fire_breath_single()
+		2: claw_swipe()
+		3: triple_fireball()
+	
+	# Luân phiên đòn đánh
+	current_attack_index = (current_attack_index + 1) % 4
 
+# --- CHI TIẾT KỸ NĂNG ---
+
+# 1. Hét đẩy lùi 2 ô
+func scream_pushback():
+	for p in all_pieces:
+		if is_instance_valid(p) and p.team == 1:
+			p.grid_pos.y += 2 # Đẩy xuống dưới 2 ô
+			p.grid_pos.y = clamp(p.grid_pos.y, 0, 7) # Không đẩy ra khỏi bàn
+			p.position = grid_to_pixel(p.grid_pos)
+
+# 2. Khạc lửa đơn + Đốt
+func fire_breath_single():
+	var players = get_all_team_units(1)
+	if players.size() > 0:
+		var target = players.pick_random()
+		deal_damage(target, 20)
+		target.set("burn_ticks", 2) # Hiệu ứng đốt 2 lượt
+
+# 3. Cào 3 ô phía trước
+func claw_swipe():
+	for x in range(3, 3 + 3): # 3 là tọa độ x của rồng
+		var target_pos = Vector2i(x, 0 + 3) # 0 là tọa độ y của rồng
+		var unit = find_unit_at(target_pos)
+		if unit: deal_damage(unit, 25)
+
+# 4. 3 Cầu lửa nổ 3x3
+func triple_fireball():
+	for i in range(3):
+		var center = Vector2i(randi()%8, randi()%8)
+		# Quét vùng nổ 3x3 quanh tâm
+		for x in range(-1, 2):
+			for y in range(-1, 2):
+				var unit = find_unit_at(center + Vector2i(x, y))
+				if unit: deal_damage(unit, 15)
 func check_and_execute_grab(pawn):
 	if "King" in pawn.name: return 
 	if pawn.is_grabbed: return 
@@ -1623,3 +1704,14 @@ func reward_allies_nearby(origin_pos: Vector2i, amount: int, type: String):
 				if type == "paper": Global.add_paper(amount)
 				print("Thưởng đồng minh tại: ", check_pos)
 # Hàm dịch tọa độ từ Chữ/Số (["E", "4"]) sang Grid (Vector2i(4, 3))
+func get_all_team_units(team_num: int) -> Array:
+	var units = []
+	for p in all_pieces:
+		if is_instance_valid(p) and p.get("team") == team_num:
+			units.append(p)
+	return units
+func find_unit_at(pos: Vector2i):
+	for p in all_pieces:
+		if is_instance_valid(p) and p.grid_pos == pos:
+			return p
+	return null

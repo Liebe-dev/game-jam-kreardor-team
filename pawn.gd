@@ -79,3 +79,14 @@ func update_visuals():
 	else:
 		# SỬA Ở ĐÂY: Xóa bỏ việc chia team. Trả tất cả về màu gốc của ảnh (Trắng)
 		modulate = Color(1, 1, 1)
+var burn_ticks = 0
+
+# Tìm hàm xử lý theo lượt của lính hoặc tạo mới nếu chưa có
+func apply_burn_damage():
+	if burn_ticks > 0:
+		current_health -= 5
+		burn_ticks -= 1
+		print("Lính bị đốt! Máu còn: ", current_health)
+		# Cập nhật thanh máu nếu có
+		if has_node("HealthBar"):
+			$HealthBar.value = current_health
