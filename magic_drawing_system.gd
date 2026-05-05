@@ -26,6 +26,7 @@ var strokes : Array = [] # Mảng chứa các nét vẽ (mỗi nét là 1 mảng
 var current_stroke : Array = []
 
 func _ready():
+	Global.magic_system = self
 	$GestureRecognizer.LoadGesturesFromResources("res://addons/Gesture_recognizer/resources/gestures/")
 	update_ui()
 	max_scroll_width = %UI_Container.size.x
@@ -351,3 +352,26 @@ func clear_all_strokes():
 	# Reset lại lượng mực
 	current_ink = max_ink
 	update_ui()
+# Hàm này để các script khác (như logicgame) có thể gọi tới
+func add_ink(amount: float):
+	# Cộng mực vào biến có sẵn
+	current_ink += amount
+	
+	# Đảm bảo mực không vượt quá giới hạn (giả sử max là 100)
+	if current_ink > 2000:
+		current_ink = 2000
+	
+	# In ra để debug xem mực có tăng thật không
+	print("[Magic System] Đã nhận ", amount, " mực. Mực hiện tại: ", current_ink)
+	
+	# QUAN TRỌNG: Nếu bạn có thanh ProgressBar hiển thị mực, hãy cập nhật nó ở đây
+	# Ví dụ:
+	# if has_node("InkBar"):
+	#    $InkBar.value = current_ink
+# Hàm này để cập nhật con số hiển thị trên màn hình
+func update_paper_ui(new_amount: int):
+	# Dùng find_child để Godot tự đi tìm cái nhãn cho mình, đỡ bị lỗi null
+	var label = find_child("PaperLabel", true, false)
+	
+	if label:
+		label.text = "Giấy: " + str(new_amount)

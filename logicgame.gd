@@ -12,7 +12,7 @@ var enemy_knight_scene = preload("res://Knight.tscn")
 var enemy_bishop_scene = preload("res://Bishop.tscn")
 var enemy_rook_scene = preload("res://Rook.tscn")
 var enemy_queen_scene = preload("res://Queen.tscn")
-
+var dummy_scene = preload("res://TargetDummy.tscn")
 @onready var grid_points = $"../GridPoints"
 @onready var btn_attack = $"../CanvasLayer/HBoxContainer/Attack"
 @onready var btn_defend = $"../CanvasLayer/HBoxContainer/Defend"
@@ -63,20 +63,33 @@ func count_enemies_alive() -> int:
 func transition_to_next_wave():
 	# 1. RESET THÔNG SỐ WAVE & TURN
 	Global.current_wave += 1
-	current_turn = 1 # Reset bộ đếm lượt về 1
+	current_turn = 1 
 	
-	# Cập nhật UI (nếu bạn có các Label này)
 	if wave_label: wave_label.text = "Wave: " + str(Global.current_wave)
 	if turn_label: turn_label.text = "Turn: 1"
 		
-	# 2. DỌN SẠCH QUÂN ĐỊCH CŨ (Team 2)
-	# Bạn có thể gọi hàm clear_old_enemies() nếu đã viết riêng, hoặc dùng đoạn này:
+	# 2. DỌN SẠCH QUÂN ĐỊCH CŨ (Xóa Hình Nộm)
 	for i in range(all_pieces.size() - 1, -1, -1):
 		var p = all_pieces[i]
 		if is_instance_valid(p) and p.team == 2:
 			all_pieces.remove_at(i)
 			p.queue_free()
 
+	# --- THÊM ĐOẠN NÀY ĐỂ XỬ LÝ RIÊNG KHI TỪ PHÒNG TẬP (WAVE 0) SANG WAVE 1 ---
+	if Global.current_wave == 1:
+		# Gọi nguyên đội hình quân ta full máu + Sinh luôn lính địch Wave 1
+		spawn_initial_army() 
+		
+		# Cập nhật hướng xoay của lính (nếu cần thiết)
+		await get_tree().process_frame
+		for p in all_pieces:
+			if is_instance_valid(p) and p.has_node("Sprite2D"):
+				p.get_node("Sprite2D").region_rect = Rect2(0, 64, 64, 64)
+				
+		return # <-- LỆNH RETURN CỰC QUAN TRỌNG: Kết thúc hàm tại đây, bỏ qua đoạn Hồi Sinh bên dưới
+
+	# =========================================================
+	# TỪ ĐOẠN NÀY TRỞ XUỐNG BẠN GIỮ NGUYÊN CODE CŨ (Sắp xếp, Hồi máu, Hồi sinh...)
 	# 3. SẮP XẾP LẠI QUÂN TA (Team 1) - GIỮ MÁU & HỒI MÁU
 	var current_pawns = []
 	var king_piece = null
@@ -145,38 +158,35 @@ func check_and_trigger_next_wave():
 	transition_to_next_wave()
 
 func spawn_initial_army():
+	# Chỉ sinh quân ta nếu là Wave 1 (Bắt đầu trận đấu thực sự)
 	if Global.current_wave == 1:
 		for i in range(8):
 			var pawn = player_pawn_scene.instantiate()
 			pawn.team = 1
 			piece_layer.add_child(pawn)
 			all_pieces.append(pawn)
-			
-			# 1. Sửa thành Vector2i
-			pawn.grid_pos = Vector2i(i, 6) 
-			
-			# 2. BẮT BUỘC dùng global_position thay vì position
-			if has_method("grid_to_pixel"): 
-				pawn.global_position = grid_to_pixel(pawn.grid_pos)
+			pawn.grid_pos = Vector2i(i, 6)
+			if has_method("grid_to_pixel"): pawn.global_position = grid_to_pixel(pawn.grid_pos)
 			
 		if player_king_scene:
 			var king = player_king_scene.instantiate()
 			king.team = 1
 			piece_layer.add_child(king)
 			all_pieces.append(king)
-			
-			# 1. Sửa thành Vector2i
 			king.grid_pos = Vector2i(3, 7) 
-			
-			# 2. BẮT BUỘC dùng global_position
-			if has_method("grid_to_pixel"): 
-				king.global_position = grid_to_pixel(king.grid_pos)
+			if has_method("grid_to_pixel"): king.global_position = grid_to_pixel(king.grid_pos)
 
-		spawn_enemy_wave()
+	# LUÔN LUÔN GỌI ĐỊCH (Để Wave 0 còn ra Hình Nộm)
+	spawn_enemy_wave()
 func spawn_enemy_wave():
 	var wave_setup = []
 	
 	match Global.current_wave:
+		0: # --- WAVE 0: PHÒNG TẬP (Chỉ có Hình Nộm) ---
+			wave_setup = [
+				{"scene": dummy_scene, "pos": Vector2(4, 3)} 
+				# Bạn có thể phẩy và thêm nhiều dummy nữa ở các tọa độ khác nếu muốn test AOE!
+			]
 		1: 
 			wave_setup = [
 				{"scene": enemy_pawn_scene, "pos": Vector2(1, 1)},
@@ -303,7 +313,159 @@ func _input(event):
 			else:
 				clear_highlights()
 				selected_piece = null
+# ==========================================
+	# --- PHÍM TẮT DEBUG: TEST PHÉP NHANH ---
+	# ==========================================
+	if event is InputEventKey and event.pressed:
+		
+		# BẤM PHÍM 1: Test phép Lửa (Ví dụ đánh vào ô E4 - tọa độ 4,3 của Hình Nộm)
+		if event.keycode == KEY_1:
+			print("[DEBUG] Test Phép Lửa tại E4!")
+			# Chú ý: Bọc Element.FIRE trong ngoặc vuông []
+			var elements = [SpellDictionary.Element.FIRE] 
+			var coords = ["E", "4"] 
+			var dirs = [] 
+			
+			cast_complex_spell(elements, coords, dirs)	
+		# BẤM PHÍM 2: Test phép Lửa có Hướng
+		elif event.keycode == KEY_2:
+			print("[DEBUG] Test Phép Lửa hướng sang Phải!")
+			var elements = [SpellDictionary.Element.FIRE]
+			var coords = ["E", "4"]
+			var dirs = [Vector2i(1, 0)] 
+			
+			cast_complex_spell(elements, coords, dirs)
 
+		# BẤM PHÍM 3: Test phép Nước (Hồi máu)
+		elif event.keycode == KEY_3:
+			print("[DEBUG] Test Phép Nước tại E4!")
+			var elements = [SpellDictionary.Element.WATER]
+			var coords = ["E", "4"]
+			var dirs = []
+			
+			cast_complex_spell(elements, coords, dirs)
+		# BẤM PHÍM 4: Trực tiếp qua Turn nhanh (Đỡ phải click nút End Turn)
+		elif event.keycode == KEY_4:
+			print("[DEBUG] Chuyển Turn nhanh!")
+			_on_end_turn_pressed()
+		# BẤM PHÍM Q: Test phép Đất thường (Miễn ST + Nhận giấy)
+		elif event.keycode == KEY_Q:
+			print("[DEBUG] Test Phép Đất cơ bản tại E4!")
+			var elements = [SpellDictionary.Element.EARTH]
+			var coords = ["E", "4"]
+			var dirs = []
+			
+			cast_complex_spell(elements, coords, dirs)
+
+		# BẤM PHÍM E: Test phép Gió thường (Đánh 2 lần)
+		elif event.keycode == KEY_E:
+			print("[DEBUG] Test Phép Gió cơ bản tại E4!")
+			var elements = [SpellDictionary.Element.WIND]
+			var coords = ["E", "4"]
+			var dirs = []
+			
+			cast_complex_spell(elements, coords, dirs)
+	# ==========================================
+		# --- TEST PHÉP GỘP VÀ GIA CƯỜNG ---
+		# ==========================================
+		
+		# BẤM PHÍM 5: Test Phép Gộp (Lửa + Đất) -> Lan truyền lửa / Dung nham
+		elif event.keycode == KEY_5:
+			print("[DEBUG] Test Phép Gộp: Lửa + Đất tại E4!")
+			# Truyền vào mảng gồm 2 nguyên tố
+			var elements = [SpellDictionary.Element.FIRE, SpellDictionary.Element.EARTH]
+			var coords = ["E", "4"] 
+			var dirs = [] # Có thể thêm hướng Vector2i(1,0) vào đây nếu muốn test lan truyền theo hướng
+			
+			# Gọi thẳng hàm phức hợp của bạn
+			cast_complex_spell(elements, coords, dirs)
+
+		# BẤM PHÍM 6: Test Phép Gộp (Lửa + Gió) -> Bão Lửa (Cần có hướng)
+		elif event.keycode == KEY_6:
+			print("[DEBUG] Test Phép Gộp: Bão Lửa (Lửa + Gió) đẩy sang phải!")
+			var elements = [SpellDictionary.Element.FIRE, SpellDictionary.Element.WIND]
+			var coords = ["E", "4"]
+			var dirs = [Vector2i(1, 0)] # Bắt buộc truyền hướng để bão lửa biết đường thổi
+			
+			cast_complex_spell(elements, coords, dirs)
+			
+		# BẤM PHÍM 7: Test Phép Gia Cường (Đất + Đất) -> Siêu phòng thủ
+		elif event.keycode == KEY_7:
+			print("[DEBUG] Test Phép Gia Cường: Đất x2 tại E4!")
+			var elements = [SpellDictionary.Element.EARTH, SpellDictionary.Element.EARTH]
+			var coords = ["E", "4"]
+			var dirs = []
+			
+			cast_complex_spell(elements, coords, dirs)
+			
+		# BẤM PHÍM 8: Test Phép Gộp Multi-target (Niệm 2 ô cùng lúc)
+		elif event.keycode == KEY_8:
+			print("[DEBUG] Test Phép Gộp: Nước + Gió lên 2 mục tiêu cùng lúc!")
+			var elements = [SpellDictionary.Element.WATER, SpellDictionary.Element.WIND]
+			# Truyền vào 4 giá trị để hệ thống chặt ra làm 2 cặp tọa độ (Ví dụ E4 và F4)
+			var coords = ["E", "4", "F", "4"] 
+			var dirs = []
+			
+			cast_complex_spell(elements, coords, dirs)
+			# BẤM PHÍM 9: Test Phép Gộp (Nước + Đất) -> Đầm lầy trói chân
+		elif event.keycode == KEY_9:
+			print("[DEBUG] Test Phép Gộp: Đầm Lầy (Nước + Đất) tại E4!")
+			var elements = [SpellDictionary.Element.WATER, SpellDictionary.Element.EARTH]
+			var coords = ["E", "4"]
+			var dirs = []
+			cast_complex_spell(elements, coords, dirs)
+
+		# BẤM PHÍM R: Test Siêu Phép Gộp (3 Nguyên Tố: Lửa + Gió + Đất)
+		# Dành cho các đòn Ultimate đỉnh cao
+		elif event.keycode == KEY_R:
+			print("[DEBUG] Test ULTIMATE: Thiên Thạch Rơi (Lửa + Gió + Đất) tại E4!")
+			var elements = [
+				SpellDictionary.Element.FIRE, 
+				SpellDictionary.Element.WIND, 
+				SpellDictionary.Element.EARTH
+			]
+			var coords = ["E", "4"]
+			var dirs = [Vector2i(0, 1)] # Hướng thiên thạch cắm xuống
+			cast_complex_spell(elements, coords, dirs)
+
+		# BẤM PHÍM T: Test Gia Cường Nước (Nước + Nước) -> Hồi máu diện rộng
+		elif event.keycode == KEY_T:
+			print("[DEBUG] Test Phép Gia Cường: Nước x2 (Siêu hồi máu) tại E4!")
+			var elements = [SpellDictionary.Element.WATER, SpellDictionary.Element.WATER]
+			var coords = ["E", "4"]
+			var dirs = []
+			cast_complex_spell(elements, coords, dirs)
+
+		# BẤM PHÍM Y: Test Gia Cường Gió (Gió + Gió) -> Loạn đấu (Đánh 3-4 lần)
+		elif event.keycode == KEY_Y:
+			print("[DEBUG] Test Phép Gia Cường: Gió x2 (Liên hoàn kích) tại E4!")
+			var elements = [SpellDictionary.Element.WIND, SpellDictionary.Element.WIND]
+			var coords = ["E", "4"]
+			var dirs = []
+			cast_complex_spell(elements, coords, dirs)
+			# BẤM PHÍM U: Test Hợp ấn (Lửa + Nước) -> Hơi nước/Mù mịt
+		elif event.keycode == KEY_U:
+			print("[DEBUG] Test Hợp ấn: Hơi nước (Lửa + Nước) tại E4!")
+			var elements = [SpellDictionary.Element.FIRE, SpellDictionary.Element.WATER]
+			var coords = ["E", "4"]
+			var dirs = []
+			cast_complex_spell(elements, coords, dirs)
+
+		# BẤM PHÍM I: Test Hợp ấn (Nước + Gió) -> Bão tuyết/Lạnh giá
+		elif event.keycode == KEY_I:
+			print("[DEBUG] Test Hợp ấn: Bão tuyết (Nước + Gió) tại E4!")
+			var elements = [SpellDictionary.Element.WATER, SpellDictionary.Element.WIND]
+			var coords = ["E", "4"]
+			var dirs = []
+			cast_complex_spell(elements, coords, dirs)
+
+		# BẤM PHÍM O: Test Hợp ấn (Gió + Đất) -> Bão cát
+		elif event.keycode == KEY_O:
+			print("[DEBUG] Test Hợp ấn: Bão cát (Gió + Đất) tại E4!")
+			var elements = [SpellDictionary.Element.WIND, SpellDictionary.Element.EARTH]
+			var coords = ["E", "4"]
+			var dirs = [Vector2i(1, 0)] # Hướng bão cát thổi
+			cast_complex_spell(elements, coords, dirs)
 func get_piece_at(grid_pos: Vector2i):
 	for p in all_pieces:
 		if is_instance_valid(p) and p.grid_pos == grid_pos:
@@ -456,7 +618,10 @@ func execute_all_combat_logic():
 func move_team_logic(team_num: int):
 	for p in all_pieces:
 		if not is_instance_valid(p) or p.team != team_num: continue
-		if p.is_grabbed or "King" in p.name: continue 
+		
+		# ---- SỬA DÒNG NÀY: Thêm or "Dummy" in p.name ----
+		if p.is_grabbed or "King" in p.name or "Dummy" in p.name: continue 
+		
 		if p.has_moved: continue
 
 		if "Rook" in p.name:
@@ -1074,12 +1239,15 @@ func clear_old_enemies():
 			all_pieces.remove_at(i) # Xóa khỏi danh sách quản lý
 			p.queue_free() # Xóa khỏi màn hình
 
-func get_unit_at(grid_pos: Vector2i):
-	# Duyệt qua tất cả các quân cờ đang có trên bàn cờ
-	# Giả sử các quân cờ nằm trong một nhóm tên là "units"
-	for unit in get_tree().get_nodes_in_group("units"):
-		if unit.grid_position == grid_pos:
-			return unit
+func get_unit_at(pos: Vector2i):
+	# Duyệt qua mảng all_pieces (giống hệt như cách cái Radar hoạt động)
+	for p in all_pieces:
+		if is_instance_valid(p):
+			# So sánh tọa độ grid_pos chuẩn xác
+			if Vector2i(p.grid_pos) == Vector2i(pos):
+				return p
+				
+	# Nếu quét hết không thấy ai ở ô đó thì trả về rỗng
 	return null
 func cast_spell(element_type):
 	# 1. Tìm tên file scene cần load từ Dictionary
@@ -1164,11 +1332,12 @@ func execute_water_logic(target_unit, multiplier):
 	if target_unit:
 		# Gốc 50 heal -> Multiplier 0.4 (nếu 2 ô) = 20 heal
 		target_unit.heal(50 * multiplier)
-	Global.add_ink(1)
-func execute_water_boosted(target_pos):
-	# Tạo vùng hồi máu tồn tại 3 lượt
-	create_tile_effect(target_pos, "healing_rain", 3) 
-	# Logic cộng mực sẽ được xử lý trong script của ô hiệu ứng (tile_effect.gd)
+	Global.magic_system.add_ink(500)
+func execute_water_boosted(target_unit):
+	# Kiểm tra xem có lính không và lấy tọa độ của lính đó
+	if target_unit and "grid_pos" in target_unit:
+		var pos = target_unit.grid_pos 
+		create_tile_effect(pos, "healing_rain", 3)
 # --- Hệ GIÓ (Wind) ---
 func execute_wind_logic(target_unit, multiplier):
 	if target_unit:
@@ -1212,7 +1381,7 @@ func cast_complex_spell(elements, coordinates, directions):
 		var pair = [coordinates[i], coordinates[i+1]]
 		var grid_pos = Global.convert_to_grid(pair)
 		var target_unit = get_unit_at(grid_pos)
-		
+		print("[HỆ THỐNG] Đang đánh vào tọa độ: ", grid_pos, " | Mục tiêu tìm thấy: ", target_unit)
 		if is_hybrid and not is_boosted:
 			# Gọi logic Hợp Ấn (Lửa+Đất, Lửa+Gió...)
 			execute_hybrid_spell(elements, grid_pos, directions)
@@ -1315,8 +1484,26 @@ func execute_standard_logic(element_type, target_unit, multiplier, _is_multi):
 
 # logicgame.gd
 
-func execute_hybrid_spell(elements: Array, target_pos: Vector2i, directions: Array):
-	elements.sort() # Đảm bảo thứ tự để khớp cặp
+# Sửa lại khai báo hàm để nhận đủ tham số từ hệ thống cast phép
+func execute_hybrid_spell(elements: Array, grid_pos: Vector2i, directions: Array = []):
+	var target_pos = grid_pos 
+	var target_unit = get_unit_at(grid_pos) # Lấy mục tiêu tại ô đánh
+	
+	# 1. Gây sát thương (Đây là dòng bạn đang thiếu)
+	if target_unit and target_unit.has_method("take_damage"):
+		var base_dmg = 20 # Bạn có thể chỉnh lượng dmg tùy ý
+		target_unit.take_damage(base_dmg)
+		print("[HỆ THỐNG] Phép gộp gây ", base_dmg, " sát thương lên mục tiêu.")
+	
+	# 2. Xử lý phần thưởng giấy mực
+	var reward_amount = 2.0 # Phép gộp mặc định cho 2 giấy
+	check_ally_hit_reward(grid_pos, reward_amount, "paper")
+	
+	# 3. Logic tạo hiệu ứng đặc biệt (Lửa + Đất = Dung nham, v.v.)
+	# ... các logic sort elements và tạo tile_effect cũ của bạn ...
+	
+	# Sau đó là các logic cũ của bạn (Lửa + Đất, v.v.)
+	# elements.sort() ...
 	var e1 = elements[0]
 	var e2 = elements[1]
 
@@ -1407,12 +1594,13 @@ func clear_tile_effects(grid_pos: Vector2i):
 			effect.queue_free()
 func check_ally_hit_reward(pos: Vector2i, amount: float, resource_type: String):
 	var unit = get_unit_at(pos)
-	if unit and not unit.is_enemy:
+	
+	# Kiểm tra unit tồn tại VÀ có biến is_enemy VÀ không phải kẻ địch
+	if unit and ("is_enemy" in unit) and not unit.is_enemy:
 		if resource_type == "paper":
 			Global.add_paper(int(amount))
 		elif resource_type == "ink":
 			Global.add_ink(amount)
-# logicgame.gd
 
 func aoe_damage_push_with_collision(center_pos: Vector2i, damage: float, push_dir: Vector2i):
 	# Duyệt 8 ô xung quanh (AOE 3x3)
@@ -1434,3 +1622,4 @@ func reward_allies_nearby(origin_pos: Vector2i, amount: int, type: String):
 			if unit and not unit.is_enemy:
 				if type == "paper": Global.add_paper(amount)
 				print("Thưởng đồng minh tại: ", check_pos)
+# Hàm dịch tọa độ từ Chữ/Số (["E", "4"]) sang Grid (Vector2i(4, 3))
