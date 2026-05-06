@@ -316,28 +316,15 @@ func _on_close_area_button_pressed():
 	close_scroll()
 func show_scroll():
 	self.show()
-	
-	# 1. Đảm bảo vị trí Y bình thường (xóa lỗi nếu bạn đang dùng code trượt dọc cũ)
 	%UI_Container.position.y = 0 
-	
-	# 2. Bắt đầu với chiều rộng = 0 (Cuộn giấy bị thu hẹp hoàn toàn về lề trái)
 	%UI_Container.size.x = 0
-	
-	# 3. Tạo hiệu ứng Tween mượt mà mở rộng chiều ngang ra
 	var tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(%UI_Container, "size:x", max_scroll_width, 0.2) # Kéo ra trong 0.4s
-# Hàm xử lý việc đóng cuộn giấy
-# Hàm xử lý việc đóng cuộn giấy
+	tween.tween_property(%UI_Container, "size:x", max_scroll_width, 0.2)
 func close_scroll():
-	# Tạo hiệu ứng thu hẹp chiều ngang về 0 (Cuộn lại)
 	var tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	tween.tween_property(%UI_Container, "size:x", 0.0, 0.3) # Cuộn vào trong 0.3s
+	tween.tween_property(%UI_Container, "size:x", 0.0, 0.3)
 	
-	# Chỉ yêu cầu: Chờ cuộn xong thì mới ẩn giao diện (không xóa nét vẽ nữa)
 	tween.finished.connect(_on_close_animation_finished)
-
-# -----------------
-# Lưu ý: Đảm bảo 2 hàm bên dưới của bạn vẫn giữ y nguyên thế này nhé:
 func _on_close_animation_finished():
 	self.hide()
 	scroll_closed.emit()
@@ -349,7 +336,6 @@ func clear_all_strokes():
 	for line in lines_container.get_children():
 		line.queue_free()
 		
-	# Reset lại lượng mực
 	current_ink = max_ink
 	update_ui()
 # Hàm này để các script khác (như logicgame) có thể gọi tới
