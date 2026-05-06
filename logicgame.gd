@@ -347,159 +347,85 @@ func _input(event):
 			else:
 				clear_highlights()
 				selected_piece = null
-# ==========================================
-	# --- PHÍM TẮT DEBUG: TEST PHÉP NHANH ---
-	# ==========================================
 	if event is InputEventKey and event.pressed:
-		
-		# BẤM PHÍM 1: Test phép Lửa (Ví dụ đánh vào ô E4 - tọa độ 4,3 của Hình Nộm)
-		if event.keycode == KEY_1:
-			print("[DEBUG] Test Phép Lửa tại E4!")
-			# Chú ý: Bọc Element.FIRE trong ngoặc vuông []
-			var elements = [SpellDictionary.Element.FIRE] 
-			var coords = ["E", "4"] 
-			var dirs = [] 
-			
-			cast_complex_spell(elements, coords, dirs)	
-		# BẤM PHÍM 2: Test phép Lửa có Hướng
-		elif event.keycode == KEY_2:
-			print("[DEBUG] Test Phép Lửa hướng sang Phải!")
-			var elements = [SpellDictionary.Element.FIRE]
-			var coords = ["E", "4"]
-			var dirs = [Vector2i(1, 0)] 
-			
-			cast_complex_spell(elements, coords, dirs)
+		# Lấy tọa độ mặc định để test (Ô E4 của Hình Nộm)
+		var coords = ["E", "4"]
+		var dirs = [] # Hướng mặc định (có thể sửa thành [Vector2i(1, 0)] nếu test lan truyền)
 
-		# BẤM PHÍM 3: Test phép Nước (Hồi máu)
-		elif event.keycode == KEY_3:
-			print("[DEBUG] Test Phép Nước tại E4!")
-			var elements = [SpellDictionary.Element.WATER]
-			var coords = ["E", "4"]
-			var dirs = []
-			
-			cast_complex_spell(elements, coords, dirs)
-		# BẤM PHÍM 4: Trực tiếp qua Turn nhanh (Đỡ phải click nút End Turn)
-		elif event.keycode == KEY_4:
-			print("[DEBUG] Chuyển Turn nhanh!")
-			_on_end_turn_pressed()
-		# BẤM PHÍM Q: Test phép Đất thường (Miễn ST + Nhận giấy)
-		elif event.keycode == KEY_Q:
-			print("[DEBUG] Test Phép Đất cơ bản tại E4!")
-			var elements = [SpellDictionary.Element.EARTH]
-			var coords = ["E", "4"]
-			var dirs = []
-			
-			cast_complex_spell(elements, coords, dirs)
-
-		# BẤM PHÍM E: Test phép Gió thường (Đánh 2 lần)
-		elif event.keycode == KEY_E:
-			print("[DEBUG] Test Phép Gió cơ bản tại E4!")
-			var elements = [SpellDictionary.Element.WIND]
-			var coords = ["E", "4"]
-			var dirs = []
-			
-			cast_complex_spell(elements, coords, dirs)
-	# ==========================================
-		# --- TEST PHÉP GỘP VÀ GIA CƯỜNG ---
 		# ==========================================
-		
-		# BẤM PHÍM 5: Test Phép Gộp (Lửa + Đất) -> Lan truyền lửa / Dung nham
+		# 1. NHÓM PHÉP CƠ BẢN (1 Nguyên tố)
+		# ==========================================
+		if event.keycode == KEY_1:
+			print("[DEBUG] CƠ BẢN 1: Lửa")
+			cast_complex_spell([SpellDictionary.Element.FIRE], coords, dirs)
+			
+		elif event.keycode == KEY_2:
+			print("[DEBUG] CƠ BẢN 2: Nước")
+			cast_complex_spell([SpellDictionary.Element.WATER], coords, dirs)
+			
+		elif event.keycode == KEY_3:
+			print("[DEBUG] CƠ BẢN 3: Gió")
+			cast_complex_spell([SpellDictionary.Element.WIND], coords, dirs)
+			
+		elif event.keycode == KEY_4:
+			print("[DEBUG] CƠ BẢN 4: Đất")
+			cast_complex_spell([SpellDictionary.Element.EARTH], coords, dirs)
+
+		# ==========================================
+		# 2. NHÓM PHÉP GIA CƯỜNG (2 Nguyên tố GIỐNG nhau)
+		# ==========================================
 		elif event.keycode == KEY_5:
-			print("[DEBUG] Test Phép Gộp: Lửa + Đất tại E4!")
-			# Truyền vào mảng gồm 2 nguyên tố
-			var elements = [SpellDictionary.Element.FIRE, SpellDictionary.Element.EARTH]
-			var coords = ["E", "4"] 
-			var dirs = [] # Có thể thêm hướng Vector2i(1,0) vào đây nếu muốn test lan truyền theo hướng
+			print("[DEBUG] GIA CƯỜNG 1: Lửa x2 (Vụ nổ lớn)")
+			cast_complex_spell([SpellDictionary.Element.FIRE, SpellDictionary.Element.FIRE], coords, dirs)
 			
-			# Gọi thẳng hàm phức hợp của bạn
-			cast_complex_spell(elements, coords, dirs)
-
-		# BẤM PHÍM 6: Test Phép Gộp (Lửa + Gió) -> Bão Lửa (Cần có hướng)
 		elif event.keycode == KEY_6:
-			print("[DEBUG] Test Phép Gộp: Bão Lửa (Lửa + Gió) đẩy sang phải!")
-			var elements = [SpellDictionary.Element.FIRE, SpellDictionary.Element.WIND]
-			var coords = ["E", "4"]
-			var dirs = [Vector2i(1, 0)] # Bắt buộc truyền hướng để bão lửa biết đường thổi
+			print("[DEBUG] GIA CƯỜNG 2: Nước x2 (Siêu hồi máu)")
+			cast_complex_spell([SpellDictionary.Element.WATER, SpellDictionary.Element.WATER], coords, dirs)
 			
-			cast_complex_spell(elements, coords, dirs)
-			
-		# BẤM PHÍM 7: Test Phép Gia Cường (Đất + Đất) -> Siêu phòng thủ
 		elif event.keycode == KEY_7:
-			print("[DEBUG] Test Phép Gia Cường: Đất x2 tại E4!")
-			var elements = [SpellDictionary.Element.EARTH, SpellDictionary.Element.EARTH]
-			var coords = ["E", "4"]
-			var dirs = []
+			print("[DEBUG] GIA CƯỜNG 3: Gió x2 (Liên hoàn kích)")
+			cast_complex_spell([SpellDictionary.Element.WIND, SpellDictionary.Element.WIND], coords, dirs)
 			
-			cast_complex_spell(elements, coords, dirs)
-			
-		# BẤM PHÍM 8: Test Phép Gộp Multi-target (Niệm 2 ô cùng lúc)
 		elif event.keycode == KEY_8:
-			print("[DEBUG] Test Phép Gộp: Nước + Gió lên 2 mục tiêu cùng lúc!")
-			var elements = [SpellDictionary.Element.WATER, SpellDictionary.Element.WIND]
-			# Truyền vào 4 giá trị để hệ thống chặt ra làm 2 cặp tọa độ (Ví dụ E4 và F4)
-			var coords = ["E", "4", "F", "4"] 
-			var dirs = []
-			
-			cast_complex_spell(elements, coords, dirs)
-			# BẤM PHÍM 9: Test Phép Gộp (Nước + Đất) -> Đầm lầy trói chân
+			print("[DEBUG] GIA CƯỜNG 4: Đất x2 (Siêu phòng thủ)")
+			cast_complex_spell([SpellDictionary.Element.EARTH, SpellDictionary.Element.EARTH], coords, dirs)
+
+		# ==========================================
+		# 3. NHÓM PHÉP HỢP ẤN (2 Nguyên tố KHÁC nhau)
+		# ==========================================
 		elif event.keycode == KEY_9:
-			print("[DEBUG] Test Phép Gộp: Đầm Lầy (Nước + Đất) tại E4!")
-			var elements = [SpellDictionary.Element.WATER, SpellDictionary.Element.EARTH]
-			var coords = ["E", "4"]
-			var dirs = []
-			cast_complex_spell(elements, coords, dirs)
-
-		# BẤM PHÍM R: Test Siêu Phép Gộp (3 Nguyên Tố: Lửa + Gió + Đất)
-		# Dành cho các đòn Ultimate đỉnh cao
+			print("[DEBUG] HỢP ẤN 1: Lửa + Nước -> Hơi nước (Gây mù)")
+			cast_complex_spell([SpellDictionary.Element.FIRE, SpellDictionary.Element.WATER], coords, dirs)
+			
+		elif event.keycode == KEY_0:
+			print("[DEBUG] HỢP ẤN 2: Lửa + Gió -> Bão lửa (Giảm giáp)")
+			# Thử thêm hướng đẩy lùi cho bão lửa
+			cast_complex_spell([SpellDictionary.Element.FIRE, SpellDictionary.Element.WIND], coords, [Vector2i(1, 0)])
+			
+		elif event.keycode == KEY_Q:
+			print("[DEBUG] HỢP ẤN 3: Lửa + Đất -> Dung nham (Gây cháy)")
+			cast_complex_spell([SpellDictionary.Element.FIRE, SpellDictionary.Element.EARTH], coords, dirs)
+			
+		elif event.keycode == KEY_W:
+			print("[DEBUG] HỢP ẤN 4: Nước + Gió -> Bão tuyết (Đóng băng)")
+			cast_complex_spell([SpellDictionary.Element.WATER, SpellDictionary.Element.WIND], coords, dirs)
+			
+		elif event.keycode == KEY_E:
+			print("[DEBUG] HỢP ẤN 5: Nước + Đất -> Đầm lầy (Làm chậm)")
+			cast_complex_spell([SpellDictionary.Element.WATER, SpellDictionary.Element.EARTH], coords, dirs)
+			
 		elif event.keycode == KEY_R:
-			print("[DEBUG] Test ULTIMATE: Thiên Thạch Rơi (Lửa + Gió + Đất) tại E4!")
-			var elements = [
-				SpellDictionary.Element.FIRE, 
-				SpellDictionary.Element.WIND, 
-				SpellDictionary.Element.EARTH
-			]
-			var coords = ["E", "4"]
-			var dirs = [Vector2i(0, 1)] # Hướng thiên thạch cắm xuống
-			cast_complex_spell(elements, coords, dirs)
+			print("[DEBUG] HỢP ẤN 6: Gió + Đất -> Bão cát (Giảm tầm đánh)")
+			cast_complex_spell([SpellDictionary.Element.WIND, SpellDictionary.Element.EARTH], coords, dirs)
 
-		# BẤM PHÍM T: Test Gia Cường Nước (Nước + Nước) -> Hồi máu diện rộng
+		# ==========================================
+		# CÁC PHÍM CHỨC NĂNG (Debug)
+		# ==========================================
 		elif event.keycode == KEY_T:
-			print("[DEBUG] Test Phép Gia Cường: Nước x2 (Siêu hồi máu) tại E4!")
-			var elements = [SpellDictionary.Element.WATER, SpellDictionary.Element.WATER]
-			var coords = ["E", "4"]
-			var dirs = []
-			cast_complex_spell(elements, coords, dirs)
-
-		# BẤM PHÍM Y: Test Gia Cường Gió (Gió + Gió) -> Loạn đấu (Đánh 3-4 lần)
-		elif event.keycode == KEY_Y:
-			print("[DEBUG] Test Phép Gia Cường: Gió x2 (Liên hoàn kích) tại E4!")
-			var elements = [SpellDictionary.Element.WIND, SpellDictionary.Element.WIND]
-			var coords = ["E", "4"]
-			var dirs = []
-			cast_complex_spell(elements, coords, dirs)
-			# BẤM PHÍM U: Test Hợp ấn (Lửa + Nước) -> Hơi nước/Mù mịt
-		elif event.keycode == KEY_U:
-			print("[DEBUG] Test Hợp ấn: Hơi nước (Lửa + Nước) tại E4!")
-			var elements = [SpellDictionary.Element.FIRE, SpellDictionary.Element.WATER]
-			var coords = ["E", "4"]
-			var dirs = []
-			cast_complex_spell(elements, coords, dirs)
-
-		# BẤM PHÍM I: Test Hợp ấn (Nước + Gió) -> Bão tuyết/Lạnh giá
-		elif event.keycode == KEY_I:
-			print("[DEBUG] Test Hợp ấn: Bão tuyết (Nước + Gió) tại E4!")
-			var elements = [SpellDictionary.Element.WATER, SpellDictionary.Element.WIND]
-			var coords = ["E", "4"]
-			var dirs = []
-			cast_complex_spell(elements, coords, dirs)
-
-		# BẤM PHÍM O: Test Hợp ấn (Gió + Đất) -> Bão cát
-		elif event.keycode == KEY_O:
-			print("[DEBUG] Test Hợp ấn: Bão cát (Gió + Đất) tại E4!")
-			var elements = [SpellDictionary.Element.WIND, SpellDictionary.Element.EARTH]
-			var coords = ["E", "4"]
-			var dirs = [Vector2i(1, 0)] # Hướng bão cát thổi
-			cast_complex_spell(elements, coords, dirs)
+			print("==== RADAR QUÉT BÀN CỜ ====")
+			for p in all_pieces:
+				if is_instance_valid(p):
+					print("- Lính: ", p.name, " | Đang đứng tại: ", p.grid_pos)
 func get_piece_at(grid_pos: Vector2i):
 	for p in all_pieces:
 		if is_instance_valid(p) and p.grid_pos == grid_pos:
@@ -1384,7 +1310,7 @@ func execute_fire_boosted(target_unit):
 		# Gốc 35 + 50% = 52.5 sát thương
 		target_unit.take_damage(52.5)
 		# Tạo ô lửa tại vị trí đó tồn tại 2 lượt
-		create_tile_effect(target_unit.grid_position, "fire_zone", 2)
+		create_tile_effect(target_unit.grid_pos, "fire_zone", 2)
 # logicgame.gd
 
 func create_tile_effect(grid_pos: Vector2i, type: String, duration: int, _directions: Array = []):
@@ -1567,12 +1493,7 @@ func execute_hybrid_spell(elements: Array, grid_pos: Vector2i, directions: Array
 	var target_pos = grid_pos 
 	var target_unit = get_unit_at(grid_pos) # Lấy mục tiêu tại ô đánh
 	
-	# 1. Gây sát thương (Đây là dòng bạn đang thiếu)
-	if target_unit and target_unit.has_method("take_damage"):
-		var base_dmg = 20 # Bạn có thể chỉnh lượng dmg tùy ý
-		target_unit.take_damage(base_dmg)
-		print("[HỆ THỐNG] Phép gộp gây ", base_dmg, " sát thương lên mục tiêu.")
-	
+
 	# 2. Xử lý phần thưởng giấy mực
 	var reward_amount = 2.0 # Phép gộp mặc định cho 2 giấy
 	check_ally_hit_reward(grid_pos, reward_amount, "paper")
@@ -1581,55 +1502,38 @@ func execute_hybrid_spell(elements: Array, grid_pos: Vector2i, directions: Array
 	# ... các logic sort elements và tạo tile_effect cũ của bạn ...
 	
 	# Sau đó là các logic cũ của bạn (Lửa + Đất, v.v.)
-	# elements.sort() ...
-	var e1 = elements[0]
-	var e2 = elements[1]
+	if target_unit and elements.size() == 2:
+		
+		# 1. LỬA + NƯỚC -> Hơi nước (Sát thương vừa + Gây mù)
+		if elements == [SpellDictionary.Element.FIRE, SpellDictionary.Element.WATER]:
+			target_unit.take_damage(15) 
+			target_unit.add_buff("blind", 2) 
 
-	# --- Lửa + Đất ---
-	if e1 == SpellDictionary.Element.EARTH and e2 == SpellDictionary.Element.FIRE:
-		var duration = 8 - directions.size()
-		create_tile_effect(target_pos, "spreading_fire", duration, directions)
-		Global.add_paper(1)
-		# Kiểm tra đồng minh trúng phải để cộng thêm giấy
-		check_ally_hit_reward(target_pos, 1, "paper")
+		# 2. LỬA + GIÓ -> Bão lửa (Sát thương to + Giảm giáp)
+		elif elements == [SpellDictionary.Element.FIRE, SpellDictionary.Element.WIND]:
+			target_unit.take_damage(35) # Bão lửa sát thương mạnh hơn!
+			target_unit.add_buff("exposed", 1)
 
-	# --- Lửa + Gió ---
-	elif e1 == SpellDictionary.Element.FIRE and e2 == SpellDictionary.Element.WIND:
-		var primary_dir = sort_directions_priority(directions)
-		create_moving_aoe(target_pos, "fire_storm", 3, primary_dir)
-		# Sát thương xung quanh và đẩy lùi (cần xử lý va chạm tường/vật cản)
-		aoe_damage_push_with_collision(target_pos, 20, primary_dir)
+		# 3. LỬA + ĐẤT -> Dung nham (Sát thương siêu to + Gây cháy)
+		elif elements == [SpellDictionary.Element.FIRE, SpellDictionary.Element.EARTH]:
+			target_unit.take_damage(45) 
+			target_unit.add_buff("burn", 3)
+			create_tile_effect(grid_pos, "lava", 2)
 
-	# --- Lửa + Nước ---
-	elif e1 == SpellDictionary.Element.FIRE and e2 == SpellDictionary.Element.WATER:
-		create_tile_effect(target_pos, "stealth_mist", 3, directions)
-		Global.add_ink(1)
-		check_ally_hit_reward(target_pos, 0.5, "ink")
+		# 4. NƯỚC + GIÓ -> Bão tuyết (Sát thương nhỏ + Đóng băng)
+		elif elements == [SpellDictionary.Element.WATER, SpellDictionary.Element.WIND]:
+			target_unit.take_damage(10) # Đóng băng khó chịu nên DMG bé lại
+			target_unit.add_buff("frozen", 1)
 
-	# --- Nước + Gió ---
-	elif e1 == SpellDictionary.Element.WATER and e2 == SpellDictionary.Element.WIND:
-		clear_tile_effects(target_pos)
-		create_tile_effect(target_pos, "purifying_rain", 3, directions)
-		check_ally_hit_reward(target_pos, 0.5, "ink")
-		if get_unit_at(target_pos) == player_unit: # Giả sử bạn có biến player_unit
-			Global.add_paper(-1)
+		# 5. NƯỚC + ĐẤT -> Đầm lầy (Không có sát thương trực tiếp, chỉ làm chậm)
+		elif elements == [SpellDictionary.Element.WATER, SpellDictionary.Element.EARTH]:
+			target_unit.add_buff("slow", 2)
+			create_tile_effect(grid_pos, "mud", 3)
 
-	# --- Nước + Đất ---
-	elif e1 == SpellDictionary.Element.EARTH and e2 == SpellDictionary.Element.WATER:
-		var duration = 8 - directions.size()
-		create_tile_effect(target_pos, "healing_swamp", duration, directions)
-
-	# --- Gió + Đất ---
-	elif e1 == SpellDictionary.Element.EARTH and e2 == SpellDictionary.Element.WIND:
-		var duration = 8 - directions.size()
-		# Tạo các khối đất theo hướng chỉ định
-		for dir in directions:
-			var wall_pos = target_pos + dir
-			if is_cell_empty(wall_pos):
-				create_static_obstacle(wall_pos, "earth_barrier", duration)
-				# Thưởng giấy cho đồng minh xung quanh
-				reward_allies_nearby(wall_pos, 1, "paper")
-# Sắp xếp hướng ưu tiên cho Bão lửa/Sương mù
+		# 6. GIÓ + ĐẤT -> Bão cát (Sát thương vừa + Giảm tầm nhìn)
+		elif elements == [SpellDictionary.Element.WIND, SpellDictionary.Element.EARTH]:
+			target_unit.take_damage(20)
+			target_unit.add_buff("sandstorm", 2)
 func sort_directions_priority(dirs: Array) -> Vector2i:
 	if dirs.is_empty(): return Vector2i.ZERO
 	# Ưu tiên Dọc (y != 0) -> Ngang (x != 0) -> Chéo
