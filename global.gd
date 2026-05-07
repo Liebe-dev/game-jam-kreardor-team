@@ -1,5 +1,5 @@
 extends Node
-var current_wave = 0
+var current_wave = 1
 var paper_count: int = 10
 var has_casted_spell: bool = false
 var magic_system: Node = null
@@ -56,3 +56,19 @@ func add_ink(amount: float):
 			print("[Global] Đã cộng mực trực tiếp vào Scene Drawing: ", magic_system.current_ink)
 	else:
 		print("[LỖI] Magic Drawing System chưa được đăng ký vào Global!")
+func calculate_world_position(grid_pos: Vector2i) -> Vector2:
+	# 1. TĂNG KÍCH THƯỚC Ô LÊN: 
+	# Hãy thử số 115, 120 hoặc 128. (Bạn cứ sửa số này đến khi nào click Cột C nó nổ đúng cột C).
+	var tile_size = 120 
+	
+	# 2. CHỈNH GÓC GỐC (Tâm của ô A1):
+	# Nếu nổ bị lệch trái/phải toàn bàn cờ -> Chỉnh board_offset_x
+	# Nếu nổ bị lệch lên/xuống toàn bàn cờ -> Chỉnh board_offset_y
+	var board_offset_x = 450 
+	var board_offset_y = 150 
+	
+	# Công thức giữ nguyên
+	var pixel_x = (grid_pos.x * tile_size) + board_offset_x + (tile_size / 2.0)
+	var pixel_y = (grid_pos.y * tile_size) + board_offset_y + (tile_size / 2.0)
+	
+	return Vector2(pixel_x, pixel_y)

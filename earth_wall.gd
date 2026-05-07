@@ -1,14 +1,6 @@
-extends Node2D
-
-var grid_position: Vector2i = Vector2i.ZERO
-var duration: int = 0
-
+extends AnimatedSprite2D
+var grid_position: Vector2i
+var duration: int
 func _ready():
-	print("Tường đất được tạo tại: ", grid_position, " - Tồn tại: ", duration, " lượt.")
-
-# Hàm này sẽ được gọi mỗi khi kết thúc lượt để trừ thời gian tồn tại
-func decrease_duration():
-	duration -= 1
-	if duration <= 0:
-		print("Tường đất tại ", grid_position, " đã sụp đổ!")
-		queue_free() # Xóa tường khỏi bàn cờ
+	# Ngay khi cột đất được tạo ra, gọi hàm play() trực tiếp cho chính bản thân nó
+	play("default")

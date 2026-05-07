@@ -9,7 +9,8 @@ class_name Piece
 @export var max_health: int = 250
 @export var damage: int = 20
 @onready var current_health: int = max_health
-
+# Túi chứa buff. Ví dụ: {"burn": 2, "invulnerable": 1}
+var active_buffs: Dictionary = {}
 var is_charging: bool = false # Trạng thái đang nạp đạn
 var is_grabbed: bool = false
 var grabbed_by: Node2D = null
@@ -28,6 +29,9 @@ func _ready():
 
 # Hàm nhận sát thương
 func take_damage(amount: int):
+	if active_buffs.has("invulnerable"):
+		print(name, " đang được bảo vệ, miễn nhiễm sát thương!")
+		return
 	current_health -= amount
 	
 	if has_node("HealthBar"):
@@ -50,7 +54,6 @@ func die():
 	else:
 		queue_free()
 func move_to_grid(new_grid_pos: Vector2i, new_world_pos: Vector2):
-	# --- LOGIC QUAY ĐẦU (CODE MỚI ĐÂY) ---
 	
 	# Vectơ hướng di chuyển (Mới - Cũ)
 	var direction_vector = new_grid_pos - grid_pos 
@@ -81,12 +84,38 @@ func update_visuals():
 		modulate = Color(1, 1, 1)
 var burn_ticks = 0
 
-# Tìm hàm xử lý theo lượt của lính hoặc tạo mới nếu chưa có
-func apply_burn_damage():
-	if burn_ticks > 0:
-		current_health -= 5
-		burn_ticks -= 1
-		print("Lính bị đốt! Máu còn: ", current_health)
-		# Cập nhật thanh máu nếu có
-		if has_node("HealthBar"):
-			$HealthBar.value = current_health
+
+func add_buff(buff_name: String, duration: int):
+	# Nếu đã có buff này rồi thì gia hạn (lấy số lượt lớn hơn)
+	if active_buffs.has(buff_name):
+		active_buffs[buff_name] = max(active_buffs[buff_name], duration)
+	else:
+		# Nếu chưa có thì thêm mới vào
+		active_buffs[buff_name] = duration
+		
+	# (Tùy chọn) Hiện icon hoặc đổi màu lính để người chơi biết
+	if buff_name == "burn":
+		modulate = Color(1, 0.5, 0.5) # Đổi màu lính hơi đỏ
+	elif buff_name == "invulnerable":
+		modulate = Color(1, 1, 0) # Đổi màu lính hơi vàng
+func process_buffs():
+	# 1. Gây tác dụng của các buff bất lợi đầu hiệp (như rút máu do cháy)
+	if active_buffs.has("burn"):
+		take_damage(10) # Cháy thì mất 10 máu mỗi hiệp
+		print(name, " bị mất máu do thiêu đốt!")
+
+	# 2. Giảm số lượt của tất cả các buff đi 1
+	var expired_buffs = []
+	for buff in active_buffs.keys():
+		active_buffs[buff] -= 1
+		
+		# Nếu hết lượt thì đánh dấu để xóa
+		if active_buffs[buff] <= 0:
+			expired_buffs.append(buff)
+			
+	# 3. Xóa các buff đã hết hạn
+	for buff in expired_buffs:
+		active_buffs.erase(buff)
+		# Khôi phục màu sắc gốc nếu cần
+		if active_buffs.is_empty():
+			modulate = Color(1, 1, 1)

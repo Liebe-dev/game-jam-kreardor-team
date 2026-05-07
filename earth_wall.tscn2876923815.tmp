@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://caaouwpniatvm"]
+
+[ext_resource type="Script" uid="uid://bjxee4k7l1ofv" path="res://earth_wall.gd" id="1_7quyf"]
+[ext_resource type="Texture2D" uid="uid://bv45iik373mfx" path="res://anim/earth+wind-sheet.png" id="1_e24q0"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3fea5"]
+atlas = ExtResource("1_e24q0")
+region = Rect2(0, 0, 208, 208)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lmiq1"]
+atlas = ExtResource("1_e24q0")
+region = Rect2(208, 0, 208, 208)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_aq4e8"]
+atlas = ExtResource("1_e24q0")
+region = Rect2(416, 0, 208, 208)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6tqhw"]
+atlas = ExtResource("1_e24q0")
+region = Rect2(624, 0, 208, 208)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_arvrx"]
+atlas = ExtResource("1_e24q0")
+region = Rect2(832, 0, 208, 208)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_oolur"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3fea5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lmiq1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_aq4e8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6tqhw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_arvrx")
+}],
+"loop": false,
+"name": &"default",
+"speed": 8.0
+}]
+
+[node name="EarthWall" type="AnimatedSprite2D" unique_id=953818492]
+sprite_frames = SubResource("SpriteFrames_oolur")
+frame = 4
+frame_progress = 1.0
+script = ExtResource("1_7quyf")
