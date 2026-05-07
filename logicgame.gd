@@ -1,5 +1,5 @@
 extends Node2D
-const TILE_EFFECT_SCENE = preload("res://tile_effect.tscn")
+
 @export var move_indicator_scene: PackedScene
 @export var endgame_menu: Control
 @export var endgame_title: Label
@@ -32,7 +32,7 @@ var is_player_turn = true
 var board_origin = Vector2(450, 250)
 var cell_size = 80
 var player_unit
-
+var fire_tile_scene = preload("res://fire_tile.tscn")
 func _ready():
 	add_to_group("logic_board")
 	player_unit = get_tree().get_first_node_in_group("player")
@@ -43,7 +43,14 @@ func _ready():
 	add_child(piece_layer)
 	
 	spawn_initial_army()
+# Hàm phụ để đếm số lần 1 ô bị trúng phép
+func _add_to_impact_map(map: Dictionary, pos: Vector2i):
+	if map.has(pos):
+		map[pos] += 1
+	else:
+		map[pos] = 1
 
+# Kiểm tra xem tọa độ có nằm trong bàn cờ 8x8 không
 func is_within_board(pos: Vector2i) -> bool:
 	return pos.x >= 0 and pos.x < 8 and pos.y >= 0 and pos.y < 8
 func count_enemies_alive() -> int:
@@ -266,16 +273,24 @@ func _input(event):
 				clear_highlights()
 				selected_piece = null
 	if event is InputEventKey and event.pressed:
-		var coords = ["B", "2"]
+		
+		# Trả lại tên cũ là coords cho các phím dưới khỏi báo lỗi
+		var coords = ["B", "2", "C", "2"] 
 		var dirs = [] 
-		# 1. NHÓM PHÉP CƠ BẢN (1 Nguyên tố)
+		dirs.append(Vector2i(1, 0))   # Phải (Right)
+		dirs.append(Vector2i(-1, 0))  # Trái (Left)
+		# dirs.append(Vector2i(0, -1))  # Lên (Up)
+		# dirs.append(Vector2i(0, 1))   # Xuống (Down)
+		# dirs.append(Vector2i(1, 1))   # Chéo Xuống Phải
 		if event.keycode == KEY_1:
-			print("[DEBUG] CƠ BẢN 1: Lửa")
+			print("[TEST] Phép Lửa")
 			cast_complex_spell([SpellDictionary.Element.FIRE], coords, dirs)
 			
 		elif event.keycode == KEY_2:
-			print("[DEBUG] CƠ BẢN 2: Nước")
+			print("[TEST] Phép Nước")
 			cast_complex_spell([SpellDictionary.Element.WATER], coords, dirs)
+		
+		# Các phím dưới tự động hết lỗi!
 			
 		elif event.keycode == KEY_3:
 			print("[DEBUG] CƠ BẢN 3: Gió")
@@ -422,6 +437,22 @@ func _on_defend_pressed():
 		btn_attack.modulate = Color(1, 1, 1)
 
 func _on_end_turn_pressed():
+	print("=== BẮT ĐẦU CHUYỂN LƯỢT ===")
+	
+	# 1. BÁO CHO TRẠM QUẢN LÝ Ô HIỆU ỨNG CHẠY
+	# Lửa sẽ đốt máu và tự đếm ngược lượt tắt
+	process_all_tile_effects()
+	
+	# 2. BÁO CHO TOÀN BỘ LÍNH TRÊN BÀN CỜ TỰ KIỂM TRA BUFF
+	# Vì bàn cờ của bạn là 8x8, ta sẽ dùng 2 vòng lặp quét qua tất cả các ô
+	for x in range(8):
+		for y in range(8):
+			var pos = Vector2i(x, y)
+			var unit = get_unit_at(pos)
+			
+			# Nếu ô đó có lính, bắt nó chạy hàm trừ lượt Buff
+			if unit != null and unit.has_method("on_turn_end"):
+				unit.on_turn_end()
 	move_team_logic(1)
 	await get_tree().create_timer(0.3).timeout
 	move_team_logic(2)
@@ -1119,15 +1150,7 @@ func get_unit_at(pos: Vector2i):
 			if Vector2i(p.grid_pos) == Vector2i(pos):
 				return p
 	return null
-func cast_spell(element_type):
-	var scene_name = SpellDictionary.get_spell_scene_name(element_type)
-	var spell_path = "res://spells/" + scene_name + ".tscn"
-	var spell_resource = load(spell_path)
-	if spell_resource:
-		var spell_instance = spell_resource.instantiate()
-		spell_instance.position = $Player.position
-		add_child(spell_instance)
-		apply_spell_effects(element_type, spell_instance)
+
 func get_first_unit_in_direction(start_pos: Vector2i, direction: Vector2i, max_range: int):
 	for i in range(1, max_range + 1):
 		var check_pos = start_pos + (direction * i)
@@ -1135,236 +1158,94 @@ func get_first_unit_in_direction(start_pos: Vector2i, direction: Vector2i, max_r
 		if unit:
 			return unit
 	return null
-func apply_spell_effects(element, _instance):
-	match element:
-		SpellDictionary.Element.FIRE:
-			print("Gây sát thương 1 lần lên 1 ô")
-		SpellDictionary.Element.WATER:
-			print("Hồi máu và nhận mực")
-		SpellDictionary.Element.EARTH:
-			print("Miễn nhiễm sát thương và nhận 3 giấy")
-		SpellDictionary.Element.WIND:
-			print("Mục tiêu tấn công 2 lần vào lượt sau")
-func execute_spell_logic(element_type, target_unit, multiplier, is_multi, is_boosted, grid_pos: Vector2i):
-	match element_type:
-		# ----- LỬA -----
-		SpellDictionary.Element.FIRE:
-			if is_boosted:
-				execute_fire_boosted(target_unit, grid_pos)
-			else:
-				execute_fire_logic(target_unit, multiplier, grid_pos)
-				
-		# ----- NƯỚC -----
-		SpellDictionary.Element.WATER:
-			if is_boosted:
-				execute_water_boosted(target_unit, grid_pos)
-			else:
-				execute_water_logic(target_unit, multiplier, grid_pos)
-				
-		# ----- ĐẤT -----
-		SpellDictionary.Element.EARTH:
-			if is_boosted:
-				execute_earth_boosted(target_unit, grid_pos)
-			else:
-				execute_earth_logic(target_unit, multiplier, grid_pos)
-				
-		# ----- GIÓ -----
-		SpellDictionary.Element.WIND:
-			if is_boosted:
-				execute_wind_boosted(target_unit, grid_pos)
-			else:
-				execute_wind_logic(target_unit, multiplier, grid_pos)
-func create_tile_effect(grid_pos: Vector2i, type: String, duration: int, _directions: Array = []):
-	clear_tile_effects(grid_pos)
-	var effect = TILE_EFFECT_SCENE.instantiate()
-	effect.global_position = grid_to_pixel(grid_pos)
-	effect.grid_pos = grid_pos
-	effect.duration = duration
-	effect.type = type
-	add_child(effect)
-	effect.get_node("AnimatedSprite2D").play(type)
-func execute_boosted_logic(element_type, target_unit, grid_pos: Vector2i, directions = []):
-	match element_type:
-		SpellDictionary.Element.FIRE:
-			execute_fire_boosted(target_unit, grid_pos)
-		SpellDictionary.Element.EARTH:
-			execute_earth_boosted(target_unit, grid_pos)
-		SpellDictionary.Element.WATER:
-			execute_water_boosted(target_unit, grid_pos)
-		SpellDictionary.Element.WIND:
-			execute_wind_boosted(target_unit, grid_pos)
+
 func cast_complex_spell(elements, coordinates, directions):
-	# 1. Kiểm tra an toàn: Phải có ít nhất 1 phép và 2 ký tự tọa độ
+	# 1. Kiểm tra an toàn
 	if elements.is_empty() or coordinates.size() < 2:
 		print("[LogicGame] Bỏ qua vì thiếu nguyên tố hoặc tọa độ!")
 		return
 		
-	# 2. Xử lý tọa độ thông minh (Chống lỗi người chơi vẽ ngược Số và Chữ)
-	var letter = ""
-	var number = ""
+	# 2. XỬ LÝ TỌA ĐỘ THÔNG MINH (HỖ TRỢ ĐA MỤC TIÊU)
+	var target_grids = []
 	
-	for char in coordinates:
-		if char in ["A", "B", "C", "D", "E", "F", "G", "H"]:
-			letter = char
-		elif char in ["1", "2", "3", "4", "5", "6", "7", "8"]:
-			number = char
+	# Nhảy bước 2 để gom từng cặp (VD: ["D", "2", "E", "3"] -> Xử lý D2, rồi nhảy sang E3)
+	for i in range(0, coordinates.size(), 2):
+		if i + 1 < coordinates.size():
+			var char1 = coordinates[i]
+			var char2 = coordinates[i+1]
 			
-	if letter == "" or number == "":
+			# Chống lỗi ngắt ngược (Số trước chữ sau) cho từng cặp
+			var letter = char1 if char1.to_upper() in ["A","B","C","D","E","F","G","H"] else char2
+			var number = char2 if char2 in ["1","2","3","4","5","6","7","8"] else char1
+			
+			if letter != "" and number != "":
+				var grid_pos = Global.convert_to_grid([letter, number])
+				target_grids.append(grid_pos)
+			
+	if target_grids.is_empty():
 		print("[LogicGame] Lỗi tọa độ không hợp lệ!")
 		return
 		
-	# Ép mảng về chuẩn ["Chữ", "Số"] để hàm Global xử lý không bao giờ sai
-	var safe_pair = [letter, number] 
-	var grid_pos = Global.convert_to_grid(safe_pair)
-	var target_unit = get_unit_at(grid_pos)
-	
-	print("[LogicGame] Xả phép tại Ô: ", safe_pair, " -> Tọa độ Grid: ", grid_pos)
+	print("[LogicGame] Xả phép tại các Ô Grid: ", target_grids)
 
-	# 3. Phân loại loại phép
+	# 3. ĐIỀU PHỐI PHÉP THUẬT TỪ ĐẦU
 	var is_hybrid = elements.size() >= 2 and elements[0] != elements[1]
 	var is_boosted = elements.size() == 2 and elements[0] == elements[1]
 	
-	# Tính toán multiplier (Giả sử bạn luôn cast 1 ô cho game hiện tại)
-	var multiplier = 1.0 
-	
-	# 4. THI TRIỂN PHÉP!
 	if is_hybrid:
-		# Gọi logic Hợp Ấn (Lửa+Gió...)
-		execute_hybrid_spell(elements, grid_pos, directions)
+		# execute_new_hybrid_spell(elements, target_grids, directions)
+		pass
 	elif is_boosted:
-		# Gọi logic Ấn gia cường (Lửa x2...)
-		execute_boosted_logic(elements[0], target_unit, grid_pos, directions)
+		# execute_new_boosted_spell(elements[0], target_grids, directions)
+		pass
 	else:
-		# Gọi logic Ấn đơn (Lửa)
-		execute_standard_logic(elements[0], target_unit, multiplier, grid_pos)
-func calculate_spell_range(directions: Array) -> int:
-	# 1 hướng = 8 ô, mỗi hướng thêm vào sẽ giảm tầm xa
-	var base_range = 9
-	var final_range = base_range - directions.size()
-	return max(1, final_range) # Tối thiểu là 1 ô
+		# --- GỌI PHÉP ĐƠN (CẤU TRÚC MỚI) ---
+		match elements[0]:
+			SpellDictionary.Element.WATER:
+				execute_new_water_spell(target_grids, directions)
+			SpellDictionary.Element.FIRE:
+				execute_new_fire_spell(target_grids, directions)
+			SpellDictionary.Element.WIND:
+				pass # Viết sau
+			SpellDictionary.Element.EARTH:
+				execute_new_earth_spell(target_grids, directions)
+	if elements.size() == 2:
+		# LỬA + LỬA
+		if elements[0] == SpellDictionary.Element.FIRE and elements[1] == SpellDictionary.Element.FIRE:
+			execute_new_fire_fire_spell(target_grids, directions)
 
-func get_multiplier_by_range(directions: Array) -> float:
-	# Hiệu quả giảm dần theo số lượng hướng
-	return max(0.2, 1.0 - (directions.size() - 1) * 0.2)
-func execute_earth_direction(target_unit, directions):
-	Global.add_paper(3)
-	if target_unit:
-		target_unit.add_buff("invulnerable", 1) # Miễn ST ô gốc
-	
-	var max_range = calculate_spell_range(directions)
-	for dir in directions:
-		var ally = get_first_unit_in_direction(target_unit.grid_position, dir, max_range)
-		if ally and not ally.is_enemy:
-			ally.add_buff("damage_reduction_1_time", 0.5) # Giảm ST nhận vào
-func execute_wind_direction(target_unit, directions):
-	if not target_unit: return
-	
-	# Sắp xếp ưu tiên: Ngang/Dọc trước, Chéo sau
-	directions.sort_custom(func(a, b): return abs(a.x) + abs(a.y) < abs(b.x) + abs(b.y))
-	
-	for dir in directions:
-		var new_pos = target_unit.grid_position + dir
-		if is_cell_empty(new_pos):
-			move_unit_to(target_unit, new_pos)
-	
-	target_unit.add_buff("rooted", 1) # Vô hiệu hóa di chuyển lượt sau
-func execute_element_direction(element, target_unit, directions):
-	var max_range = calculate_spell_range(directions)
-	var power = get_multiplier_by_range(directions)
-	
-	if element == SpellDictionary.Element.WATER:
-		Global.add_ink(1)
 
-	for dir in directions:
-		var extra_target = get_first_unit_in_direction(target_unit.grid_position, dir, max_range)
-		if extra_target:
-			if element == SpellDictionary.Element.FIRE:
-				extra_target.take_damage(35 * power)
-			else:
-				extra_target.heal(50 * power)
-func execute_combined_logic(element, unit, pos, dirs, mult, is_multi, m_range):
-	match element:
-		SpellDictionary.Element.FIRE:
-			# Lửa: 35 dmg gốc -> 14 dmg nếu multi. Gây ST ô gốc và hướng bay.
-			if unit: unit.take_damage(35 * mult)
-			for d in dirs:
-				var extra = get_first_unit_in_direction(pos, d, m_range)
-				if extra: extra.take_damage(35 * mult)
-
-		SpellDictionary.Element.EARTH:
-			# Đất: Multi -> nhận 40% ST. Single -> Miễn ST hoàn toàn. Nhận giấy.
-			if unit:
-				if is_multi: unit.add_buff("damage_taken_multiplier", 0.4)
-				else: unit.add_buff("invulnerable", 1)
-			
-			for d in dirs:
-				var ally = get_first_unit_in_direction(pos, d, m_range)
-				if ally and not ally.is_enemy:
-					ally.add_buff("damage_reduction_1_time", 0.5)
-			Global.add_paper(int(3 * mult))
-
-		SpellDictionary.Element.WATER:
-			# Nước: 50 heal gốc -> 20 heal nếu multi. Nhận mực.
-			if unit: unit.heal(50 * mult)
-			for d in dirs:
-				var extra = get_first_unit_in_direction(pos, d, m_range)
-				if extra: extra.heal(50 * mult)
-			Global.add_ink(1)
-
-		SpellDictionary.Element.WIND:
-			# Gió: Multi -> Chỉ đẩy 1 ô. Single -> Đánh 2 lần.
-			if is_multi:
-				execute_wind_direction(unit, dirs) # Hàm đẩy mục tiêu bạn đã viết
-			else:
-				if unit: unit.add_buff("double_attack", 1)
-
-func execute_standard_logic(element_type, target_unit, multiplier, grid_pos: Vector2i, _is_multi = false):
-	match element_type:
-		SpellDictionary.Element.FIRE:
-			execute_fire_logic(target_unit, multiplier, grid_pos)
-		SpellDictionary.Element.EARTH:
-			execute_earth_logic(target_unit, multiplier, grid_pos)
-		SpellDictionary.Element.WATER:
-			execute_water_logic(target_unit, multiplier, grid_pos)
-		SpellDictionary.Element.WIND:
-			execute_wind_logic(target_unit, multiplier, grid_pos)
-# Sửa lại khai báo hàm để nhận đủ tham số từ hệ thống cast phép
-# --- PHÉP LỬA CƠ BẢN ---
-func execute_fire_logic(target_unit, multiplier, grid_pos: Vector2i):
+func execute_new_fire_spell(target_grids: Array, directions: Array):
+	print("[Phép Lửa] Bắt đầu gọi thiên thạch...")
 	
-	# 1. Nổ thẳng phép thuật từ trên trời giáng xuống vị trí đã vẽ
-	play_spell_animation(grid_pos, "lua", target_unit)
-	
-	# 2. Trừ máu nếu có quái
-	if target_unit:
-		target_unit.take_damage(35 * multiplier)
-
+	# Gọi hàm lõi: Base 35, loại "damage", hiệu ứng "lua"
+	execute_aoe_effect(target_grids, directions, 35.0, "damage", "lua")
 # --- PHÉP LỬA CƯỜNG HÓA ---
-func execute_fire_boosted(target_unit, grid_pos: Vector2i):
+# --- PHÉP LỬA - LỬA ---
+# --- PHÉP LỬA - LỬA ---
+func execute_new_fire_fire_spell(target_grids: Array, directions: Array):
+	print("[Phép Lửa-Lửa] Tạo thảm lửa trên mặt đất...")
 	
-	# 1. Nổ hoạt ảnh x2
-	play_spell_animation(grid_pos, "lualua", target_unit)
+	# 1. Sát thương gây ra khi phép vừa chạm vào người lính (50% cộng thêm)
+	var base_damage = 52.5 
 	
-	# 2. Tạo bãi lửa
-	create_tile_effect(grid_pos, "fire_zone", 2)
+	# 2. Thi triển AOE. Lưu ý: ground_anim truyền "" để không tạo animation nổ rác bàn cờ
+	var impact_map = execute_aoe_effect(target_grids, directions, base_damage, "damage", "lua")
 	
-	# 3. Trừ máu
-	if target_unit:
-		target_unit.take_damage(52.5)
-# --- B. PHÉP NƯỚC (Hồi máu) ---
-func execute_water_logic(target_unit, multiplier, grid_pos: Vector2i):
-	play_spell_animation(grid_pos, "nuoc") # Mưa rơi
-	if target_unit:
-		if target_unit.has_method("heal"):
-			target_unit.heal(20 * multiplier)
-
-func execute_water_boosted(target_unit, grid_pos: Vector2i):
-	play_spell_animation(grid_pos, "nuocnuoc")
-	create_tile_effect(grid_pos, "puddle", 2) # Tạo bãi nước
-	if target_unit:
-		if target_unit.has_method("heal"):
-			target_unit.heal(40)
-
+	# 3. Tạo Ô Lửa trên TẤT CẢ các ô bị ảnh hưởng bởi phép
+	for grid_pos in impact_map.keys():
+		add_tile_effect(grid_pos, "fire_tile", 2) # Ô lửa cháy phập phùng 2 lượt
+		
+func execute_new_water_spell(target_grids: Array, directions: Array):
+	print("[Phép Nước] Bắt đầu dội mưa...")
+	
+	# Gọi hàm lõi: Base 50, loại "heal", hiệu ứng "nuoc"
+	execute_aoe_effect(target_grids, directions, 50.0, "heal", "nuoc")
+	
+	# Nhận mực
+	Global.add_ink(500)
+	# 4. NHẬN 500 MỰC DUY NHẤT 1 LẦN
+	Global.add_ink(500)
 
 # --- C. PHÉP GIÓ (Đẩy lùi) ---
 func execute_wind_logic(target_unit, multiplier, grid_pos: Vector2i):
@@ -1372,94 +1253,13 @@ func execute_wind_logic(target_unit, multiplier, grid_pos: Vector2i):
 	play_spell_animation(grid_pos, "gio") 
 	# (Logic đẩy lùi của bạn viết ở đây...)
 
-func execute_wind_boosted(target_unit, grid_pos: Vector2i):
-	play_spell_animation(grid_pos, "giogio")
-	create_tile_effect(grid_pos, "wind_zone", 2) 
-
 
 # --- D. PHÉP ĐẤT (Phòng thủ) ---
-func execute_earth_logic(target_unit, multiplier, grid_pos: Vector2i):
-	play_spell_animation(grid_pos, "dat")
-	if target_unit:
-		target_unit.add_buff("invulnerable", 1) # (Buff buff đã có)
+func execute_new_earth_spell(target_grids: Array, directions: Array):
+	# Gửi "" để báo cho hệ thống biết: "Đừng vẽ gì lên đất cả, lính sẽ tự bật khiên!"
+	execute_aoe_effect(target_grids, directions, 1.0, "earth_buff", "")
+	Global.add_paper(3)
 
-func execute_earth_boosted(target_unit, grid_pos: Vector2i):
-	play_spell_animation(grid_pos, "datdat")
-	# Tạo tường đất chặn đường
-	create_tile_effect(grid_pos, "earth_wall", 2) 
-	if target_unit:
-		target_unit.add_buff("invulnerable", 2)
-func execute_hybrid_spell(elements: Array, grid_pos: Vector2i, directions: Array = []):
-	
-	# Lấy thông tin mục tiêu tại ô click chuột (có thể rỗng)
-	var target_unit = get_unit_at(grid_pos)
-	
-	# MỞ KHÓA TỔNG: Chỉ cần đủ 2 nguyên tố là chạy, không quan tâm có lính hay không
-	if elements.size() == 2:
-		
-		# ==========================================
-		# 1. LỬA + ĐẤT -> Bãi Dung Nham
-		# ==========================================
-		if elements == [SpellDictionary.Element.FIRE, SpellDictionary.Element.EARTH] or elements == [SpellDictionary.Element.EARTH, SpellDictionary.Element.FIRE]:
-			play_spell_animation(grid_pos, "luadat")
-			create_tile_effect(grid_pos, "lava", 8) # Tồn tại 8 lượt theo tài liệu
-			
-			if target_unit:
-				target_unit.take_damage(45) # Hoặc theo công thức sát thương của bạn
-				target_unit.add_buff("burn", 3)
-
-		# ==========================================
-		# 2. LỬA + GIÓ -> Bão Lửa
-		# ==========================================
-		elif elements == [SpellDictionary.Element.FIRE, SpellDictionary.Element.WIND] or elements == [SpellDictionary.Element.WIND, SpellDictionary.Element.FIRE]:
-				
-			play_spell_animation(grid_pos, "luagio")
-			create_tile_effect(grid_pos, "luagio", 3) # Bão lửa 3 lượt
-			
-			if target_unit:
-				target_unit.take_damage(35)
-				# Tương lai thêm code đẩy mục tiêu ở đây
-
-		# ==========================================
-		# 3. LỬA + NƯỚC -> Sương Mù
-		# ==========================================
-		elif elements == [SpellDictionary.Element.FIRE, SpellDictionary.Element.WATER] or elements == [SpellDictionary.Element.WATER, SpellDictionary.Element.FIRE]:
-				
-			play_spell_animation(grid_pos, "luanuoc1")
-			create_tile_effect(grid_pos, "luanuoc2", 3) # Sương mù 3 lượt
-			
-			if target_unit:
-				target_unit.add_buff("un-targetable", 3) # Không thể bị chỉ định
-
-		# 4. NƯỚC + GIÓ -> Cơn Mưa
-		elif elements == [SpellDictionary.Element.WATER, SpellDictionary.Element.WIND]:
-			# Anim này là các giọt mưa rơi lất phất, tồn tại 3 lượt
-			create_tile_effect(grid_pos, "rain", 3) 
-			
-			# Logic hồi máu và mực của bạn...
-			clear_tile_effects(grid_pos) # (Nếu bạn muốn dọn bãi cũ trước khi tạo mưa)
-
-		# ==========================================
-		# 5. NƯỚC + ĐẤT -> Đầm Lầy
-		# ==========================================
-		elif elements == [SpellDictionary.Element.WATER, SpellDictionary.Element.EARTH] or elements == [SpellDictionary.Element.EARTH, SpellDictionary.Element.WATER]:
-				
-			play_spell_animation(grid_pos, "nuocdat")
-			create_tile_effect(grid_pos, "mud", 8) # Đầm lầy 8 lượt
-			
-			if target_unit:
-				target_unit.add_buff("root", 1) # Bám rễ/Không thể di chuyển 1 lượt
-
-		# ==========================================
-		# 6. GIÓ + ĐẤT -> Cột Đất (Vật cản)
-		# ==========================================
-		elif elements == [SpellDictionary.Element.WIND, SpellDictionary.Element.EARTH] or elements == [SpellDictionary.Element.EARTH, SpellDictionary.Element.WIND]:
-				
-			# Lưu ý: Cột đất tự hiện hình, không cần play_spell_animation
-			create_static_obstacle(grid_pos, "earth_wall", 8) # Khối đất 8 lượt
-			
-			if target_unit:
-				target_unit.take_damage(20)
 func sort_directions_priority(dirs: Array) -> Vector2i:
 	if dirs.is_empty(): return Vector2i.ZERO
 	# Ưu tiên Dọc (y != 0) -> Ngang (x != 0) -> Chéo
@@ -1469,38 +1269,6 @@ func sort_directions_priority(dirs: Array) -> Vector2i:
 	)
 	return dirs[0]
 
-# Gây ST diện rộng và đẩy lùi
-func aoe_damage_and_push(center_pos, damage, _force):
-	var neighbors = [Vector2i(0,1), Vector2i(0,-1), Vector2i(1,0), Vector2i(-1,0)]
-	for offset in neighbors:
-		var unit = get_unit_at(center_pos + offset)
-		if unit:
-			unit.take_damage(damage)
-			push_unit(unit, offset) # Hàm đẩy bạn đã viết ở hệ Gió
-func create_moving_aoe(pos: Vector2i, type: String, _duration: int, direction: Vector2i):
-	print("Tạo AOE di động: ", type, " tại ", pos, " hướng ", direction)
-func create_static_obstacle(grid_pos: Vector2i, _type: String, duration: int):
-	var wall = preload("res://earth_wall.tscn").instantiate()
-	add_child(wall)
-	wall.grid_position = grid_pos # Đảm bảo dùng Tab để thụt lề
-	wall.duration = duration
-	wall.add_to_group("obstacles")
-func push_unit(unit, direction: Vector2i):
-	var target_pos = unit.grid_position + direction
-	if is_cell_empty(target_pos):
-		move_unit_to(unit, target_pos)
-	else:
-		# Nếu bị chặn không đẩy được, nhận thêm sát thương (theo mô tả Bão Lửa)
-		unit.take_damage(10)
-		print("Mục tiêu bị chặn, nhận thêm sát thương va chạm!")
-func clear_tile_effects(grid_pos: Vector2i):
-	# Tìm tất cả các bãi ma thuật đang có trên bản đồ
-	var all_effects = get_tree().get_nodes_in_group("tile_effects")
-	
-	for effect in all_effects:
-		# Nếu bãi nào nằm đúng ở ô mình cần xóa thì hủy nó đi
-		if effect.grid_pos == grid_pos:
-			effect.queue_free()
 func check_ally_hit_reward(pos: Vector2i, amount: float, resource_type: String):
 	var unit = get_unit_at(pos)
 	
@@ -1511,18 +1279,6 @@ func check_ally_hit_reward(pos: Vector2i, amount: float, resource_type: String):
 		elif resource_type == "ink":
 			Global.add_ink(amount)
 
-func aoe_damage_push_with_collision(center_pos: Vector2i, damage: float, push_dir: Vector2i):
-	# Duyệt 8 ô xung quanh (AOE 3x3)
-	for x in range(-1, 2):
-		for y in range(-1, 2):
-			if x == 0 and y == 0: continue # Bỏ qua ô tâm
-			var target_pos = center_pos + Vector2i(x, y)
-			var unit = get_unit_at(target_pos)
-			
-			if unit:
-				unit.take_damage(damage)
-				# Đẩy mục tiêu theo hướng bão (push_dir)
-				push_unit(unit, push_dir) # Hàm push_unit đã thêm ở bước trước
 func reward_allies_nearby(origin_pos: Vector2i, amount: int, type: String):
 	for x in range(-1, 2):
 		for y in range(-1, 2):
@@ -1587,13 +1343,140 @@ func play_spell_animation(grid_pos: Vector2i, anim_name: String, target_unit = n
 	effect.visible = false 
 	get_tree().current_scene.add_child(effect)
 	
+	# 1. Lấy tọa độ gốc
+	var base_pos = Vector2.ZERO
 	if target_unit != null:
-		effect.global_position = target_unit.global_position
+		base_pos = target_unit.global_position
 	else:
-		effect.global_position = grid_to_pixel(grid_pos)
+		base_pos = grid_to_pixel(grid_pos)
+		
+	# 2. CỘNG THÊM OFFSET ĐỂ CĂN GIỮA
+	# Ví dụ: Vector2(0, -30) sẽ đẩy phép dịch lên trên 30 pixel.
+	# Bạn có thể tăng giảm 2 số (X, Y) này cho đến khi nó nằm ngay giữa ô nhé!
+	effect.global_position = base_pos + Vector2(0, -30) 
 		
 	effect.play(anim_name)
 	effect.visible = true 
-	
-	# --- THÊM DÒNG NÀY ĐỂ TỰ HỦY SAU KHI NỔ XONG ---
 	effect.animation_finished.connect(effect.queue_free)
+	
+# ==========================================
+# HÀM LÕI: TÍNH TOÁN VÀ GÂY SÁT THƯƠNG/HỒI MÁU AOE
+# ==========================================
+func execute_aoe_effect(target_grids: Array, directions: Array, base_value: float, effect_type: String, ground_anim: String) -> Dictionary:
+	# 1. Tính toán hệ số
+	var is_multi_target = target_grids.size() > 1
+	var multi_factor = 0.4 if is_multi_target else 1.0
+	var direction_factor = 1.0 / (directions.size() + 1)
+	
+	# Giá trị thực tế trên MỖI LẦN CHẠM
+	var value_per_hit = base_value * multi_factor * direction_factor
+	
+	# 2. Gom nhóm chồng lấp (Stacking)
+	var impact_map = {} 
+	for center_pos in target_grids:
+		_add_to_impact_map(impact_map, center_pos)
+		for dir in directions:
+			var offset_pos = center_pos + Vector2i(dir.x, dir.y)
+			if is_within_board(offset_pos):
+				_add_to_impact_map(impact_map, offset_pos)
+
+
+	# 3. Thi triển lên bàn cờ
+	for grid_pos in impact_map.keys():
+		var hit_count = impact_map[grid_pos]
+		var total_value = value_per_hit * hit_count
+		var target_unit = get_unit_at(grid_pos)
+		
+		# LUẬT 1: Chỉ cho nổ mặt đất nếu phép đó ĐƯỢC CẤP TÊN (như "lua", "nuoc")
+		if ground_anim != "":
+			play_spell_animation(grid_pos, ground_anim, target_unit)
+			
+		# LUẬT 2: Giao toàn quyền hiệu ứng cho Trạm Kiểm Soát
+		if target_unit != null:
+			apply_unit_effect(target_unit, effect_type, total_value, grid_pos)
+		else:
+			if ground_anim == "":
+				print(" -> Ô ", grid_pos, " trống. Phép bay xuyên qua, không có tác dụng.")
+	return impact_map
+# ==========================================
+# TRẠM KIỂM SOÁT HIỆU ỨNG (TÁCH RIÊNG)
+# ==========================================
+func apply_unit_effect(unit, effect_type: String, value: float, grid_pos: Vector2i):
+	var unit_name = unit.name 
+	
+	match effect_type:
+		"heal":
+			if unit.has_method("heal"):
+				unit.heal(value)
+				print(" -> Ô ", grid_pos, " Hồi ", value, " máu cho [", unit_name, "]")
+				
+		"damage":
+			deal_damage(unit, value)
+			print(" -> Ô ", grid_pos, " Nổ ", value, " sát thương lên [", unit_name, "]")
+			
+		"earth_buff":
+			if unit.has_method("add_buff"):
+				unit.add_buff("damage_reduction", value, 2)
+				print(" -> Ô ", grid_pos, " Giảm ", (value * 100), "% ST cho [", unit_name, "]")
+				
+		# Mai sau thêm "root" (Trói chân), "burn" (Cháy), "stun" (Choáng) v.v... cực kỳ dễ
+		_:
+			print(" -> Ô ", grid_pos, " có hiệu ứng không xác định!")
+# ==========================================
+# TRẠM QUẢN LÝ Ô HIỆU ỨNG TRÊN BÀN CỜ
+# ==========================================
+var active_tile_effects = {} # Cấu trúc: { Vector2i(x,y) : {"type": "fire", "turns": 2} }
+
+# 1. Hàm tạo ô hiệu ứng
+func add_tile_effect(grid_pos: Vector2i, effect_type: String, duration: int):
+	var spawned_visual = null
+	
+	# Nếu là tạo Ô Lửa
+	if effect_type == "fire_tile":
+		spawned_visual = fire_tile_scene.instantiate()
+		add_child(spawned_visual)
+		
+		# Đặt tọa độ của ngọn lửa khớp với tọa độ thật của ô trên màn hình.
+		# (Bạn hãy dùng cái hàm chuyển đổi từ Grid (vd: 1,1) sang Position pixel của bạn, 
+		# ví dụ dưới đây tôi gọi tên hàm là get_pixel_position)
+		var base_pos = grid_to_pixel(grid_pos)
+		spawned_visual.global_position = base_pos + Vector2(0, -30)
+		
+	# Lưu mọi thứ vào Danh sách Quản lý (đã có sẵn chỗ cất "Xác")
+	active_tile_effects[grid_pos] = {
+		"type": effect_type,
+		"turns": duration,
+		"visual_node": spawned_visual # Cất hình ảnh ngọn lửa vào đây để lúc sau xóa
+	}
+	print("[Tile Effect] Đã tạo ô [", effect_type, "] tại ", grid_pos)
+# 2. Hàm chạy mỗi khi qua lượt (Đốt máu, làm chậm, trừ lượt tồn tại...)
+func process_all_tile_effects():
+	# Lấy danh sách các ô đang có hiệu ứng để xử lý
+	var grids_to_remove = []
+	
+	for grid_pos in active_tile_effects.keys():
+		var effect = active_tile_effects[grid_pos]
+		var target_unit = get_unit_at(grid_pos)
+		
+		# --- KIỂM TRA LOẠI HIỆU ỨNG (Tương lai thêm sương mù, bùn vào đây) ---
+		if effect["type"] == "fire_tile":
+			if target_unit != null:
+				# Gây 10 sát thương cố định mỗi đầu/cuối lượt (Không bị giảm bởi AOE!)
+				deal_damage(target_unit, 10.0) 
+				print(" -> [Ô Lửa] Đốt cháy [", target_unit.name, "] mất 10 máu!")
+				
+		# Trừ đi 1 lượt tồn tại
+		effect["turns"] -= 1
+		if effect["turns"] <= 0:
+			grids_to_remove.append(grid_pos)
+			
+	# Dọn dẹp các ô đã hết hạn
+	for pos in grids_to_remove:
+		var effect = active_tile_effects[pos]
+		
+		# 1. XÓA HÌNH ẢNH TRÊN BÀN CỜ (Dọn xác)
+		if effect.has("visual_node") and is_instance_valid(effect["visual_node"]):
+			effect["visual_node"].queue_free() # queue_free() là lệnh xóa tận gốc trong Godot
+			
+		# 2. XÓA KHỎI DANH SÁCH LOGIC (Dọn hồn)
+		active_tile_effects.erase(pos)

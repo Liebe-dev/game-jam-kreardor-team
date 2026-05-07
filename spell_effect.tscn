@@ -106,21 +106,6 @@ region = Rect2(2496, 0, 624, 624)
 atlas = ExtResource("4_8f727")
 region = Rect2(3120, 0, 624, 624)
 
-[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_c8osh"]
-load_path = "res://.godot/imported/fire+fire fire+earth-sheet.png-5344819bde9bc0793d2362105f1367d2.ctex"
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_46qiu"]
-atlas = SubResource("CompressedTexture2D_c8osh")
-region = Rect2(0, 0, 208, 208)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_wh0j1"]
-atlas = SubResource("CompressedTexture2D_c8osh")
-region = Rect2(208, 0, 208, 208)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_tgm1o"]
-atlas = SubResource("CompressedTexture2D_c8osh")
-region = Rect2(416, 0, 208, 208)
-
 [sub_resource type="AtlasTexture" id="AtlasTexture_34bs8"]
 atlas = ExtResource("6_8cvsy")
 region = Rect2(0, 0, 208, 208)
@@ -322,20 +307,6 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_46qiu")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_wh0j1")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_tgm1o")
-}],
-"loop": true,
-"name": &"lualua",
-"speed": 8.0
-}, {
-"frames": [{
-"duration": 1.0,
 "texture": SubResource("AtlasTexture_34bs8")
 }, {
 "duration": 1.0,
@@ -429,9 +400,9 @@ animations = [{
 }]
 
 [node name="SpellEffect" type="AnimatedSprite2D" unique_id=1633474168]
+visible = false
 z_index = 10
 sprite_frames = SubResource("SpriteFrames_w8e4j")
-animation = &"luagio"
+animation = &"_flash_protector"
 autoplay = "_flash_protector"
-frame_progress = 0.8080189
 script = ExtResource("1_3hl3j")

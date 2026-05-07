@@ -1,0 +1,40 @@
+[gd_scene format=3 uid="uid://s3haymksxcot"]
+
+[ext_resource type="Texture2D" uid="uid://boiphqvpo1k3o" path="res://anim/fire+fire fire+earth-sheet.png" id="1_wpkbe"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wvyod"]
+atlas = ExtResource("1_wpkbe")
+region = Rect2(0, 0, 208, 208)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ywmuj"]
+atlas = ExtResource("1_wpkbe")
+region = Rect2(208, 0, 208, 208)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_brrdc"]
+atlas = ExtResource("1_wpkbe")
+region = Rect2(416, 0, 208, 208)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_yi0ga"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wvyod")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ywmuj")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_brrdc")
+}],
+"loop": true,
+"name": &"default",
+"speed": 9.0
+}]
+
+[node name="FireTile" type="Node2D" unique_id=736345703]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=2015530064]
+visible = false
+sprite_frames = SubResource("SpriteFrames_yi0ga")
+frame = 1
+frame_progress = 0.18331492

@@ -18,8 +18,8 @@ signal spell_casted(elements, coordinates, directions_list)
 @export var radius_middle: float = 180.0
 
 # Tài nguyên
-var max_ink : float = 2000.0
-var current_ink : float = 2000.0
+var max_ink : float = 1000.0
+var current_ink : float = 1000.0
 var ink_cost_per_pixel : float = 1
 var max_scroll_width: float = 0.0
 # Dữ liệu vẽ

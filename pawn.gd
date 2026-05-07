@@ -20,7 +20,7 @@ var max_ammo = 3
 var current_ammo = 3
 var is_reloading = false
 var reload_turns_left = 0
-
+var damage_reduction_rate = 0.0
 func _ready():
 	# Đảm bảo thanh máu khớp với chỉ số khi vừa sinh ra
 	if has_node("HealthBar"):
@@ -28,11 +28,15 @@ func _ready():
 		get_node("HealthBar").value = current_health
 
 # Hàm nhận sát thương
-func take_damage(amount: int):
-	if active_buffs.has("invulnerable"):
-		print(name, " đang được bảo vệ, miễn nhiễm sát thương!")
-		return
-	current_health -= amount
+func take_damage(amount: float):
+	# Tính toán sát thương sau khi giảm trừ
+	var final_damage = amount * (1.0 - damage_reduction_rate)
+	
+	# Trừ lượng sát thương ĐÃ GIẢM vào máu hiện tại
+	current_health -= final_damage 
+	
+	if has_node("HealthBar"):
+		get_node("HealthBar").value = current_health
 	
 	if has_node("HealthBar"):
 		$HealthBar.value = current_health
@@ -85,19 +89,37 @@ func update_visuals():
 var burn_ticks = 0
 
 
-func add_buff(buff_name: String, duration: int):
-	# Nếu đã có buff này rồi thì gia hạn (lấy số lượt lớn hơn)
-	if active_buffs.has(buff_name):
-		active_buffs[buff_name] = max(active_buffs[buff_name], duration)
-	else:
-		# Nếu chưa có thì thêm mới vào
-		active_buffs[buff_name] = duration
+# 1. BẬT ANIMATION KHI NHẬN BUFF
+func add_buff(buff_name: String, value: float, duration_turns: int):
+	active_buffs[buff_name] = duration_turns
+	
+	if buff_name == "damage_reduction":
+		damage_reduction_rate = value
 		
-	# (Tùy chọn) Hiện icon hoặc đổi màu lính để người chơi biết
-	if buff_name == "burn":
-		modulate = Color(1, 0.5, 0.5) # Đổi màu lính hơi đỏ
-	elif buff_name == "invulnerable":
-		modulate = Color(1, 1, 0) # Đổi màu lính hơi vàng
+		# --- Bật Animation Khiên của bạn ở đây ---
+		# Thay "ShieldAnim" bằng tên Node thực tế của bạn
+		if has_node("ShieldAnim"):
+			$ShieldAnim.visible = true
+			$ShieldAnim.play("ShieldAnim") # Điền tên animation loop của khiên vào
+			
+		print("[Pawn] Bật khiên bảo vệ cho ", name)
+
+# 2. TẮT ANIMATION KHI HẾT LƯỢT
+func on_turn_end():
+	if active_buffs.has("damage_reduction"):
+		active_buffs["damage_reduction"] -= 1 
+		
+		# Hết lượt -> Tắt buff
+		if active_buffs["damage_reduction"] <= 0:
+			active_buffs.erase("damage_reduction")
+			damage_reduction_rate = 0.0
+			
+			# --- Tắt Animation Khiên đi ---
+			if has_node("ShieldAnim"):
+				$ShieldAnim.visible = false
+				$ShieldAnim.stop()
+				
+			print("[Pawn] Đã vỡ khiên Đất trên ", name)
 func process_buffs():
 	# 1. Gây tác dụng của các buff bất lợi đầu hiệp (như rút máu do cháy)
 	if active_buffs.has("burn"):
@@ -119,3 +141,12 @@ func process_buffs():
 		# Khôi phục màu sắc gốc nếu cần
 		if active_buffs.is_empty():
 			modulate = Color(1, 1, 1)
+func heal(amount):
+	current_health += amount
+	# Chặn không cho máu vượt mức tối đa (Giả sử max_current_health là biến máu tối đa của bạn)
+	if current_health > max_health: 
+		current_health = max_health
+		
+	# Cập nhật lại cái thanh máu hiển thị trên đầu
+	if has_node("HealthBar"):
+		get_node("HealthBar").value = current_health

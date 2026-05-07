@@ -3,7 +3,7 @@ var current_wave = 1
 var paper_count: int = 10
 var has_casted_spell: bool = false
 var magic_system: Node = null
-
+var current_ink : float = 1000.0
 func convert_to_grid(pair: Array) -> Vector2i:
 	if pair.size() < 2:
 		return Vector2i(-1, -1) # Trả về tọa độ lỗi nếu mảng không đủ 2 phần tử
@@ -44,18 +44,19 @@ func add_paper(amount: int):
 		magic_system.update_paper_ui(paper_count)
 # (Trong global.gd)
 
+# Khai báo sẵn giới hạn (nếu bạn chưa có)
+var max_ink: float = 1000.0
+
 func add_ink(amount: float):
-	# Kiểm tra xem magic_system (Scene Drawing của bạn) đã được đăng ký chưa
-	if magic_system:
-		# Gọi trực tiếp hàm xử lý mực bên trong Scene đó
-		if magic_system.has_method("add_ink_to_system"):
-			magic_system.add_ink_to_system(amount)
-		else:
-			# Nếu bên Scene Drawing chưa có hàm, ta cộng trực tiếp vào biến bên đó
-			magic_system.current_ink += amount
-			print("[Global] Đã cộng mực trực tiếp vào Scene Drawing: ", magic_system.current_ink)
-	else:
-		print("[LỖI] Magic Drawing System chưa được đăng ký vào Global!")
+	# Dùng hàm clamp để nhốt current_ink trong khoảng từ 0 đến max_ink (2000)
+	current_ink = clamp(current_ink + amount, 0.0, max_ink)
+	
+	print("[Global] Đã nhận mực. Mực hiện tại: ", current_ink)
+	
+	# CHÚ Ý QUAN TRỌNG: Cập nhật lại thanh UI để nó không bị lố
+	# Giả sử bạn đã lưu tham chiếu magic_drawing_system vào biến magic_system
+	if magic_system != null and magic_system.has_method("update_ui"):
+		magic_system.update_ui()
 func calculate_world_position(grid_pos: Vector2i) -> Vector2:
 	# 1. TĂNG KÍCH THƯỚC Ô LÊN: 
 	# Hãy thử số 115, 120 hoặc 128. (Bạn cứ sửa số này đến khi nào click Cột C nó nổ đúng cột C).
