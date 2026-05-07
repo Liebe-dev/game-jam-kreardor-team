@@ -8,6 +8,8 @@
 
 [node name="MagicDrawingSystem" type="CanvasLayer" unique_id=1222554842]
 script = ExtResource("1_eigxu")
+radius_inner = 87.15
+radius_middle = 174.3
 
 [node name="UI_Container" type="Control" parent="." unique_id=638788640]
 unique_name_in_owner = true
@@ -41,7 +43,7 @@ offset_left = 483.0
 offset_top = 84.0
 offset_right = 981.0
 offset_bottom = 582.0
-pivot_offset = Vector2(270, 221)
+pivot_offset = Vector2(248, 244)
 texture = ExtResource("2_yc3uf")
 
 [node name="LinesContainer" type="Node2D" parent="UI_Container/SpellScroll" unique_id=1916018457]

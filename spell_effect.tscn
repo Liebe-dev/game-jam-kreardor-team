@@ -14,9 +14,6 @@
 [ext_resource type="Texture2D" uid="uid://bgwylppson6vx" path="res://anim/earth+water.png" id="10_8cvsy"]
 [ext_resource type="Texture2D" uid="uid://b1qdge85osuxo" path="res://anim/water+water.png" id="10_pgxgt"]
 
-[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_1t38n"]
-blend_mode = 1
-
 [sub_resource type="AtlasTexture" id="AtlasTexture_2h4wd"]
 atlas = ExtResource("1_6gi4m")
 region = Rect2(0, 0, 162, 162)
@@ -433,8 +430,8 @@ animations = [{
 
 [node name="SpellEffect" type="AnimatedSprite2D" unique_id=1633474168]
 z_index = 10
-material = SubResource("CanvasItemMaterial_1t38n")
 sprite_frames = SubResource("SpriteFrames_w8e4j")
 animation = &"luagio"
 autoplay = "_flash_protector"
+frame_progress = 0.8080189
 script = ExtResource("1_3hl3j")

@@ -144,9 +144,11 @@ animations = [{
 }]
 
 [node name="TileEffect" type="Node2D" unique_id=235769357]
+z_index = 10
 script = ExtResource("1_uqcuh")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1404090182]
+z_index = 10
 scale = Vector2(0.25, 0.25)
 sprite_frames = SubResource("SpriteFrames_ct7kr")
 animation = &"_flash_protector"

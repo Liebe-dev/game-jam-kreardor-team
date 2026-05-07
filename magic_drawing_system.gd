@@ -32,7 +32,6 @@ func _ready():
 	$GestureRecognizer.LoadGesturesFromResources("res://addons/Gesture_recognizer/resources/gestures/")
 	update_ui()
 	max_scroll_width = %UI_Container.size.x
-# Bắt sự kiện chuột chỉ khi thao tác trên Cuộn Giấy (SpellScroll)
 func _on_spell_scroll_gui_input(event):
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
@@ -94,26 +93,39 @@ func _on_end_turn_button_pressed():
 	# 1. Tìm tọa độ tâm
 	var circle_center = magic_circle.position + (magic_circle.size / 2.0)
 	
-	# 2. Tạo 3 mảng phân loại
-	var layer1_strokes = []
-	var layer2_strokes = []
-	var layer3_strokes = []
+	# =========================================================
+	# BƯỚC MỚI: GOM NHÓM TẤT CẢ NÉT VẼ TRƯỚC KHI CHIA LỚP
+	# Tăng khoảng cách gom nhóm lên 90 để các nét xa nhau vẫn dính lại
+	# =========================================================
+	var all_clusters = cluster_strokes(strokes, 90.0)
 	
-	# 3. Phân loại nét vẽ
-	for stroke in strokes:
-		var center_pt = get_stroke_center(stroke)
-		var distance = circle_center.distance_to(center_pt)
-		if distance < radius_inner: layer1_strokes.append(stroke)
-		elif distance < radius_middle: layer2_strokes.append(stroke)
-		else: layer3_strokes.append(stroke)
-
-	# 4. NHẬN DIỆN LỚP 1: ẤN CHÚ
-	var recognized_elements = [] # Tạo cái giỏ trống để chứa các nguyên tố
+	# Tạo 3 mảng chứa CỤM nét vẽ (Thay vì từng nét lẻ tẻ)
+	var layer1_clusters = []
+	var layer2_clusters = []
+	var layer3_clusters = []
 	
-	if layer1_strokes.size() > 0:
-		# GOM NHÓM LỚP 1: Tách nét vẽ Gió và Lửa ra riêng biệt
-		var layer1_clusters = cluster_strokes(layer1_strokes, 70.0) 
+	# ĐIỀU CHỈNH LẠI BÁN KÍNH THỰC TẾ CHO KHỚP VỚI UI (Bạn có thể tăng giảm số này)
+	var actual_radius_inner = 87.15
+	var actual_radius_middle = 174.3
+	
+	# Phân loại nguyên cả CỤM vào các Lớp
+	for cluster in all_clusters:
+		var cluster_center = get_cluster_center(cluster)
+		var distance = circle_center.distance_to(cluster_center)
 		
+		if distance < actual_radius_inner:
+			layer1_clusters.append(cluster)
+		elif distance < actual_radius_middle:
+			layer2_clusters.append(cluster)
+		else:
+			layer3_clusters.append(cluster)
+
+	# =========================================================
+	# 4. NHẬN DIỆN LỚP 1: ẤN CHÚ
+	# =========================================================
+	var recognized_elements = []
+	
+	if layer1_clusters.size() > 0:
 		for cluster in layer1_clusters:
 			var element_gesture = recognize_strokes_with_plugin(cluster, "l1_")
 			var elem = SpellDictionary.Element.NONE
@@ -124,19 +136,18 @@ func _on_end_turn_button_pressed():
 				"l1_earth_hand_1": elem = SpellDictionary.Element.EARTH
 				"l1_wind_hand_1": elem = SpellDictionary.Element.WIND
 				
-			# Nếu nhận ra nguyên tố, nhét nó vào giỏ
 			if elem != SpellDictionary.Element.NONE:
 				recognized_elements.append(elem)
 
-	# Báo xịt phép nếu trong giỏ không có gì
 	if recognized_elements.is_empty():
 		play_fizzle_effect()
 		await get_tree().create_timer(0.5).timeout
 		clear_all_strokes()
 		close_scroll()
 		return
+		
+	# ... (GIỮ NGUYÊN CODE TỪ BƯỚC 5 TRỞ ĐI: Nhận diện Lớp 2...) ...
 	# 5. NHẬN DIỆN LỚP 2 (ĐÃ ÁP DỤNG LỌC LÙI TOP 1, 2, 3...)
-	var layer2_clusters = cluster_strokes(layer2_strokes, 70.0)
 	var valid_letters = ["A", "B", "C", "D", "E", "F", "G", "H"]
 	var valid_numbers = ["1", "2", "3", "4", "5", "6", "7", "8"]
 	var target_coords = []
@@ -158,7 +169,6 @@ func _on_end_turn_button_pressed():
 			print("Nét vẽ quá xấu hoặc không khớp luật vùng, bỏ qua!")
 
 # 6. NHẬN DIỆN LỚP 3: HƯỚNG
-	var layer3_clusters = cluster_strokes(layer3_strokes, 70.0)
 	var directions = []
 	
 	for cluster in layer3_clusters:
@@ -197,6 +207,7 @@ func _on_end_turn_button_pressed():
 	print("Đã niệm phép: ", recognized_elements, " | Tọa độ: ", target_coords, " | Hướng: ", directions)
 	Global.has_casted_spell = true
 	spell_casted.emit(recognized_elements, target_coords, directions)
+	get_tree().call_group("logic_board", "cast_complex_spell", recognized_elements, target_coords, directions)
 	clear_all_strokes()
 	close_scroll()
 func recognize_strokes_with_plugin(strokes_to_eval: Array, layer_prefix: String) -> String:

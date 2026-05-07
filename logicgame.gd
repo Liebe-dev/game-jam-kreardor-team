@@ -34,6 +34,7 @@ var cell_size = 80
 var player_unit
 
 func _ready():
+	add_to_group("logic_board")
 	player_unit = get_tree().get_first_node_in_group("player")
 	if wave_label:
 		wave_label.text = "Wave: " + str(Global.current_wave)
@@ -1176,7 +1177,7 @@ func execute_spell_logic(element_type, target_unit, multiplier, is_multi, is_boo
 func create_tile_effect(grid_pos: Vector2i, type: String, duration: int, _directions: Array = []):
 	clear_tile_effects(grid_pos)
 	var effect = TILE_EFFECT_SCENE.instantiate()
-	effect.global_position = Global.calculate_world_position(grid_pos)
+	effect.global_position = grid_to_pixel(grid_pos)
 	effect.grid_pos = grid_pos
 	effect.duration = duration
 	effect.type = type
@@ -1589,7 +1590,7 @@ func play_spell_animation(grid_pos: Vector2i, anim_name: String, target_unit = n
 	if target_unit != null:
 		effect.global_position = target_unit.global_position
 	else:
-		effect.global_position = Global.calculate_world_position(grid_pos)
+		effect.global_position = grid_to_pixel(grid_pos)
 		
 	effect.play(anim_name)
 	effect.visible = true 
