@@ -1,6 +1,8 @@
 extends CanvasLayer
+var current_elements: Array = []
+var current_coord_chars: Array = []
 signal scroll_closed
-signal spell_casted(element_type, coordinates, directions_list)
+signal spell_casted(elements, coordinates, directions_list)
 
 # Sử dụng Unique Name (%) để không bao giờ bị lỗi sai đường dẫn Node nữa
 @onready var lines_container = %LinesContainer
@@ -106,22 +108,33 @@ func _on_end_turn_button_pressed():
 		else: layer3_strokes.append(stroke)
 
 	# 4. NHẬN DIỆN LỚP 1: ẤN CHÚ
-	var element = SpellDictionary.Element.NONE
+	var recognized_elements = [] # Tạo cái giỏ trống để chứa các nguyên tố
+	
 	if layer1_strokes.size() > 0:
-		var element_gesture = recognize_strokes_with_plugin(layer1_strokes, "l1_")
-		match element_gesture:
-			"l1_fire_hand_1", "l1_fire_hand_2", "l1_fire_hand_3": element = SpellDictionary.Element.FIRE
-			"l1_water_hand_1": element = SpellDictionary.Element.WATER
-			"l1_earth_hand_1": element = SpellDictionary.Element.EARTH
-			"l1_wind_hand_1": element = SpellDictionary.Element.WIND
+		# GOM NHÓM LỚP 1: Tách nét vẽ Gió và Lửa ra riêng biệt
+		var layer1_clusters = cluster_strokes(layer1_strokes, 70.0) 
+		
+		for cluster in layer1_clusters:
+			var element_gesture = recognize_strokes_with_plugin(cluster, "l1_")
+			var elem = SpellDictionary.Element.NONE
+			
+			match element_gesture:
+				"l1_fire_hand_1", "l1_fire_hand_2", "l1_fire_hand_3": elem = SpellDictionary.Element.FIRE
+				"l1_water_hand_1": elem = SpellDictionary.Element.WATER
+				"l1_earth_hand_1": elem = SpellDictionary.Element.EARTH
+				"l1_wind_hand_1": elem = SpellDictionary.Element.WIND
+				
+			# Nếu nhận ra nguyên tố, nhét nó vào giỏ
+			if elem != SpellDictionary.Element.NONE:
+				recognized_elements.append(elem)
 
-	if element == SpellDictionary.Element.NONE:
+	# Báo xịt phép nếu trong giỏ không có gì
+	if recognized_elements.is_empty():
 		play_fizzle_effect()
 		await get_tree().create_timer(0.5).timeout
 		clear_all_strokes()
 		close_scroll()
 		return
-		
 	# 5. NHẬN DIỆN LỚP 2 (ĐÃ ÁP DỤNG LỌC LÙI TOP 1, 2, 3...)
 	var layer2_clusters = cluster_strokes(layer2_strokes, 70.0)
 	var valid_letters = ["A", "B", "C", "D", "E", "F", "G", "H"]
@@ -151,10 +164,6 @@ func _on_end_turn_button_pressed():
 	for cluster in layer3_clusters:
 		var cluster_center = get_cluster_center(cluster)
 		var angle = get_angle_deg(cluster_center)
-		
-		# --- THỦ THUẬT: QUAY NÉT VẼ VỀ 0 ĐỘ ---
-		# Dù người chơi vẽ mũi tên hướng ra ngoài ở bất kỳ góc nào,
-		# ta sẽ bẻ nó về góc 0 độ (hướng sang phải) trước khi cho plugin đọc.
 		var rotated_cluster = []
 		for stroke in cluster:
 			var rotated_stroke = []
@@ -185,9 +194,9 @@ func _on_end_turn_button_pressed():
 				
 			directions.append(final_dir)
 			print("Nhận diện mũi tên thành công tại hướng: ", final_dir)
-	print("Đã niệm phép: ", element, " | Tọa độ: ", target_coords, " | Hướng: ", directions)
+	print("Đã niệm phép: ", recognized_elements, " | Tọa độ: ", target_coords, " | Hướng: ", directions)
 	Global.has_casted_spell = true
-	spell_casted.emit(element, target_coords, directions)
+	spell_casted.emit(recognized_elements, target_coords, directions)
 	clear_all_strokes()
 	close_scroll()
 func recognize_strokes_with_plugin(strokes_to_eval: Array, layer_prefix: String) -> String:

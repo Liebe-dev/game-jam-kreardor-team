@@ -2,9 +2,9 @@ extends Node2D
 const TILE_EFFECT_SCENE = preload("res://tile_effect.tscn")
 @export var move_indicator_scene: PackedScene
 @export var endgame_menu: Control
-@export var endgame_title: Label  # Chỗ chứa dòng chữ "Thắng" hoặc "Thua"
+@export var endgame_title: Label
 const SPELL_EFFECT_SCENE = preload("res://spell_effect.tscn")
-var active_indicators = [] # Mảng quản lý các ô đang hiện trên màn hình
+var active_indicators = []
 var player_pawn_scene = preload("res://Pawn.tscn")
 var player_king_scene = preload("res://PlayerKing.tscn")
 var enemy_pawn_scene = preload("res://Enemy_pawn.tscn")
@@ -22,24 +22,21 @@ var dragon_res = load("res://boss_dragon.tscn")
 var boss = dragon_res.instantiate()
 var current_turn = 1
 enum Command { ATTACK, DEFEND, IDLE }
-var current_command = Command.IDLE # Mặc định là đứng im
+var current_command = Command.IDLE
 var current_attack_index = 0
-var has_moved_main_piece = false # Kiểm tra xem lượt này đã đi quân chính chưa
+var has_moved_main_piece = false
 var piece_layer: Node2D
 var all_pieces = []
 var selected_piece = null
 var is_player_turn = true
 var board_origin = Vector2(450, 250)
 var cell_size = 80
-var player_unit # Biến lưu trữ quân cờ của người chơi
+var player_unit
 
 func _ready():
-	# Giả sử bạn tìm quân cờ người chơi thông qua nhóm "player"
 	player_unit = get_tree().get_first_node_in_group("player")
 	if wave_label:
-		# Lấy biến current_wave từ file Global đắp vào Label
 		wave_label.text = "Wave: " + str(Global.current_wave)
-	# Tạo một Node2D làm lớp chứa quân cờ nếu chưa có
 	piece_layer = Node2D.new()
 	piece_layer.name = "PieceLayer"
 	add_child(piece_layer)
@@ -47,141 +44,91 @@ func _ready():
 	spawn_initial_army()
 
 func is_within_board(pos: Vector2i) -> bool:
-	# Giả sử bàn cờ của bạn là 8x8 (từ ô 0 đến 7)
 	return pos.x >= 0 and pos.x < 8 and pos.y >= 0 and pos.y < 8
-
-# --- CƠ CHẾ WAVE ---
-
-# 1. Hàm đếm số địch còn sống trên bàn cờ
 func count_enemies_alive() -> int:
 	var enemy_count = 0
 	for p in all_pieces:
-		# Kẻ nào thuộc Team 2 thì chắc chắn là địch!
 		if is_instance_valid(p) and p.team == 2:
 			enemy_count += 1
 	return enemy_count
-# --- HÀM 1: CHUYỂN WAVE VÀ BƠM MÁU/HỒI SINH ---
 func transition_to_next_wave():
-	# 1. RESET THÔNG SỐ WAVE & TURN
 	Global.current_wave += 1
 	current_turn = 1
 	
 	if wave_label: wave_label.text = "Wave: " + str(Global.current_wave)
 	if turn_label: turn_label.text = "Turn: 1"
-		
-	# 2. DỌN SẠCH QUÂN ĐỊCH CŨ (Xóa Hình Nộm)
 	for i in range(all_pieces.size() - 1, -1, -1):
 		var p = all_pieces[i]
 		if is_instance_valid(p) and p.team == 2:
 			all_pieces.remove_at(i)
 			p.queue_free()
-
-	# --- THÊM ĐOẠN NÀY ĐỂ XỬ LÝ RIÊNG KHI TỪ PHÒNG TẬP (WAVE 0) SANG WAVE 1 ---
 	if Global.current_wave == 1:
-		# Gọi nguyên đội hình quân ta full máu + Sinh luôn lính địch Wave 1
 		spawn_initial_army()
-		
-		# Cập nhật hướng xoay của lính (nếu cần thiết)
 		await get_tree().process_frame
 		for p in all_pieces:
 			if is_instance_valid(p) and p.has_node("Sprite2D"):
 				p.get_node("Sprite2D").region_rect = Rect2(0, 64, 64, 64)
-				
-		return # <-- LỆNH RETURN CỰC QUAN TRỌNG: Kết thúc hàm tại đây, bỏ qua đoạn Hồi Sinh bên dưới
-
-	# =========================================================
-	# TỪ ĐOẠN NÀY TRỞ XUỐNG BẠN GIỮ NGUYÊN CODE CŨ (Sắp xếp, Hồi máu, Hồi sinh...)
-	# 3. SẮP XẾP LẠI QUÂN TA (Team 1) - GIỮ MÁU & HỒI MÁU
+		return
 	var current_pawns = []
 	var king_piece = null
-	
-	# Phân loại quân ta đang có trên sân
 	for p in all_pieces:
 		if is_instance_valid(p) and p.team == 1:
 			if "King" in p.name:
 				king_piece = p
 			else:
 				current_pawns.append(p)
-	
-	# Duyệt qua 8 vị trí hàng ngang mặc định (hàng 6)
 	for i in range(8):
 		if i < current_pawns.size():
-			# --- LÍNH CÒN SỐNG: NHẤC VỀ & CỘNG THÊM 30 MÁU ---
 			var p = current_pawns[i]
 			p.grid_pos = Vector2i(i, 6)
 			p.position = grid_to_pixel(p.grid_pos)
 			
 			if "hp" in p:
-				p.hp += 30 # Hồi thêm 30 máu cho lính sống sót
-				# Cập nhật thanh máu (mở rộng max_value nếu máu vượt ngưỡng)
+				p.hp += 30
 				if p.has_node("HealthBar"):
 					var bar = p.get_node("HealthBar")
 					bar.max_value = max(bar.max_value, p.hp)
 					bar.value = p.hp
 		else:
-			# --- LÍNH ĐÃ CHẾT: HỒI SINH MỚI VỚI 20 MÁU ---
 			var new_pawn = player_pawn_scene.instantiate()
 			new_pawn.team = 1
 			piece_layer.add_child(new_pawn)
 			all_pieces.append(new_pawn)
-			
-			new_pawn.set("hp", 20) # Hồi sinh lính chết với 20 máu
+			new_pawn.set("hp", 20)
 			new_pawn.grid_pos = Vector2i(i, 6)
 			new_pawn.position = grid_to_pixel(new_pawn.grid_pos)
-			
 			if new_pawn.has_node("HealthBar"):
 				new_pawn.get_node("HealthBar").max_value = 50
 				new_pawn.get_node("HealthBar").value = 20
-
-	# 4. ĐƯA VUA VỀ VỊ TRÍ CŨ
 	if is_instance_valid(king_piece):
 		king_piece.grid_pos = Vector2i(3, 7)
 		king_piece.position = grid_to_pixel(king_piece.grid_pos)
-
-	# 5. GỌI QUÂN ĐỊCH WAVE MỚI
 	spawn_enemy_wave()
-	
-	# 6. XOAY TẤT CẢ MẶT LÊN TRÊN (Sau khi lính đã xuất hiện)
 	await get_tree().process_frame
 	for p in all_pieces:
 		if is_instance_valid(p) and p.has_node("Sprite2D"):
 			var sprite = p.get_node("Sprite2D")
-			# Giả sử hình quay lưng nằm ở tọa độ y = 64 trên Sprite Sheet
-			# Bạn hãy kiểm tra thông số Region trong Inspector của Pawn để điền số đúng
 			sprite.region_rect = Rect2(0, 64, 64, 64)
-# Đợi lính load xong
 	await get_tree().process_frame
-	
 	for p in all_pieces:
 		if is_instance_valid(p):
-			# Duyệt qua TẤT CẢ các node con của lính để tìm hình ảnh
 			for child in p.get_children():
-				
-				# Xử lý nếu nó là hình tĩnh (Sprite2D)
 				if child is Sprite2D:
 					if p.team == 1:
-						child.frame = 1 # Quân ta: nhìn lưng
+						child.frame = 1
 					else:
-						# QUÂN ĐỊCH: Ép nhìn xuống
-						child.frame = 0 # Đổi thành frame nhìn mặt của mấy con lính mới
-						# child.flip_v = true # (Mở cmt dòng này nếu bạn dùng cách lật ảnh chứ không dùng frame)
-						
-				# Xử lý phòng hờ nếu lính mới là ảnh động (AnimatedSprite2D)
+						child.frame = 0
 				elif child is AnimatedSprite2D:
 					if p.team == 1:
-						child.play("up") # Quân ta nhìn lên
+						child.play("up")
 					else:
-						child.play("down") # Quân địch nhìn xuống
-# --- HÀM 2: CÔNG TẮC KIỂM TRA ĐIỀU KIỆN ---
+						child.play("down")
 func check_and_trigger_next_wave():
 	if Global.current_wave >= 5:
 		trigger_victory()
 		return
-		
 	transition_to_next_wave()
-
 func spawn_initial_army():
-	# Chỉ sinh quân ta nếu là Wave 1 (Bắt đầu trận đấu thực sự)
 	if Global.current_wave == 1:
 		for i in range(8):
 			var pawn = player_pawn_scene.instantiate()
@@ -190,7 +137,6 @@ func spawn_initial_army():
 			all_pieces.append(pawn)
 			pawn.grid_pos = Vector2i(i, 6)
 			if has_method("grid_to_pixel"): pawn.global_position = grid_to_pixel(pawn.grid_pos)
-			
 		if player_king_scene:
 			var king = player_king_scene.instantiate()
 			king.team = 1
@@ -198,17 +144,14 @@ func spawn_initial_army():
 			all_pieces.append(king)
 			king.grid_pos = Vector2i(3, 7)
 			if has_method("grid_to_pixel"): king.global_position = grid_to_pixel(king.grid_pos)
-
-	# LUÔN LUÔN GỌI ĐỊCH (Để Wave 0 còn ra Hình Nộm)
 	spawn_enemy_wave()
 func spawn_enemy_wave():
 	var wave_setup = []
 	
 	match Global.current_wave:
-		0: # --- WAVE 0: PHÒNG TẬP (Chỉ có Hình Nộm) ---
+		0:
 			wave_setup = [
 				{"scene": dummy_scene, "pos": Vector2(4, 3)}
-				# Bạn có thể phẩy và thêm nhiều dummy nữa ở các tọa độ khác nếu muốn test AOE!
 			]
 		1:
 			wave_setup = [
@@ -256,31 +199,20 @@ func spawn_enemy_wave():
 		enemy.team = 2
 		piece_layer.add_child(enemy)
 		all_pieces.append(enemy)
-		
-		# Chuyển đổi data["pos"] (đang là Vector2) sang Vector2i
 		enemy.grid_pos = Vector2i(data["pos"].x, data["pos"].y)
-		
-		# Dùng global_position
 		if has_method("grid_to_pixel"):
 			enemy.global_position = grid_to_pixel(enemy.grid_pos)
-	
-	#if Global.current_wave == 6:
-		#spawn_final_boss()
-
 func spawn_final_boss():
 	boss.hp = 1000
-	# Đặt boss vào giữa hàng trên cùng
 	boss.grid_pos = Vector2i(3, 0)
 	boss.position = grid_to_pixel(boss.grid_pos)
 	piece_layer.add_child(boss)
 	all_pieces.append(boss)
 func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 	if scene == null: return
-	
 	var new_unit = scene.instantiate()
 	new_unit.team = team
 	new_unit.grid_pos = grid_pos
-	
 	if scene == player_king_scene:
 		new_unit.name = "King_" + str(team)
 	elif scene == enemy_rook_scene:
@@ -293,68 +225,49 @@ func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 		new_unit.name = "Bishop_" + str(team)
 	else:
 		new_unit.name = "Pawn_" + str(team)
-		
 	piece_layer.add_child(new_unit)
 	new_unit.global_position = calculate_world_position(grid_pos)
-	
 	var sprite = new_unit.get_node("Sprite2D")
-	
 	if team == 1:
 		sprite.frame = 3
 	elif team == 2:
 		sprite.frame = 0
 		if new_unit.has_node("HealthBar"):
 			new_unit.get_node("HealthBar").modulate = Color(1, 0, 0)
-			
 	all_pieces.append(new_unit)
-
 func deal_damage(target, amount):
 	if not is_instance_valid(target):
 		return
-		
 	if amount <= 0: return
-	
 	if target.has_method("take_damage"):
 		target.take_damage(amount)
-
 func _input(event):
 	if has_moved_main_piece: return
-
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var click_pos = get_global_mouse_position()
 		var clicked_grid = calculate_grid_position(click_pos)
-		
 		if not is_within_board(clicked_grid): return
-			
 		var piece_at_click = get_piece_at(clicked_grid)
-		
 		if piece_at_click and piece_at_click.team == 1:
 			selected_piece = piece_at_click
 			show_highlights(selected_piece)
-			
 		elif selected_piece != null:
 			var valid_moves = get_valid_moves(selected_piece)
 			if clicked_grid in valid_moves:
 				if selected_piece.is_grabbed:
 					break_grab(selected_piece)
-						
 				move_piece(selected_piece, clicked_grid)
 				selected_piece.has_moved = true
 				has_moved_main_piece = true
-				
 				clear_highlights()
 				selected_piece = null
 			else:
 				clear_highlights()
 				selected_piece = null
 	if event is InputEventKey and event.pressed:
-		# Lấy tọa độ mặc định để test (Ô E4 của Hình Nộm)
 		var coords = ["B", "2"]
-		var dirs = [] # Hướng mặc định (có thể sửa thành [Vector2i(1, 0)] nếu test lan truyền)
-
-		# ==========================================
+		var dirs = [] 
 		# 1. NHÓM PHÉP CƠ BẢN (1 Nguyên tố)
-		# ==========================================
 		if event.keycode == KEY_1:
 			print("[DEBUG] CƠ BẢN 1: Lửa")
 			cast_complex_spell([SpellDictionary.Element.FIRE], coords, dirs)
@@ -370,10 +283,7 @@ func _input(event):
 		elif event.keycode == KEY_4:
 			print("[DEBUG] CƠ BẢN 4: Đất")
 			cast_complex_spell([SpellDictionary.Element.EARTH], coords, dirs)
-
-		# ==========================================
 		# 2. NHÓM PHÉP GIA CƯỜNG (2 Nguyên tố GIỐNG nhau)
-		# ==========================================
 		elif event.keycode == KEY_5:
 			print("[DEBUG] GIA CƯỜNG 1: Lửa x2 (Vụ nổ lớn)")
 			cast_complex_spell([SpellDictionary.Element.FIRE, SpellDictionary.Element.FIRE], coords, dirs)
@@ -389,17 +299,14 @@ func _input(event):
 		elif event.keycode == KEY_8:
 			print("[DEBUG] GIA CƯỜNG 4: Đất x2 (Siêu phòng thủ)")
 			cast_complex_spell([SpellDictionary.Element.EARTH, SpellDictionary.Element.EARTH], coords, dirs)
-
-		# ==========================================
 		# 3. NHÓM PHÉP HỢP ẤN (2 Nguyên tố KHÁC nhau)
-		# ==========================================
 		elif event.keycode == KEY_9:
 			print("[DEBUG] HỢP ẤN 1: Lửa + Nước -> Hơi nước (Gây mù)")
 			cast_complex_spell([SpellDictionary.Element.FIRE, SpellDictionary.Element.WATER], coords, dirs)
 			
 		elif event.keycode == KEY_0:
 			print("[DEBUG] HỢP ẤN 2: Lửa + Gió -> Bão lửa (Giảm giáp)")
-			# Thử thêm hướng đẩy lùi cho bão lửa
+
 			cast_complex_spell([SpellDictionary.Element.FIRE, SpellDictionary.Element.WIND], coords, [Vector2i(1, 0)])
 			
 		elif event.keycode == KEY_Q:
@@ -417,7 +324,6 @@ func _input(event):
 		elif event.keycode == KEY_R:
 			print("[DEBUG] HỢP ẤN 6: Gió + Đất -> Bão cát (Giảm tầm đánh)")
 			cast_complex_spell([SpellDictionary.Element.WIND, SpellDictionary.Element.EARTH], coords, dirs)
-
 func get_piece_at(grid_pos: Vector2i):
 	for p in all_pieces:
 		if is_instance_valid(p) and p.grid_pos == grid_pos:
@@ -535,51 +441,34 @@ func _on_end_turn_pressed():
 	if turn_label:
 		turn_label.text = "Turn: " + str(current_turn)
 	Global.has_casted_spell = false
-	%ClosedScrollButton.show() # Ép cuộn giấy nhỏ hiện ra lại
+	%ClosedScrollButton.show()
 	process_ammo_reloads()
-
-	# Sau khi đánh nhau xong, đếm xem địch còn mống nào không
 	if count_enemies_alive() <= 0:
 		check_and_trigger_next_wave()
 	for effect in get_tree().get_nodes_in_group("tile_effects"):
-		# --- 1. PHẦN MỚI: TÁC ĐỘNG MÔI TRƯỜNG LÊN LÍNH ---
-		# Lấy con lính đang đứng đúng trên cái ô của hiệu ứng này
 		var unit_on_tile = get_unit_at(effect.grid_pos)
 		
 		if unit_on_tile:
-			# Nếu là bãi Lửa hoặc Dung nham -> Đốt máu
 			if effect.type == "fire_zone" or effect.type == "lava":
-				unit_on_tile.take_damage(10) # Đứng trên lửa mất 10 máu mỗi lượt
+				unit_on_tile.take_damage(10)
 				print(unit_on_tile.name, " bị bỏng vì đứng trên bãi lửa!")
-				
-			# (Tương lai bạn có thể thêm: Nếu effect.type == "rain" thì hồi máu...)
-		# ------------------------------------------------
-		
-		# --- 2. PHẦN CŨ: TRỪ THỜI GIAN TỒN TẠI ---
 		effect.duration -= 1
 		if effect.duration <= 0:
-			effect.queue_free() # Tự hủy khi hết hạn
+			effect.queue_free()
 func execute_all_combat_logic():
 	for p in all_pieces:
 		if not is_instance_valid(p): continue
-		
-		# --- KHI ĐANG TÚM CỔ NHAU (Cận chiến) ---
 		if p.is_grabbed:
-			# Chuyển tên thành chữ thường hết để không bao giờ bị lỗi Hoa/Thường nữa
 			var p_name = p.name.to_lower()
-			
 			if "queen" in p_name:
-				queen_grab_counter(p) # (Tôi đã sửa lại hàm cận chiến của Hậu cho bạn luôn ở đây)
+				queen_grab_counter(p)
 			elif "knight" in p_name:
 				execute_knight_logic(p)
 			elif "bishop" in p_name:
 				execute_bishop_logic(p)
 			else:
-				# NẾU LÀ LÍNH THƯỜNG (Hoặc Vua): Cứ bị tóm là chém trả 10 máu!
 				if is_instance_valid(p.grabbed_by):
 					deal_damage(p.grabbed_by, 10)
-		
-		# --- KHI ĐỨNG TỰ DO (Đánh xa) ---
 		else:
 			var p_name = p.name.to_lower()
 			if "rook" in p_name:
@@ -589,12 +478,9 @@ func execute_all_combat_logic():
 func move_team_logic(team_num: int):
 	for p in all_pieces:
 		if not is_instance_valid(p) or p.team != team_num: continue
-		
-		# ---- SỬA DÒNG NÀY: Thêm or "Dummy" in p.name ----
 		if p.get("is_grabbed") == true or "King" in p.name or "Dummy" in p.name or "boss" in p.name.to_lower() or "dragon" in p.name.to_lower():
 			continue
 		if p.has_moved: continue
-
 		if "Rook" in p.name:
 			if not p.is_charging:
 				p.is_charging = true
@@ -602,7 +488,6 @@ func move_team_logic(team_num: int):
 				p.set_meta("just_charged", true)
 				if p.has_method("update_visuals"): p.update_visuals()
 				continue
-				
 		if team_num == 1:
 			if current_command == Command.IDLE: continue
 			elif current_command == Command.DEFEND:
@@ -611,7 +496,6 @@ func move_team_logic(team_num: int):
 					var next = get_next_step_towards(p.grid_pos, king_target.grid_pos)
 					if is_cell_vacant(next): move_piece(p, next)
 				continue
-
 		if (team_num == 1 and current_command == Command.ATTACK) or team_num == 2:
 			var acted = false
 			if "Queen" in p.name:
@@ -625,18 +509,14 @@ func move_team_logic(team_num: int):
 				acted = true
 			elif "Rook" in p.name:
 				acted = true
-				
 			if acted: continue
-			
 			var target = find_best_target(p)
 			if target:
 				var next = get_next_step_towards(p.grid_pos, target.grid_pos)
 				if is_cell_vacant(next): move_piece(p, next)
-
 func find_best_target(for_piece):
 	var enemy_king = null
 	var enemy_soldiers = []
-	
 	for p in all_pieces:
 		if is_instance_valid(p) and p.team != for_piece.team:
 			if "King" in p.name:
@@ -942,40 +822,31 @@ func execute_boss_turn():
 		1: fire_breath_single()
 		2: claw_swipe()
 		3: triple_fireball()
-	
-	# Luân phiên đòn đánh
+
 	current_attack_index = (current_attack_index + 1) % 4
 
-# --- CHI TIẾT KỸ NĂNG ---
-
-# 1. Hét đẩy lùi 2 ô
 func scream_pushback():
 	for p in all_pieces:
 		if is_instance_valid(p) and p.team == 1:
-			p.grid_pos.y += 2 # Đẩy xuống dưới 2 ô
-			p.grid_pos.y = clamp(p.grid_pos.y, 0, 7) # Không đẩy ra khỏi bàn
+			p.grid_pos.y += 2
+			p.grid_pos.y = clamp(p.grid_pos.y, 0, 7)
 			p.position = grid_to_pixel(p.grid_pos)
 
-# 2. Khạc lửa đơn + Đốt
 func fire_breath_single():
 	var players = get_all_team_units(1)
 	if players.size() > 0:
 		var target = players.pick_random()
 		deal_damage(target, 20)
-		target.set("burn_ticks", 2) # Hiệu ứng đốt 2 lượt
+		target.set("burn_ticks", 2)
 
-# 3. Cào 3 ô phía trước
 func claw_swipe():
-	for x in range(3, 3 + 3): # 3 là tọa độ x của rồng
-		var target_pos = Vector2i(x, 0 + 3) # 0 là tọa độ y của rồng
+	for x in range(3, 3 + 3):
+		var target_pos = Vector2i(x, 0 + 3)
 		var unit = find_unit_at(target_pos)
 		if unit: deal_damage(unit, 25)
-
-# 4. 3 Cầu lửa nổ 3x3
 func triple_fireball():
 	for i in range(3):
 		var center = Vector2i(randi()%8, randi()%8)
-		# Quét vùng nổ 3x3 quanh tâm
 		for x in range(-1, 2):
 			for y in range(-1, 2):
 				var unit = find_unit_at(center + Vector2i(x, y))
@@ -1166,15 +1037,10 @@ func process_ammo_reloads():
 					if p.has_node("AmmoBar"):
 						p.get_node("AmmoBar").value = p.current_ammo
 
-# Kiểm tra xem một ô trên lưới có trống hay không
 func is_cell_empty(grid_pos: Vector2i) -> bool:
-	# 1. Kiểm tra xem có nằm trong phạm vi bàn cờ không (giả sử 8x8)
 	if grid_pos.x < 0 or grid_pos.x >= 8 or grid_pos.y < 0 or grid_pos.y >= 8:
 		return false
-	# 2. Kiểm tra xem có quân cờ nào đang đứng ở đó không
 	return get_unit_at(grid_pos) == null
-
-# Thực hiện di chuyển quân cờ và cập nhật vị trí logic
 func move_unit_to(unit, new_grid_pos: Vector2i):
 	if "active_buffs" in unit and unit.active_buffs.has("root"):
 		return
@@ -1189,8 +1055,6 @@ func grid_to_pixel(grid_pos: Vector2i) -> Vector2:
 		target_grid = get_parent().get_node_or_null("GridPoints")
 		
 	if target_grid == null: return Vector2.ZERO
-		
-	# ÉP BUỘC THỨ TỰ TÊN NÚT LÀ: "Y X" (Dọc trước, Ngang sau)
 	var marker_name = str(int(grid_pos.y)) + " " + str(int(grid_pos.x))
 	
 	for child in target_grid.get_children():
@@ -1198,8 +1062,6 @@ func grid_to_pixel(grid_pos: Vector2i) -> Vector2:
 			return child.global_position
 			
 	return Vector2.ZERO
-
-# --- HÀM 2: CLICK CHUỘT ---
 func pixel_to_grid(mouse_pixel_pos: Vector2) -> Vector2i:
 	var target_grid = grid_points
 	if target_grid == null:
@@ -1219,14 +1081,12 @@ func pixel_to_grid(mouse_pixel_pos: Vector2) -> Vector2i:
 			var parts = clean_name.split(" ", false)
 			
 			if parts.size() >= 2:
-				# Trả về tọa độ cờ: Ngang (X) là số thứ hai, Dọc (Y) là số đầu tiên
 				closest_grid = Vector2i(int(parts[1]), int(parts[0]))
 				
 	if min_dist > 60:
 		return Vector2i(-1, -1)
 		
 	return closest_grid
-# --- 3. GỘP CÁC HÀM CŨ ĐỂ KHÔNG BỊ "ĐÁ" NHAU ---
 func calculate_world_position(grid_pos: Vector2i) -> Vector2:
 	return grid_to_pixel(grid_pos)
 
@@ -1247,46 +1107,30 @@ func trigger_victory():
 			endgame_title.modulate = Color(1, 1, 0)
 
 func clear_old_enemies():
-	# Duyệt ngược mảng để xóa không bị sót
 	for i in range(all_pieces.size() - 1, -1, -1):
 		var p = all_pieces[i]
-		if is_instance_valid(p) and p.team == 2: # Nếu là lính địch (Team 2)
-			all_pieces.remove_at(i) # Xóa khỏi danh sách quản lý
-			p.queue_free() # Xóa khỏi màn hình
-
+		if is_instance_valid(p) and p.team == 2:
+			all_pieces.remove_at(i)
+			p.queue_free()
 func get_unit_at(pos: Vector2i):
-	# Duyệt qua mảng all_pieces (giống hệt như cách cái Radar hoạt động)
 	for p in all_pieces:
 		if is_instance_valid(p):
-			# So sánh tọa độ grid_pos chuẩn xác
 			if Vector2i(p.grid_pos) == Vector2i(pos):
 				return p
-				
-	# Nếu quét hết không thấy ai ở ô đó thì trả về rỗng
 	return null
 func cast_spell(element_type):
-	# 1. Tìm tên file scene cần load từ Dictionary
 	var scene_name = SpellDictionary.get_spell_scene_name(element_type)
-	
-	# 2. Load file .tscn tương ứng
 	var spell_path = "res://spells/" + scene_name + ".tscn"
 	var spell_resource = load(spell_path)
-	
 	if spell_resource:
 		var spell_instance = spell_resource.instantiate()
-		
-		# 3. Đặt vị trí xuất phát (vị trí người chơi hoặc tọa độ đã vẽ)
 		spell_instance.position = $Player.position
-		
-		# 4. Thêm phép vào bàn cờ
 		add_child(spell_instance)
-		
-		# 5. Áp dụng hiệu ứng dựa trên thiết kế của bạn
 		apply_spell_effects(element_type, spell_instance)
 func get_first_unit_in_direction(start_pos: Vector2i, direction: Vector2i, max_range: int):
 	for i in range(1, max_range + 1):
 		var check_pos = start_pos + (direction * i)
-		var unit = get_unit_at(check_pos) # Hàm get_unit_at bạn đã thêm trước đó
+		var unit = get_unit_at(check_pos)
 		if unit:
 			return unit
 	return null
@@ -1300,8 +1144,6 @@ func apply_spell_effects(element, _instance):
 			print("Miễn nhiễm sát thương và nhận 3 giấy")
 		SpellDictionary.Element.WIND:
 			print("Mục tiêu tấn công 2 lần vào lượt sau")
-
-
 func execute_spell_logic(element_type, target_unit, multiplier, is_multi, is_boosted, grid_pos: Vector2i):
 	match element_type:
 		# ----- LỬA -----
@@ -1350,27 +1192,50 @@ func execute_boosted_logic(element_type, target_unit, grid_pos: Vector2i, direct
 			execute_water_boosted(target_unit, grid_pos)
 		SpellDictionary.Element.WIND:
 			execute_wind_boosted(target_unit, grid_pos)
-			# (Lưu ý: Nếu hàm gió x2 của bạn cần xài directions, bạn có thể sửa hàm đó nhận thêm biến directions, còn hiện tại thì nó chỉ nhận grid_pos thôi là đủ rồi)
 func cast_complex_spell(elements, coordinates, directions):
-	# 1. Kiểm tra loại phép
-	var is_hybrid = elements.size() >= 2
+	# 1. Kiểm tra an toàn: Phải có ít nhất 1 phép và 2 ký tự tọa độ
+	if elements.is_empty() or coordinates.size() < 2:
+		print("[LogicGame] Bỏ qua vì thiếu nguyên tố hoặc tọa độ!")
+		return
+		
+	# 2. Xử lý tọa độ thông minh (Chống lỗi người chơi vẽ ngược Số và Chữ)
+	var letter = ""
+	var number = ""
+	
+	for char in coordinates:
+		if char in ["A", "B", "C", "D", "E", "F", "G", "H"]:
+			letter = char
+		elif char in ["1", "2", "3", "4", "5", "6", "7", "8"]:
+			number = char
+			
+	if letter == "" or number == "":
+		print("[LogicGame] Lỗi tọa độ không hợp lệ!")
+		return
+		
+	# Ép mảng về chuẩn ["Chữ", "Số"] để hàm Global xử lý không bao giờ sai
+	var safe_pair = [letter, number] 
+	var grid_pos = Global.convert_to_grid(safe_pair)
+	var target_unit = get_unit_at(grid_pos)
+	
+	print("[LogicGame] Xả phép tại Ô: ", safe_pair, " -> Tọa độ Grid: ", grid_pos)
+
+	# 3. Phân loại loại phép
+	var is_hybrid = elements.size() >= 2 and elements[0] != elements[1]
 	var is_boosted = elements.size() == 2 and elements[0] == elements[1]
 	
-	# 2. Tính toán multiplier cho 2 vị trí
-	var is_multi = (coordinates.size() >= 4)
-	var multiplier = 0.4 if is_multi else 1.0
+	# Tính toán multiplier (Giả sử bạn luôn cast 1 ô cho game hiện tại)
+	var multiplier = 1.0 
 	
-	# 3. Duyệt tọa độ và thi triển
-	for i in range(0, coordinates.size(), 2):
-		var pair = [coordinates[i], coordinates[i+1]]
-		var grid_pos = Global.convert_to_grid(pair)
-		var target_unit = get_unit_at(grid_pos)
-		if is_hybrid and not is_boosted:
-			# Gọi logic Hợp Ấn (Lửa+Đất, Lửa+Gió...)
-			execute_hybrid_spell(elements, grid_pos, directions)
-		else:
-			# Gọi logic Ấn đơn hoặc Ấn gia cường
-			execute_boosted_logic(elements[0], target_unit, grid_pos, directions)
+	# 4. THI TRIỂN PHÉP!
+	if is_hybrid:
+		# Gọi logic Hợp Ấn (Lửa+Gió...)
+		execute_hybrid_spell(elements, grid_pos, directions)
+	elif is_boosted:
+		# Gọi logic Ấn gia cường (Lửa x2...)
+		execute_boosted_logic(elements[0], target_unit, grid_pos, directions)
+	else:
+		# Gọi logic Ấn đơn (Lửa)
+		execute_standard_logic(elements[0], target_unit, multiplier, grid_pos)
 func calculate_spell_range(directions: Array) -> int:
 	# 1 hướng = 8 ô, mỗi hướng thêm vào sẽ giảm tầm xa
 	var base_range = 9
@@ -1463,33 +1328,28 @@ func execute_standard_logic(element_type, target_unit, multiplier, grid_pos: Vec
 		SpellDictionary.Element.WIND:
 			execute_wind_logic(target_unit, multiplier, grid_pos)
 # Sửa lại khai báo hàm để nhận đủ tham số từ hệ thống cast phép
+# --- PHÉP LỬA CƠ BẢN ---
 func execute_fire_logic(target_unit, multiplier, grid_pos: Vector2i):
-	var my_king = get_king_piece()
-	# Chỉ bay từ Vua nếu click vào ô TRỐNG hoặc ĐỊCH
-	if target_unit == null:
-		# Đợi đạn bay (Rất quan trọng!)
-		if my_king:
-			await shoot_spell_from_king(my_king, grid_pos, "fireball_fly") 
-		play_spell_animation(grid_pos, "lua") # Nổ
-		# (Tùy chọn: Thưởng mực nếu nổ trúng ô trống...)
-	else:
-		if my_king:
-			await shoot_spell_from_king(my_king, grid_pos, "fireball_fly") 
-		play_spell_animation(grid_pos, "lua")
+	
+	# 1. Nổ thẳng phép thuật từ trên trời giáng xuống vị trí đã vẽ
+	play_spell_animation(grid_pos, "lua", target_unit)
+	
+	# 2. Trừ máu nếu có quái
+	if target_unit:
 		target_unit.take_damage(35 * multiplier)
+
+# --- PHÉP LỬA CƯỜNG HÓA ---
 func execute_fire_boosted(target_unit, grid_pos: Vector2i):
-	var my_king = get_king_piece()
-	if target_unit == null:
-		if my_king:
-			await shoot_spell_from_king(my_king, grid_pos, "fireball_fly") 
-		play_spell_animation(grid_pos, "lualua") # Nổ mạnh
-		create_tile_effect(grid_pos, "fire_zone", 2) # Tạo bãi lửa
-	else:
-		if my_king:
-			await shoot_spell_from_king(my_king, grid_pos, "fireball_fly") 
-		play_spell_animation(grid_pos, "lualua")
-		create_tile_effect(grid_pos, "fire_zone", 2)
-		target_unit.take_damage(52.5) # Dame có sẵn của bạn
+	
+	# 1. Nổ hoạt ảnh x2
+	play_spell_animation(grid_pos, "lualua", target_unit)
+	
+	# 2. Tạo bãi lửa
+	create_tile_effect(grid_pos, "fire_zone", 2)
+	
+	# 3. Trừ máu
+	if target_unit:
+		target_unit.take_damage(52.5)
 # --- B. PHÉP NƯỚC (Hồi máu) ---
 func execute_water_logic(target_unit, multiplier, grid_pos: Vector2i):
 	play_spell_animation(grid_pos, "nuoc") # Mưa rơi
@@ -1532,7 +1392,6 @@ func execute_hybrid_spell(elements: Array, grid_pos: Vector2i, directions: Array
 	
 	# Lấy thông tin mục tiêu tại ô click chuột (có thể rỗng)
 	var target_unit = get_unit_at(grid_pos)
-	var my_king = get_king_piece()
 	
 	# MỞ KHÓA TỔNG: Chỉ cần đủ 2 nguyên tố là chạy, không quan tâm có lính hay không
 	if elements.size() == 2:
@@ -1541,9 +1400,6 @@ func execute_hybrid_spell(elements: Array, grid_pos: Vector2i, directions: Array
 		# 1. LỬA + ĐẤT -> Bãi Dung Nham
 		# ==========================================
 		if elements == [SpellDictionary.Element.FIRE, SpellDictionary.Element.EARTH] or elements == [SpellDictionary.Element.EARTH, SpellDictionary.Element.FIRE]:
-			if my_king:
-				await shoot_spell_from_king(my_king, grid_pos, "fireball_fly") # Đạn lửa bay ra
-			
 			play_spell_animation(grid_pos, "luadat")
 			create_tile_effect(grid_pos, "lava", 8) # Tồn tại 8 lượt theo tài liệu
 			
@@ -1555,8 +1411,6 @@ func execute_hybrid_spell(elements: Array, grid_pos: Vector2i, directions: Array
 		# 2. LỬA + GIÓ -> Bão Lửa
 		# ==========================================
 		elif elements == [SpellDictionary.Element.FIRE, SpellDictionary.Element.WIND] or elements == [SpellDictionary.Element.WIND, SpellDictionary.Element.FIRE]:
-			if my_king:
-				await shoot_spell_from_king(my_king, grid_pos, "fireball_fly")
 				
 			play_spell_animation(grid_pos, "luagio")
 			create_tile_effect(grid_pos, "luagio", 3) # Bão lửa 3 lượt
@@ -1569,8 +1423,6 @@ func execute_hybrid_spell(elements: Array, grid_pos: Vector2i, directions: Array
 		# 3. LỬA + NƯỚC -> Sương Mù
 		# ==========================================
 		elif elements == [SpellDictionary.Element.FIRE, SpellDictionary.Element.WATER] or elements == [SpellDictionary.Element.WATER, SpellDictionary.Element.FIRE]:
-			if my_king:
-				await shoot_spell_from_king(my_king, grid_pos, "fireball_fly")
 				
 			play_spell_animation(grid_pos, "luanuoc1")
 			create_tile_effect(grid_pos, "luanuoc2", 3) # Sương mù 3 lượt
@@ -1601,8 +1453,6 @@ func execute_hybrid_spell(elements: Array, grid_pos: Vector2i, directions: Array
 		# 6. GIÓ + ĐẤT -> Cột Đất (Vật cản)
 		# ==========================================
 		elif elements == [SpellDictionary.Element.WIND, SpellDictionary.Element.EARTH] or elements == [SpellDictionary.Element.EARTH, SpellDictionary.Element.WIND]:
-			if my_king:
-				await shoot_spell_from_king(my_king, grid_pos, "wind_fly")
 				
 			# Lưu ý: Cột đất tự hiện hình, không cần play_spell_animation
 			create_static_obstacle(grid_pos, "earth_wall", 8) # Khối đất 8 lượt
@@ -1733,14 +1583,16 @@ func shoot_spell_from_king(king_node, target_grid_pos: Vector2i, anim_name: Stri
 # --- 2. HÀM NỔ ANIMATION ---
 func play_spell_animation(grid_pos: Vector2i, anim_name: String, target_unit = null):
 	var effect = SPELL_EFFECT_SCENE.instantiate()
-	
-	# Thêm vụ nổ vào thẳng màn hình gốc
+	effect.visible = false 
 	get_tree().current_scene.add_child(effect)
 	
-	# Tương tự, ưu tiên lấy tọa độ quái nếu trúng quái
 	if target_unit != null:
 		effect.global_position = target_unit.global_position
 	else:
 		effect.global_position = Global.calculate_world_position(grid_pos)
 		
 	effect.play(anim_name)
+	effect.visible = true 
+	
+	# --- THÊM DÒNG NÀY ĐỂ TỰ HỦY SAU KHI NỔ XONG ---
+	effect.animation_finished.connect(effect.queue_free)

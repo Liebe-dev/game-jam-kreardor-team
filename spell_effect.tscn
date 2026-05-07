@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://djkuq11k4ecgw" path="res://SpellEffect.gd" id="1_3hl3j"]
 [ext_resource type="Texture2D" uid="uid://b0bth1atflgjn" path="res://anim/wind.png" id="1_6gi4m"]
+[ext_resource type="Texture2D" uid="uid://b2kwp7gew6sun" path="res://anim/earth.png" id="1_6vc43"]
 [ext_resource type="Texture2D" uid="uid://fltyxrm475ac" path="res://anim/wind+wind-sheet.png" id="2_ctjfh"]
 [ext_resource type="Texture2D" uid="uid://bknfi0j07p3tt" path="res://anim/fire-sheet.png" id="2_nwwmj"]
 [ext_resource type="Texture2D" uid="uid://d1j22ty72rlj6" path="res://anim/fire+wind-sheet.png" id="4_8f727"]
@@ -10,7 +11,11 @@
 [ext_resource type="Texture2D" uid="uid://ckm5rdxfvs3pq" path="res://anim/water+fireremain-sheet.png" id="7_1t38n"]
 [ext_resource type="Texture2D" uid="uid://cd2qmawk0tb26" path="res://anim/water-sheet.png" id="8_45p7d"]
 [ext_resource type="Texture2D" uid="uid://t1fdcxb3moxv" path="res://anim/water+wind-sheet.png" id="9_6mkkg"]
+[ext_resource type="Texture2D" uid="uid://bgwylppson6vx" path="res://anim/earth+water.png" id="10_8cvsy"]
 [ext_resource type="Texture2D" uid="uid://b1qdge85osuxo" path="res://anim/water+water.png" id="10_pgxgt"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_1t38n"]
+blend_mode = 1
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_2h4wd"]
 atlas = ExtResource("1_6gi4m")
@@ -68,6 +73,18 @@ region = Rect2(1040, 0, 208, 208)
 atlas = ExtResource("2_nwwmj")
 region = Rect2(1248, 0, 208, 208)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_45p7d"]
+atlas = ExtResource("5_6vc43")
+region = Rect2(0, 0, 208, 208)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6mkkg"]
+atlas = ExtResource("5_6vc43")
+region = Rect2(208, 0, 208, 208)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pgxgt"]
+atlas = ExtResource("5_6vc43")
+region = Rect2(416, 0, 208, 208)
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_pg37a"]
 atlas = ExtResource("4_8f727")
 region = Rect2(0, 0, 624, 624)
@@ -92,16 +109,19 @@ region = Rect2(2496, 0, 624, 624)
 atlas = ExtResource("4_8f727")
 region = Rect2(3120, 0, 624, 624)
 
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_c8osh"]
+load_path = "res://.godot/imported/fire+fire fire+earth-sheet.png-5344819bde9bc0793d2362105f1367d2.ctex"
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_46qiu"]
-atlas = ExtResource("5_6vc43")
+atlas = SubResource("CompressedTexture2D_c8osh")
 region = Rect2(0, 0, 208, 208)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_wh0j1"]
-atlas = ExtResource("5_6vc43")
+atlas = SubResource("CompressedTexture2D_c8osh")
 region = Rect2(208, 0, 208, 208)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_tgm1o"]
-atlas = ExtResource("5_6vc43")
+atlas = SubResource("CompressedTexture2D_c8osh")
 region = Rect2(416, 0, 208, 208)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_34bs8"]
@@ -187,12 +207,18 @@ animations = [{
 "name": &"_flash_protector",
 "speed": 5.0
 }, {
-"frames": [],
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_6vc43")
+}],
 "loop": true,
 "name": &"dat",
 "speed": 5.0
 }, {
-"frames": [],
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_6vc43")
+}],
 "loop": true,
 "name": &"datdat",
 "speed": 5.0
@@ -209,7 +235,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"gio",
-"speed": 5.0
+"speed": 7.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -232,7 +258,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"giogio",
-"speed": 5.0
+"speed": 10.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -258,12 +284,21 @@ animations = [{
 }],
 "loop": false,
 "name": &"lua",
-"speed": 7.0
+"speed": 10.0
 }, {
-"frames": [],
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_45p7d")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6mkkg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pgxgt")
+}],
 "loop": true,
 "name": &"luadat",
-"speed": 5.0
+"speed": 8.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -284,9 +319,9 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_3vvts")
 }],
-"loop": false,
+"loop": true,
 "name": &"luagio",
-"speed": 5.0
+"speed": 10.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -300,7 +335,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"lualua",
-"speed": 5.0
+"speed": 8.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -314,7 +349,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"luanuoc1",
-"speed": 5.0
+"speed": 6.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -334,7 +369,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"luanuoc2",
-"speed": 5.0
+"speed": 7.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -357,9 +392,12 @@ animations = [{
 }],
 "loop": false,
 "name": &"nuoc",
-"speed": 5.0
+"speed": 8.0
 }, {
-"frames": [],
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("10_8cvsy")
+}],
 "loop": true,
 "name": &"nuocdat",
 "speed": 5.0
@@ -379,7 +417,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"nuocgio",
-"speed": 5.0
+"speed": 7.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -394,7 +432,9 @@ animations = [{
 }]
 
 [node name="SpellEffect" type="AnimatedSprite2D" unique_id=1633474168]
+z_index = 10
+material = SubResource("CanvasItemMaterial_1t38n")
 sprite_frames = SubResource("SpriteFrames_w8e4j")
-animation = &"_flash_protector"
+animation = &"luagio"
 autoplay = "_flash_protector"
 script = ExtResource("1_3hl3j")
