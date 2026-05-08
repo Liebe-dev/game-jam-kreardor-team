@@ -4,6 +4,7 @@ var paper_count: int = 10
 var has_casted_spell: bool = false
 var magic_system: Node = null
 var current_ink : float = 1000.0
+
 func convert_to_grid(pair: Array) -> Vector2i:
 	if pair.size() < 2:
 		return Vector2i(-1, -1) # Trả về tọa độ lỗi nếu mảng không đủ 2 phần tử

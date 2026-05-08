@@ -21,6 +21,9 @@ var current_ammo = 3
 var is_reloading = false
 var reload_turns_left = 0
 var damage_reduction_rate = 0.0
+var is_shield_new = false # Biến cờ đánh dấu khiên mới
+var current_wind_visual = null
+var stun_turns = 0
 func _ready():
 	# Đảm bảo thanh máu khớp với chỉ số khi vừa sinh ra
 	if has_node("HealthBar"):
@@ -58,7 +61,9 @@ func die():
 	else:
 		queue_free()
 func move_to_grid(new_grid_pos: Vector2i, new_world_pos: Vector2):
-	
+	if stun_turns > 0:
+		print("Đang bị choáng: Chặn di chuyển!")
+		return
 	# Vectơ hướng di chuyển (Mới - Cũ)
 	var direction_vector = new_grid_pos - grid_pos 
 	
@@ -95,14 +100,31 @@ func add_buff(buff_name: String, value: float, duration_turns: int):
 	
 	if buff_name == "damage_reduction":
 		damage_reduction_rate = value
-		
-		# --- Bật Animation Khiên của bạn ở đây ---
-		# Thay "ShieldAnim" bằng tên Node thực tế của bạn
+		self.is_shield_new = true
 		if has_node("ShieldAnim"):
 			$ShieldAnim.visible = true
 			$ShieldAnim.play("ShieldAnim") # Điền tên animation loop của khiên vào
+	if buff_name == "stun":
+		self.stun_turns = duration_turns
+		
+		# Nếu đang có hiệu ứng gió cũ thì xóa đi trước khi tạo cái mới
+		if is_instance_valid(current_wind_visual):
+			current_wind_visual.queue_free()
 			
-		print("[Pawn] Bật khiên bảo vệ cho ", name)
+		# Gọi Scene chứa animation
+		var effect = preload("res://spell_effect.tscn").instantiate()
+		add_child(effect) # Gắn trực tiếp làm con của lính
+		
+		# Chỉnh vị trí và thứ tự hiển thị
+		effect.position = Vector2(0, -15) # Chỉnh số này cho vừa với thân lính
+		effect.z_index = 1
+		
+		# Phát animation buff
+		effect.play("gio") 
+		
+		# Lưu lại vào biến để xóa khi lính hết bị stun
+		self.current_wind_visual = effect
+
 
 # 2. TẮT ANIMATION KHI HẾT LƯỢT
 func on_turn_end():
@@ -120,6 +142,15 @@ func on_turn_end():
 				$ShieldAnim.stop()
 				
 			print("[Pawn] Đã vỡ khiên Đất trên ", name)
+	if stun_turns > 0:
+		
+		print("Số lượt choáng còn lại: ", stun_turns)
+		
+		# Khi hết choáng thì xóa hiệu ứng hình ảnh
+		if stun_turns == 0:
+			if is_instance_valid(current_wind_visual):
+				current_wind_visual.queue_free()
+				print("Đã hết choáng!")
 func process_buffs():
 	# 1. Gây tác dụng của các buff bất lợi đầu hiệp (như rút máu do cháy)
 	if active_buffs.has("burn"):

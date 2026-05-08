@@ -67,7 +67,7 @@ offset_top = 249.0
 offset_right = 1597.6666
 offset_bottom = 272.0
 scale = Vector2(2, 2)
-text = "TURN 1"
+text = "Turn: 1"
 
 [node name="WaveLabel" type="Label" parent="CanvasLayer" unique_id=166825750]
 texture_filter = 1
@@ -76,7 +76,7 @@ offset_top = 200.0
 offset_right = 1599.6666
 offset_bottom = 223.0
 scale = Vector2(2, 2)
-text = "Wave 1"
+text = "Wave: 1"
 
 [node name="GridPoints" type="Node2D" parent="." unique_id=715706376]
 
