@@ -5,18 +5,38 @@
 [ext_resource type="Texture2D" uid="uid://b2kwp7gew6sun" path="res://anim/earth.png" id="1_6vc43"]
 [ext_resource type="Texture2D" uid="uid://fltyxrm475ac" path="res://anim/wind+wind-sheet.png" id="2_ctjfh"]
 [ext_resource type="Texture2D" uid="uid://bknfi0j07p3tt" path="res://anim/fire-sheet.png" id="2_nwwmj"]
+[ext_resource type="Texture2D" uid="uid://bv45iik373mfx" path="res://anim/earth+wind-sheet.png" id="3_6vc43"]
 [ext_resource type="Texture2D" uid="uid://d1j22ty72rlj6" path="res://anim/fire+wind-sheet.png" id="4_8f727"]
 [ext_resource type="Texture2D" uid="uid://boiphqvpo1k3o" path="res://anim/fire+fire fire+earth-sheet.png" id="5_6vc43"]
 [ext_resource type="Texture2D" uid="uid://dl712kuobxf62" path="res://anim/water+fireappear-sheet.png" id="6_8cvsy"]
 [ext_resource type="Texture2D" uid="uid://ckm5rdxfvs3pq" path="res://anim/water+fireremain-sheet.png" id="7_1t38n"]
 [ext_resource type="Texture2D" uid="uid://cd2qmawk0tb26" path="res://anim/water-sheet.png" id="8_45p7d"]
-[ext_resource type="Texture2D" uid="uid://t1fdcxb3moxv" path="res://anim/water+wind-sheet.png" id="9_6mkkg"]
 [ext_resource type="Texture2D" uid="uid://bgwylppson6vx" path="res://anim/earth+water.png" id="10_8cvsy"]
 [ext_resource type="Texture2D" uid="uid://b1qdge85osuxo" path="res://anim/water+water.png" id="10_pgxgt"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_2h4wd"]
 atlas = ExtResource("1_6gi4m")
 region = Rect2(0, 0, 162, 162)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_46qiu"]
+atlas = ExtResource("3_6vc43")
+region = Rect2(0, 0, 208, 208)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wh0j1"]
+atlas = ExtResource("3_6vc43")
+region = Rect2(208, 0, 208, 208)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tgm1o"]
+atlas = ExtResource("3_6vc43")
+region = Rect2(416, 0, 208, 208)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vp21v"]
+atlas = ExtResource("3_6vc43")
+region = Rect2(624, 0, 208, 208)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_510yp"]
+atlas = ExtResource("3_6vc43")
+region = Rect2(832, 0, 208, 208)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_c8osh"]
 atlas = ExtResource("2_ctjfh")
@@ -174,22 +194,6 @@ region = Rect2(832, 0, 208, 208)
 atlas = ExtResource("8_45p7d")
 region = Rect2(1040, 0, 208, 208)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_vp21v"]
-atlas = ExtResource("9_6mkkg")
-region = Rect2(0, 0, 208, 208)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_510yp"]
-atlas = ExtResource("9_6mkkg")
-region = Rect2(208, 0, 208, 208)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_pm6qb"]
-atlas = ExtResource("9_6mkkg")
-region = Rect2(416, 0, 208, 208)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_yo6kt"]
-atlas = ExtResource("9_6mkkg")
-region = Rect2(624, 0, 208, 208)
-
 [sub_resource type="AtlasTexture" id="AtlasTexture_xaudq"]
 atlas = ExtResource("10_pgxgt")
 region = Rect2(0, 0, 134, 134)
@@ -227,6 +231,26 @@ animations = [{
 "loop": true,
 "name": &"gio",
 "speed": 7.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_46qiu")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wh0j1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tgm1o")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vp21v")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_510yp")
+}],
+"loop": false,
+"name": &"giodat",
+"speed": 8.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -395,23 +419,6 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_vp21v")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_510yp")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_pm6qb")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_yo6kt")
-}],
-"loop": true,
-"name": &"nuocgio",
-"speed": 7.0
-}, {
-"frames": [{
-"duration": 1.0,
 "texture": SubResource("AtlasTexture_xaudq")
 }],
 "loop": true,
@@ -423,6 +430,6 @@ animations = [{
 z_index = 100
 position = Vector2(0, 50)
 sprite_frames = SubResource("SpriteFrames_w8e4j")
-animation = &"giogio"
+animation = &"giodat"
 autoplay = "_flash_protector"
 script = ExtResource("1_3hl3j")
