@@ -3,13 +3,10 @@
 [ext_resource type="Script" uid="uid://cutk255mh0tqh" path="res://magic_drawing_system.gd" id="1_eigxu"]
 [ext_resource type="Texture2D" uid="uid://dlcgvacntsjif" path="res://scroll open.png" id="2_rxjga"]
 [ext_resource type="Texture2D" uid="uid://b6hcex5r2vkgg" path="res://circle.png" id="2_yc3uf"]
-[ext_resource type="Script" uid="uid://cachgqrvecjqi" path="res://addons/Gesture_recognizer/GR_Algorithm.gd" id="4_bkrc7"]
 [ext_resource type="Texture2D" uid="uid://duq4viquuuw0v" path="res://sample 2.png" id="4_p45i7"]
 
 [node name="MagicDrawingSystem" type="CanvasLayer" unique_id=1222554842]
 script = ExtResource("1_eigxu")
-radius_inner = 87.15
-radius_middle = 174.3
 
 [node name="UI_Container" type="Control" parent="." unique_id=638788640]
 unique_name_in_owner = true
@@ -46,13 +43,223 @@ offset_bottom = 582.0
 pivot_offset = Vector2(248, 244)
 texture = ExtResource("2_yc3uf")
 
-[node name="LinesContainer" type="Node2D" parent="UI_Container/SpellScroll" unique_id=1916018457]
+[node name="ElemIcon1" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=621674226]
 unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
 
-[node name="CurrentLine" type="Line2D" parent="UI_Container/SpellScroll" unique_id=1367213323]
+[node name="ElemEdit1" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=1264869398]
 unique_name_in_owner = true
-width = 3.0
-default_color = Color(0, 0, 0, 1)
+layout_mode = 0
+offset_left = 674.0
+offset_top = 336.0
+offset_right = 782.0
+offset_bottom = 408.0
+
+[node name="ElemIcon2" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=5122300]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="ElemEdit2" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=1490989987]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 676.0
+offset_top = 257.0
+offset_right = 784.0
+offset_bottom = 330.0
+
+[node name="IconTop" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1965926953]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="CoordTop" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=2050689200]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 671.0
+offset_top = 183.0
+offset_right = 795.0
+offset_bottom = 229.0
+
+[node name="IconBot" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1190594995]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="CoordBottom" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=473315685]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 671.0
+offset_top = 436.0
+offset_right = 795.0
+offset_bottom = 482.0
+
+[node name="IconLeft" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1409452546]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="CoordLeft" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=464601552]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 565.0
+offset_top = 293.0
+offset_right = 633.5
+offset_bottom = 354.0
+
+[node name="IconRight" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1376980109]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="CoordRight" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=835466503]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 828.0
+offset_top = 293.0
+offset_right = 896.5
+offset_bottom = 354.0
+
+[node name="IconDir1" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1291677053]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 556.0
+offset_top = 175.0
+offset_right = 596.0
+offset_bottom = 215.0
+
+[node name="Dir1" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=896711897]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 686.0
+offset_top = 115.0
+offset_right = 774.0
+offset_bottom = 152.0
+
+[node name="IconDir2" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1154175468]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 556.0
+offset_top = 175.0
+offset_right = 596.0
+offset_bottom = 215.0
+
+[node name="Dir2" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=910322110]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 853.0
+offset_top = 178.0
+offset_right = 941.0
+offset_bottom = 215.0
+
+[node name="IconDir3" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1626455866]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 556.0
+offset_top = 175.0
+offset_right = 596.0
+offset_bottom = 215.0
+
+[node name="Dir3" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=2061129147]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 904.0
+offset_top = 310.0
+offset_right = 992.0
+offset_bottom = 347.0
+
+[node name="IconDir4" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1488705402]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 556.0
+offset_top = 175.0
+offset_right = 596.0
+offset_bottom = 215.0
+
+[node name="Dir4" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=127036570]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 836.0
+offset_top = 461.0
+offset_right = 924.0
+offset_bottom = 498.0
+
+[node name="IconDir5" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1949420114]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 556.0
+offset_top = 175.0
+offset_right = 596.0
+offset_bottom = 215.0
+
+[node name="Dir5" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=2018218715]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 681.0
+offset_top = 517.0
+offset_right = 769.0
+offset_bottom = 554.0
+
+[node name="IconDir6" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=2069882381]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 556.0
+offset_top = 175.0
+offset_right = 596.0
+offset_bottom = 215.0
+
+[node name="Dir6" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=785831974]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 526.0
+offset_top = 459.0
+offset_right = 614.0
+offset_bottom = 496.0
+
+[node name="IconDir7" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=523351452]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 556.0
+offset_top = 175.0
+offset_right = 596.0
+offset_bottom = 215.0
+
+[node name="Dir7" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=1276422809]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 471.0
+offset_top = 312.0
+offset_right = 559.0
+offset_bottom = 349.0
+
+[node name="IconDir8" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=965349822]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 556.0
+offset_top = 175.0
+offset_right = 596.0
+offset_bottom = 215.0
+
+[node name="Dir8" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=2145071514]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 547.0
+offset_top = 174.0
+offset_right = 635.0
+offset_bottom = 211.0
 
 [node name="CloseAreaButton" type="Button" parent="UI_Container" unique_id=1900036161]
 layout_mode = 0
@@ -104,10 +311,6 @@ modulate = Color(1, 1, 1, 0.29803923)
 offset_right = 1920.0
 offset_bottom = 1080.0
 texture = ExtResource("4_p45i7")
-
-[node name="GestureRecognizer" type="Node" parent="." unique_id=1019601702]
-script = ExtResource("4_bkrc7")
-metadata/_custom_type_script = "uid://cachgqrvecjqi"
 
 [connection signal="gui_input" from="UI_Container/SpellScroll" to="." method="_on_spell_scroll_gui_input"]
 [connection signal="pressed" from="UI_Container/CloseAreaButton" to="." method="_on_close_area_button_pressed"]
