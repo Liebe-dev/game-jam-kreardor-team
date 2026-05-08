@@ -251,7 +251,7 @@ func _input(event):
 		var clicked_grid = calculate_grid_position(click_pos)
 		if not is_within_board(clicked_grid): return
 		var piece_at_click = get_piece_at(clicked_grid)
-		if piece_at_click and piece_at_click.team == 1:
+		if piece_at_click and piece_at_click.team == 1 and not "EarthBlock" in piece_at_click.name:
 			selected_piece = piece_at_click
 			show_highlights(selected_piece)
 		elif selected_piece != null:
@@ -950,8 +950,6 @@ func check_and_execute_grab(pawn):
 	else:
 		chosen_target = possible_targets.pick_random()
 		
-	pawn.is_grabbed = true
-	pawn.grabbed_by = chosen_target
 	if "EarthBlock" in pawn.name or "EarthBlock" in chosen_target.name:
 		return
 		
