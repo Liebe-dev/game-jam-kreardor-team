@@ -24,6 +24,7 @@ var damage_reduction_rate = 0.0
 var is_shield_new = false # Biến cờ đánh dấu khiên mới
 var current_wind_visual = null
 var stun_turns = 0
+var root_turns = 0
 func _ready():
 	# Đảm bảo thanh máu khớp với chỉ số khi vừa sinh ra
 	if has_node("HealthBar"):
@@ -61,9 +62,10 @@ func die():
 	else:
 		queue_free()
 func move_to_grid(new_grid_pos: Vector2i, new_world_pos: Vector2):
-	if stun_turns > 0:
-		print("Đang bị choáng: Chặn di chuyển!")
+	if stun_turns > 0 or root_turns > 0:
+		print("Đang bị choáng hoặc lún đầm lầy: Chặn di chuyển!")
 		return
+		
 	# Vectơ hướng di chuyển (Mới - Cũ)
 	var direction_vector = new_grid_pos - grid_pos 
 	
@@ -106,7 +108,8 @@ func add_buff(buff_name: String, value: float, duration_turns: int):
 			$ShieldAnim.play("ShieldAnim") # Điền tên animation loop của khiên vào
 	if buff_name == "stun":
 		self.stun_turns = duration_turns
-		
+	elif buff_name == "root":
+		root_turns = duration_turns
 		# Nếu đang có hiệu ứng gió cũ thì xóa đi trước khi tạo cái mới
 		if is_instance_valid(current_wind_visual):
 			current_wind_visual.queue_free()
