@@ -13,6 +13,7 @@
 [ext_resource type="Texture2D" uid="uid://cd2qmawk0tb26" path="res://anim/water-sheet.png" id="8_45p7d"]
 [ext_resource type="Texture2D" uid="uid://bgwylppson6vx" path="res://anim/earth+water.png" id="10_8cvsy"]
 [ext_resource type="Texture2D" uid="uid://b1qdge85osuxo" path="res://anim/water+water.png" id="10_pgxgt"]
+[ext_resource type="Texture2D" uid="uid://t1fdcxb3moxv" path="res://anim/water+wind-sheet.png" id="12_8cvsy"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_2h4wd"]
 atlas = ExtResource("1_6gi4m")
@@ -150,6 +151,26 @@ region = Rect2(208, 0, 208, 208)
 atlas = ExtResource("6_8cvsy")
 region = Rect2(416, 0, 208, 208)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_15i8b"]
+atlas = ExtResource("7_1t38n")
+region = Rect2(0, 0, 208, 208)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_27cc5"]
+atlas = ExtResource("7_1t38n")
+region = Rect2(208, 0, 208, 208)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_glk6k"]
+atlas = ExtResource("7_1t38n")
+region = Rect2(416, 0, 208, 208)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_b1hpu"]
+atlas = ExtResource("7_1t38n")
+region = Rect2(624, 0, 208, 208)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hc4ne"]
+atlas = ExtResource("7_1t38n")
+region = Rect2(832, 0, 208, 208)
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_hxqgb"]
 atlas = ExtResource("7_1t38n")
 region = Rect2(0, 0, 208, 208)
@@ -193,6 +214,22 @@ region = Rect2(832, 0, 208, 208)
 [sub_resource type="AtlasTexture" id="AtlasTexture_ihrr5"]
 atlas = ExtResource("8_45p7d")
 region = Rect2(1040, 0, 208, 208)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pm6qb"]
+atlas = ExtResource("12_8cvsy")
+region = Rect2(0, 0, 208, 208)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yo6kt"]
+atlas = ExtResource("12_8cvsy")
+region = Rect2(208, 0, 208, 208)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yoni3"]
+atlas = ExtResource("12_8cvsy")
+region = Rect2(416, 0, 208, 208)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bs0bq"]
+atlas = ExtResource("12_8cvsy")
+region = Rect2(624, 0, 208, 208)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_xaudq"]
 atlas = ExtResource("10_pgxgt")
@@ -361,10 +398,25 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_eusu2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_15i8b")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_27cc5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_glk6k")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_b1hpu")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hc4ne")
 }],
-"loop": false,
+"loop": true,
 "name": &"luanuoc1",
-"speed": 6.0
+"speed": 7.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -419,6 +471,23 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("AtlasTexture_pm6qb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yo6kt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yoni3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bs0bq")
+}],
+"loop": true,
+"name": &"nuocgio",
+"speed": 9.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": SubResource("AtlasTexture_xaudq")
 }],
 "loop": true,
@@ -429,7 +498,8 @@ animations = [{
 [node name="SpellEffect" type="AnimatedSprite2D" unique_id=1633474168]
 z_index = 100
 position = Vector2(0, 50)
+scale = Vector2(0.8, 0.8)
 sprite_frames = SubResource("SpriteFrames_w8e4j")
-animation = &"giodat"
+animation = &"luanuoc1"
 autoplay = "_flash_protector"
 script = ExtResource("1_3hl3j")
