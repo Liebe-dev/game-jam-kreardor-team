@@ -19,16 +19,24 @@ signal spell_casted(elements, coordinates, directions_list)
 @onready var dir_edits = [%Dir1, %Dir2, %Dir3, %Dir4, %Dir5, %Dir6, %Dir7, %Dir8]
 @onready var dir_icons = [%IconDir1, %IconDir2, %IconDir3, %IconDir4, %IconDir5, %IconDir6, %IconDir7, %IconDir8]
 
-# ==========================================
-# KHU VỰC KÉO THẢ HÌNH ẢNH (Kéo ảnh từ FileSystem vào Inspector bên phải)
-# ==========================================
+# KHU VỰC KÉO THẢ HÌNH ẢNH
 @export_group("Hình ảnh Ấn Chú")
 @export var icon_fire: Texture2D
 @export var icon_water: Texture2D
 @export var icon_earth: Texture2D
 @export var icon_wind: Texture2D
-@export var icon_success_text: Texture2D # Hình ảnh chung khi gõ đúng Tọa độ/Hướng
-
+@export var icon_success_text: Texture2D 
+@export var icon_direction: Texture2D
+@export var icon_fire_fire: Texture2D
+@export var icon_water_water: Texture2D
+@export var icon_earth_earth: Texture2D
+@export var icon_wind_wind: Texture2D
+@export var icon_fire_water: Texture2D
+@export var icon_fire_earth: Texture2D
+@export var icon_fire_wind: Texture2D
+@export var icon_water_earth: Texture2D
+@export var icon_water_wind: Texture2D
+@export var icon_earth_wind: Texture2D
 # Tài nguyên
 var max_ink : float = 1000.0
 var current_ink : float = 1000.0
@@ -38,110 +46,143 @@ var max_scroll_width: float = 0.0
 # Dữ liệu thi triển
 var cast_elements = []
 var cast_directions = []
-
-# Từ điển
+var cast_elements_str = []
+# Từ điển Nguyên tố
 var dict_elements = {
 	"ignis": "fire", "fire": "fire",
 	"aqua": "water", "water": "water",
 	"terra": "earth", "earth": "earth",
 	"ventus": "wind", "wind": "wind"
 }
-# Bản đồ liên kết vị trí Ô chữ (từ 0 đến 7) với Hướng bắn
+
+# Bản đồ liên kết Vị trí ô Hướng với Vector Thực tế
 var index_to_direction = {
-	0: Vector2(0, -1),   # %Dir1 (Ví dụ ô này nằm ở Hướng Lên)
-	1: Vector2(1, -1),   # %Dir2 (Lên Phải)
-	2: Vector2(1, 0),    # %Dir3 (Phải)
-	3: Vector2(1, 1),    # %Dir4 (Xuống Phải)
-	4: Vector2(0, 1),    # %Dir5 (Xuống)
-	5: Vector2(-1, 1),   # %Dir6 (Xuống Trái)
-	6: Vector2(-1, 0),   # %Dir7 (Trái)
-	7: Vector2(-1, -1)   # %Dir8 (Lên Trái)
+	0: Vector2(0, -1),   # Lên
+	1: Vector2(1, -1),   # Lên Phải
+	2: Vector2(1, 0),    # Phải
+	3: Vector2(1, 1),    # Xuống Phải
+	4: Vector2(0, 1),    # Xuống
+	5: Vector2(-1, 1),   # Xuống Trái
+	6: Vector2(-1, 0),   # Trái
+	7: Vector2(-1, -1)   # Lên Trái
 }
-func _ready():
+
+func _ready(): # Đã sửa lỗi khoảng trắng ở đây
 	Global.magic_system = self
 	max_scroll_width = %UI_Container.size.x
+	
+	# Đảm bảo cuộn bắt đầu trắng tinh
+	clear_all_inputs() 
 	update_ui()
 	
-	# 1. Cài đặt theo dõi phím gõ cho TẤT CẢ các ô
+	# 1. Cài đặt theo dõi phím gõ cho TẤT CẢ các ô (Để trừ mực)
 	var all_edits = elem_edits + coord_edits + dir_edits
 	for edit_node in all_edits:
 		edit_node.set_meta("prev_len", 0)
 		edit_node.text_changed.connect(_on_any_text_changed.bind(edit_node))
 		
-	# 2. Cài đặt nhấn phím Enter (Tách riêng ra để không bị lỗi đếm số)
+	# 2. Cài đặt nhấn phím Enter (Gửi dữ liệu)
 	for i in range(elem_edits.size()):
 		elem_edits[i].text_submitted.connect(_on_element_submitted.bind(i))
 	for i in range(coord_edits.size()):
 		coord_edits[i].text_submitted.connect(_on_coord_submitted.bind(i))
 	for i in range(dir_edits.size()):
 		dir_edits[i].text_submitted.connect(_on_dir_submitted.bind(i))
+
+# --- XỬ LÝ LỚP 1 (NGUYÊN TỐ) ---
 func _on_element_submitted(new_text: String, index: int):
 	var text_lower = new_text.to_lower().strip_edges()
 	
 	if dict_elements.has(text_lower):
-		var elem_type = dict_elements[text_lower]
-		var final_icon = null
+		var elem_str = dict_elements[text_lower] # Trả về "fire", "water"...
 		
-		# Lưu dữ liệu thật và gán hình ảnh tương ứng
-		match elem_type:
-			"fire": 
-				cast_elements.append(SpellDictionary.Element.FIRE)
-				final_icon = icon_fire
-			"water": 
-				cast_elements.append(SpellDictionary.Element.WATER)
-				final_icon = icon_water
-			"earth": 
-				cast_elements.append(SpellDictionary.Element.EARTH)
-				final_icon = icon_earth
-			"wind": 
-				cast_elements.append(SpellDictionary.Element.WIND)
-				final_icon = icon_wind
+		# 1. Lưu vào logic game
+		match elem_str:
+			"fire": cast_elements.append(SpellDictionary.Element.FIRE)
+			"water": cast_elements.append(SpellDictionary.Element.WATER)
+			"earth": cast_elements.append(SpellDictionary.Element.EARTH)
+			"wind": cast_elements.append(SpellDictionary.Element.WIND)
+			
+		# 2. Lưu vào mảng phục vụ UI
+		cast_elements_str.append(elem_str)
 		
-		# Hô biến: Ẩn chữ, Hiện Hình
+		# 3. Ẩn ô nhập chữ đi
 		elem_edits[index].hide()
-		elem_icons[index].texture = final_icon
-		elem_icons[index].show()
+		
+		# 4. XỬ LÝ HÌNH ẢNH
+		if cast_elements_str.size() == 1:
+			# Lần 1: Hiện ảnh nguyên tố đơn lẻ ở vị trí Icon 1 (Chính giữa)
+			elem_icons[0].texture = get_single_icon(elem_str)
+			elem_icons[0].show()
+			
+		elif cast_elements_str.size() == 2:
+			# Lần 2: Đổi ảnh ở Icon 1 thành ảnh KẾT HỢP
+			elem_icons[0].texture = get_combined_icon(cast_elements_str[0], cast_elements_str[1])
+			elem_icons[1].hide() # Đảm bảo Icon 2 không hiện ra vì đã gộp vào Icon 1 rồi
+			
 	else:
-		elem_edits[index].text = "" # Sai thì xóa bắt gõ lại
-
-# XỬ LÝ LỚP 2 (TỌA ĐỘ)
+		elem_edits[index].text = "" # Gõ sai thì xóa chữ
+# --- XỬ LÝ LỚP 2 (TỌA ĐỘ) ---
+# --- XỬ LÝ LỚP 2 (TỌA ĐỘ) ---
 func _on_coord_submitted(new_text: String, index: int):
 	var text_upper = new_text.to_upper().strip_edges()
-	# Luật: Ô 0 (Trên) và 2 (Dưới) chỉ nhận Chữ (A-H). Ô 1 (Trái) và 3 (Phải) chỉ nhận Số (1-8)
 	var is_valid = false
+	
 	if (index == 0 or index == 2) and text_upper.length() == 1 and "ABCDEFGH".contains(text_upper):
-		is_valid = true
+		is_valid = true # Tọa độ Top/Bot nhận Chữ
 	elif (index == 1 or index == 3) and text_upper.length() == 1 and "12345678".contains(text_upper):
-		is_valid = true
+		is_valid = true # Tọa độ Left/Right nhận Số
 		
 	if is_valid:
-		coord_edits[index].hide()
-		coord_icons[index].texture = icon_success_text # Hiện ảnh báo hiệu gõ thành công
-		coord_icons[index].show()
+		# Tọa độ ĐÚNG: Để nguyên chữ, KHÔNG ẩn ô nhập, KHÔNG hiện ảnh
+		coord_edits[index].text = text_upper # Ép thành chữ in hoa cho đẹp
+		coord_edits[index].release_focus()   # Nhả con trỏ chuột ra khỏi ô để người chơi không lỡ gõ thêm
 	else:
+		# Tọa độ SAI: Xóa chữ bắt gõ lại
 		coord_edits[index].text = ""
-# XỬ LÝ LỚP 3 (HƯỚNG)
-# XỬ LÝ LỚP 3 (HƯỚNG)
+# --- XỬ LÝ LỚP 3 (HƯỚNG) ---
 func _on_dir_submitted(new_text: String, index: int):
 	var text_lower = new_text.to_lower().strip_edges()
 	if text_lower == "sagitta":
 		var final_dir = index_to_direction[index]
 		cast_directions.append(final_dir)
+		
+		# 1. TỰ ĐẶT KÍCH THƯỚC CHO MŨI TÊN (Đổi số 80 thành độ to bạn muốn)
+		var custom_size = Vector2(70, 70) # <--- BẠN CHỈNH SỐ NÀY ĐỂ PHÓNG TO THU NHỎ
+		dir_icons[index].size = custom_size
+		
+		# 2. TỰ ĐỘNG CĂN VÀO CHÍNH GIỮA Ô CHỮ
+		var center_of_edit = dir_edits[index].global_position + (dir_edits[index].size / 2.0)
+		dir_icons[index].global_position = center_of_edit - (custom_size / 2.0)
+		
+		# 3. Cài lại tâm xoay vào chính giữa
+		dir_icons[index].pivot_offset = custom_size / 2.0
+		
+		# 4. Gán ảnh và xoay
+		dir_icons[index].texture = icon_direction
+		dir_icons[index].rotation_degrees = index * 45.0
+		
+		# 5. Ẩn chữ, Hiện hình
 		dir_edits[index].hide()
-		dir_icons[index].texture = icon_success_text
 		dir_icons[index].show()
 		
 		print("Đã giải phóng ấn Sagitta tại ô số ", index, ", hướng bay: ", final_dir)
+# --- THỰC THI PHÉP ---
 func _on_end_turn_button_pressed():
-	if cast_elements.is_empty(): return # Phải có ít nhất 1 nguyên tố
-	var final_coords = []
-# Kiểm tra Cặp 1 (Trên & Trái)
-	if not coord_edits[0].visible and not coord_edits[1].visible:
-		final_coords.append(coord_edits[0].text.to_upper()) # Gửi "D"
-		final_coords.append(coord_edits[1].text.to_upper()) # Gửi "2"
+	if cast_elements.is_empty(): 
+		print("Cần ít nhất 1 nguyên tố!")
+		return 
 		
-	# Kiểm tra Cặp 2 (Dưới & Phải)
-	if not coord_edits[2].visible and not coord_edits[3].visible:
+	var final_coords = []
+	
+# Thu thập tọa độ Cặp 1 (Trên & Trái)
+	# Kiểm tra xem cả 2 ô có được nhập chữ/số chưa (text khác rỗng)
+	if coord_edits[0].text != "" and coord_edits[1].text != "":
+		final_coords.append(coord_edits[0].text.to_upper()) 
+		final_coords.append(coord_edits[1].text.to_upper()) 
+		
+	# Thu thập tọa độ Cặp 2 (Dưới & Phải)
+	if coord_edits[2].text != "" and coord_edits[3].text != "":
 		final_coords.append(coord_edits[2].text.to_upper())
 		final_coords.append(coord_edits[3].text.to_upper())
 	Global.paper_count -= 1 
@@ -153,6 +194,8 @@ func _on_end_turn_button_pressed():
 	
 	clear_all_inputs()
 	close_scroll()
+
+# --- TIỆN ÍCH ---
 func update_ui():
 	if paper_label: paper_label.text = "Giấy: " + str(Global.paper_count)
 	if ink_bar: ink_bar.value = (current_ink / max_ink) * 100
@@ -164,9 +207,7 @@ func show_scroll():
 func close_scroll():
 	self.hide()
 	scroll_closed.emit()
-# ==========================================
-# TRỪ MỰC REAL-TIME KHI GÕ CHỮ
-# ==========================================
+
 func _on_any_text_changed(new_text: String, edit_node: LineEdit):
 	var current_len = new_text.length()
 	var prev_len = edit_node.get_meta("prev_len")
@@ -186,18 +227,67 @@ func _on_any_text_changed(new_text: String, edit_node: LineEdit):
 		
 	edit_node.set_meta("prev_len", current_len)
 
-# ==========================================
-# GHI ĐÈ HÀM CLEAR ĐỂ RESET LẠI MỰC (Sửa lại hàm cũ của bạn)
-# ==========================================
 func clear_all_inputs():
+	# Xóa dữ liệu ghi nhớ
 	cast_elements.clear()
 	cast_directions.clear()
+	cast_elements_str.clear() # Rất quan trọng để ghép ấn không bị nhớ nhầm sang lượt sau
 	
 	var all_edits = elem_edits + coord_edits + dir_edits
 	var all_icons = elem_icons + coord_icons + dir_icons
 	
+	# Xóa chữ và giấu ảnh trên giao diện
 	for i in range(all_edits.size()):
 		all_edits[i].text = ""
-		all_edits[i].set_meta("prev_len", 0) # <--- Lệnh bắt buộc để reset logic trừ mực
+		all_edits[i].set_meta("prev_len", 0) # Reset lại biến đếm mực
 		all_edits[i].show()
 		all_icons[i].hide()
+	for i in range(all_edits.size()):
+		all_edits[i].text = ""
+		all_edits[i].set_meta("prev_len", 0) 
+		all_edits[i].show()
+		all_icons[i].hide()
+# --- HÀM TRẢ VỀ ẢNH ĐƠN ---
+func get_single_icon(elem_str: String) -> Texture2D:
+	match elem_str:
+		"fire": return icon_fire
+		"water": return icon_water
+		"earth": return icon_earth
+		"wind": return icon_wind
+	return null
+
+# --- HÀM TRẢ VỀ ẢNH KẾT HỢP ---
+func get_combined_icon(e1: String, e2: String) -> Texture2D:
+	var combo = [e1, e2]
+	combo.sort() # Tự động xếp Alphabet (earth, fire, water, wind) để tra từ điển chuẩn xác
+	var combo_str = combo[0] + "_" + combo[1]
+	
+	match combo_str:
+		# Gõ 2 nguyên tố giống nhau
+		"fire_fire": return icon_fire_fire
+		"water_water": return icon_water_water
+		"earth_earth": return icon_earth_earth
+		"wind_wind": return icon_wind_wind
+		
+		# Gõ 2 nguyên tố khác nhau (do đã sort A-Z nên chỉ có các trường hợp sau)
+		"earth_fire": return icon_fire_earth 
+		"fire_water": return icon_fire_water 
+		"fire_wind": return icon_fire_wind   
+		"earth_water": return icon_water_earth 
+		"earth_wind": return icon_earth_wind 
+		"water_wind": return icon_water_wind 
+		
+	return null
+func _on_undo_button_pressed():
+	# 1. Xóa toàn bộ chữ, ẩn ảnh và reset các mảng dữ liệu (Hàm này bạn đã có sẵn)
+	clear_all_inputs()
+	
+	# 2. Hoàn trả lại mực cho người chơi
+	current_ink = max_ink # (Hoặc bạn có thể gán về mức mực ở đầu lượt nếu game có cơ chế lưu trữ mực qua nhiều lượt)
+	update_ui()
+	
+	print("Đã xóa toàn bộ ấn chú trên giấy và hoàn trả mực!")
+	
+func _on_close_area_button_pressed():
+	self.hide()
+	scroll_closed.emit()

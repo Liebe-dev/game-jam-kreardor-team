@@ -1,12 +1,62 @@
 [gd_scene format=3 uid="uid://ctte4mualqncs"]
 
 [ext_resource type="Script" uid="uid://cutk255mh0tqh" path="res://magic_drawing_system.gd" id="1_eigxu"]
+[ext_resource type="Texture2D" uid="uid://ct08b33jqrbys" path="res://spell/fire.png" id="2_5e5eq"]
 [ext_resource type="Texture2D" uid="uid://dlcgvacntsjif" path="res://scroll open.png" id="2_rxjga"]
-[ext_resource type="Texture2D" uid="uid://b6hcex5r2vkgg" path="res://circle.png" id="2_yc3uf"]
+[ext_resource type="Texture2D" uid="uid://du1vn2pg8pxb0" path="res://spell/circle.png" id="3_bkrc7"]
+[ext_resource type="Texture2D" uid="uid://otsr8iffaikr" path="res://spell/water.png" id="3_y3wtt"]
+[ext_resource type="Texture2D" uid="uid://clvrc6vopjhoy" path="res://spell/earth.png" id="4_gaanc"]
+[ext_resource type="Texture2D" uid="uid://djhaqygqekbli" path="res://spell/wind.png" id="4_guniv"]
 [ext_resource type="Texture2D" uid="uid://duq4viquuuw0v" path="res://sample 2.png" id="4_p45i7"]
+[ext_resource type="Texture2D" uid="uid://dwsg0x3ukok6" path="res://spell/arrow.png" id="5_y3wtt"]
+[ext_resource type="Texture2D" uid="uid://dru1lxv5pku6c" path="res://spell/fire fire.png" id="6_sqpxv"]
+[ext_resource type="Texture2D" uid="uid://bocprvunmtwa0" path="res://spell/water water.png" id="7_bsgm6"]
+[ext_resource type="Texture2D" uid="uid://c5u2ft8euy4m2" path="res://spell/earth earth.png" id="8_ivg7b"]
+[ext_resource type="Texture2D" uid="uid://cvwile5wcjt7t" path="res://spell/wind wind.png" id="9_gaanc"]
+[ext_resource type="Texture2D" uid="uid://b7b7epi701s8j" path="res://spell/water+fire.png" id="10_qgr2d"]
+[ext_resource type="Texture2D" uid="uid://fgqhcvwtxgx" path="res://spell/earth+fire.png" id="11_dgoko"]
+[ext_resource type="Texture2D" uid="uid://cw1rno6kqorna" path="res://spell/wind+fire.png" id="12_vsgki"]
+[ext_resource type="Texture2D" uid="uid://cuq2mc2dbgwkd" path="res://spell/water+earth.png" id="13_hnkdm"]
+[ext_resource type="Texture2D" uid="uid://c5bl6lrdt16b6" path="res://spell/water+wind.png" id="14_b6mp0"]
+[ext_resource type="Texture2D" uid="uid://13igkwfq21vb" path="res://spell/wind+earth.png" id="15_m3yhp"]
+[ext_resource type="FontFile" uid="uid://dgsadco7qna6k" path="res://spell/Romantic Sunrise.otf" id="18_bsgm6"]
+[ext_resource type="Texture2D" uid="uid://bbf13uklnn0sv" path="res://spell/casting spell.png" id="19_ivg7b"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_gaanc"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_qgr2d"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_dgoko"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_sqpxv"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_bsgm6"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ivg7b"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_vsgki"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_hnkdm"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_b6mp0"]
 
 [node name="MagicDrawingSystem" type="CanvasLayer" unique_id=1222554842]
 script = ExtResource("1_eigxu")
+icon_fire = ExtResource("2_5e5eq")
+icon_water = ExtResource("3_y3wtt")
+icon_earth = ExtResource("4_gaanc")
+icon_wind = ExtResource("4_guniv")
+icon_direction = ExtResource("5_y3wtt")
+icon_fire_fire = ExtResource("6_sqpxv")
+icon_water_water = ExtResource("7_bsgm6")
+icon_earth_earth = ExtResource("8_ivg7b")
+icon_wind_wind = ExtResource("9_gaanc")
+icon_fire_water = ExtResource("10_qgr2d")
+icon_fire_earth = ExtResource("11_dgoko")
+icon_fire_wind = ExtResource("12_vsgki")
+icon_water_earth = ExtResource("13_hnkdm")
+icon_water_wind = ExtResource("14_b6mp0")
+icon_earth_wind = ExtResource("15_m3yhp")
 
 [node name="UI_Container" type="Control" parent="." unique_id=638788640]
 unique_name_in_owner = true
@@ -41,39 +91,78 @@ offset_top = 84.0
 offset_right = 981.0
 offset_bottom = 582.0
 pivot_offset = Vector2(248, 244)
-texture = ExtResource("2_yc3uf")
+texture = ExtResource("3_bkrc7")
 
 [node name="ElemIcon1" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=621674226]
 unique_name_in_owner = true
-visible = false
 layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+offset_left = 644.0
+offset_top = 242.0
+offset_right = 824.0
+offset_bottom = 422.0
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ElemIcon2" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=5122300]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 651.0
+offset_top = 254.0
+offset_right = 691.0
+offset_bottom = 294.0
 
 [node name="ElemEdit1" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=1264869398]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 674.0
-offset_top = 336.0
+offset_top = 297.0
 offset_right = 782.0
-offset_bottom = 408.0
+offset_bottom = 370.0
+pivot_offset = Vector2(72, 85)
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 25
+theme_override_styles/normal = SubResource("StyleBoxEmpty_gaanc")
+theme_override_styles/read_only = SubResource("StyleBoxEmpty_qgr2d")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_dgoko")
+alignment = 1
 
-[node name="ElemIcon2" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=5122300]
+[node name="ElemEdit2" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=1490989987]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 676.0
+offset_top = 297.0
+offset_right = 784.0
+offset_bottom = 370.0
+pivot_offset = Vector2(70, 85)
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 25
+theme_override_styles/normal = SubResource("StyleBoxEmpty_gaanc")
+theme_override_styles/read_only = SubResource("StyleBoxEmpty_qgr2d")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_dgoko")
+alignment = 1
+
+[node name="IconTop" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1965926953]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
 
-[node name="ElemEdit2" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=1490989987]
+[node name="IconBot" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1190594995]
 unique_name_in_owner = true
+visible = false
 layout_mode = 0
-offset_left = 676.0
-offset_top = 257.0
-offset_right = 784.0
-offset_bottom = 330.0
+offset_right = 40.0
+offset_bottom = 40.0
 
-[node name="IconTop" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1965926953]
+[node name="IconLeft" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1409452546]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="IconRight" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1376980109]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
@@ -83,183 +172,262 @@ offset_bottom = 40.0
 [node name="CoordTop" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=2050689200]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 671.0
-offset_top = 183.0
-offset_right = 795.0
-offset_bottom = 229.0
-
-[node name="IconBot" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1190594995]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+offset_left = 645.0
+offset_top = 176.0
+offset_right = 821.0
+offset_bottom = 240.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("18_bsgm6")
+theme_override_font_sizes/font_size = 50
+theme_override_styles/normal = SubResource("StyleBoxEmpty_sqpxv")
+theme_override_styles/read_only = SubResource("StyleBoxEmpty_bsgm6")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_ivg7b")
+alignment = 1
 
 [node name="CoordBottom" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=473315685]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 671.0
-offset_top = 436.0
-offset_right = 795.0
-offset_bottom = 482.0
-
-[node name="IconLeft" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1409452546]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+offset_left = 645.0
+offset_top = 432.0
+offset_right = 821.0
+offset_bottom = 496.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("18_bsgm6")
+theme_override_font_sizes/font_size = 50
+theme_override_styles/normal = SubResource("StyleBoxEmpty_sqpxv")
+theme_override_styles/read_only = SubResource("StyleBoxEmpty_bsgm6")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_ivg7b")
+alignment = 1
 
 [node name="CoordLeft" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=464601552]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 565.0
-offset_top = 293.0
-offset_right = 633.5
-offset_bottom = 354.0
-
-[node name="IconRight" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1376980109]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+offset_left = 512.0
+offset_top = 302.0
+offset_right = 688.0
+offset_bottom = 366.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("18_bsgm6")
+theme_override_font_sizes/font_size = 50
+theme_override_styles/normal = SubResource("StyleBoxEmpty_sqpxv")
+theme_override_styles/read_only = SubResource("StyleBoxEmpty_bsgm6")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_ivg7b")
+alignment = 1
 
 [node name="CoordRight" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=835466503]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 828.0
-offset_top = 293.0
-offset_right = 896.5
-offset_bottom = 354.0
+offset_left = 779.0
+offset_top = 303.0
+offset_right = 955.0
+offset_bottom = 367.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("18_bsgm6")
+theme_override_font_sizes/font_size = 50
+theme_override_styles/normal = SubResource("StyleBoxEmpty_sqpxv")
+theme_override_styles/read_only = SubResource("StyleBoxEmpty_bsgm6")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_ivg7b")
+alignment = 1
 
 [node name="IconDir1" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1291677053]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 556.0
-offset_top = 175.0
-offset_right = 596.0
-offset_bottom = 215.0
-
-[node name="Dir1" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=896711897]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 686.0
-offset_top = 115.0
-offset_right = 774.0
-offset_bottom = 152.0
+offset_left = 522.0
+offset_top = 131.0
+offset_right = 622.0
+offset_bottom = 231.0
+expand_mode = 1
+stretch_mode = 5
 
 [node name="IconDir2" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1154175468]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 556.0
-offset_top = 175.0
-offset_right = 596.0
-offset_bottom = 215.0
-
-[node name="Dir2" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=910322110]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 853.0
-offset_top = 178.0
-offset_right = 941.0
-offset_bottom = 215.0
+offset_left = 522.0
+offset_top = 131.0
+offset_right = 622.0
+offset_bottom = 231.0
+expand_mode = 1
+stretch_mode = 5
 
 [node name="IconDir3" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1626455866]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 556.0
-offset_top = 175.0
-offset_right = 596.0
-offset_bottom = 215.0
-
-[node name="Dir3" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=2061129147]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 904.0
-offset_top = 310.0
-offset_right = 992.0
-offset_bottom = 347.0
+offset_left = 522.0
+offset_top = 131.0
+offset_right = 622.0
+offset_bottom = 231.0
+expand_mode = 1
+stretch_mode = 5
 
 [node name="IconDir4" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1488705402]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 556.0
-offset_top = 175.0
-offset_right = 596.0
-offset_bottom = 215.0
-
-[node name="Dir4" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=127036570]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 836.0
-offset_top = 461.0
-offset_right = 924.0
-offset_bottom = 498.0
+offset_left = 522.0
+offset_top = 131.0
+offset_right = 622.0
+offset_bottom = 231.0
+expand_mode = 1
+stretch_mode = 5
 
 [node name="IconDir5" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1949420114]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 556.0
-offset_top = 175.0
-offset_right = 596.0
-offset_bottom = 215.0
-
-[node name="Dir5" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=2018218715]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 681.0
-offset_top = 517.0
-offset_right = 769.0
-offset_bottom = 554.0
+offset_left = 522.0
+offset_top = 131.0
+offset_right = 622.0
+offset_bottom = 231.0
+expand_mode = 1
+stretch_mode = 5
 
 [node name="IconDir6" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=2069882381]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 556.0
-offset_top = 175.0
-offset_right = 596.0
-offset_bottom = 215.0
-
-[node name="Dir6" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=785831974]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 526.0
-offset_top = 459.0
-offset_right = 614.0
-offset_bottom = 496.0
+offset_left = 522.0
+offset_top = 131.0
+offset_right = 622.0
+offset_bottom = 231.0
+expand_mode = 1
+stretch_mode = 5
 
 [node name="IconDir7" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=523351452]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 556.0
-offset_top = 175.0
-offset_right = 596.0
-offset_bottom = 215.0
-
-[node name="Dir7" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=1276422809]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 471.0
-offset_top = 312.0
-offset_right = 559.0
-offset_bottom = 349.0
+offset_left = 522.0
+offset_top = 131.0
+offset_right = 622.0
+offset_bottom = 231.0
+expand_mode = 1
+stretch_mode = 5
 
 [node name="IconDir8" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=965349822]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 556.0
-offset_top = 175.0
-offset_right = 596.0
-offset_bottom = 215.0
+offset_left = 522.0
+offset_top = 131.0
+offset_right = 622.0
+offset_bottom = 231.0
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Dir1" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=896711897]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_left = 688.0
+offset_top = 118.0
+offset_right = 784.0
+offset_bottom = 155.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 25
+theme_override_styles/normal = SubResource("StyleBoxEmpty_vsgki")
+theme_override_styles/read_only = SubResource("StyleBoxEmpty_hnkdm")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_b6mp0")
+alignment = 1
+
+[node name="Dir2" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=910322110]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_left = 826.0
+offset_top = 174.0
+offset_right = 922.0
+offset_bottom = 212.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 25
+theme_override_styles/normal = SubResource("StyleBoxEmpty_vsgki")
+theme_override_styles/read_only = SubResource("StyleBoxEmpty_hnkdm")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_b6mp0")
+alignment = 1
+
+[node name="Dir3" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=2061129147]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_left = 887.0
+offset_top = 320.0
+offset_right = 983.0
+offset_bottom = 357.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 25
+theme_override_styles/normal = SubResource("StyleBoxEmpty_vsgki")
+theme_override_styles/read_only = SubResource("StyleBoxEmpty_hnkdm")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_b6mp0")
+alignment = 1
+
+[node name="Dir4" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=127036570]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_left = 826.0
+offset_top = 458.0
+offset_right = 922.0
+offset_bottom = 495.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 25
+theme_override_styles/normal = SubResource("StyleBoxEmpty_vsgki")
+theme_override_styles/read_only = SubResource("StyleBoxEmpty_hnkdm")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_b6mp0")
+alignment = 1
+
+[node name="Dir5" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=2018218715]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_left = 688.0
+offset_top = 515.0
+offset_right = 784.0
+offset_bottom = 552.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 25
+theme_override_styles/normal = SubResource("StyleBoxEmpty_vsgki")
+theme_override_styles/read_only = SubResource("StyleBoxEmpty_hnkdm")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_b6mp0")
+alignment = 1
+
+[node name="Dir6" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=785831974]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_left = 543.0
+offset_top = 458.0
+offset_right = 639.0
+offset_bottom = 495.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 25
+theme_override_styles/normal = SubResource("StyleBoxEmpty_vsgki")
+theme_override_styles/read_only = SubResource("StyleBoxEmpty_hnkdm")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_b6mp0")
+alignment = 1
+
+[node name="Dir7" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=1276422809]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_left = 486.0
+offset_top = 317.0
+offset_right = 582.0
+offset_bottom = 354.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 25
+theme_override_styles/normal = SubResource("StyleBoxEmpty_vsgki")
+theme_override_styles/read_only = SubResource("StyleBoxEmpty_hnkdm")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_b6mp0")
+alignment = 1
 
 [node name="Dir8" type="LineEdit" parent="UI_Container/SpellScroll" unique_id=2145071514]
 unique_name_in_owner = true
+z_index = 2
 layout_mode = 0
-offset_left = 547.0
+offset_left = 545.0
 offset_top = 174.0
-offset_right = 635.0
+offset_right = 641.0
 offset_bottom = 211.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 25
+theme_override_styles/normal = SubResource("StyleBoxEmpty_vsgki")
+theme_override_styles/read_only = SubResource("StyleBoxEmpty_hnkdm")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_b6mp0")
+alignment = 1
 
 [node name="CloseAreaButton" type="Button" parent="UI_Container" unique_id=1900036161]
 layout_mode = 0
@@ -278,32 +446,38 @@ offset_bottom = 1067.0
 flat = true
 
 [node name="ResourceUI" type="VBoxContainer" parent="." unique_id=1918446056]
-offset_left = 208.0
-offset_top = 752.0
-offset_right = 285.0
-offset_bottom = 861.0
+offset_left = 1124.0
+offset_top = 541.0
+offset_right = 1392.0
+offset_bottom = 650.0
 
 [node name="PaperLabel" type="Label" parent="ResourceUI" unique_id=731252920]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 30
+text = "Lượng mực còn lại"
+vertical_alignment = 1
 
 [node name="InkBar" type="ProgressBar" parent="ResourceUI" unique_id=851355291]
 unique_name_in_owner = true
 layout_mode = 2
 
 [node name="EndTurnButton" type="Button" parent="." unique_id=125429919]
-offset_left = 217.0
-offset_top = 566.0
-offset_right = 340.0
-offset_bottom = 680.0
-pivot_offset = Vector2(485, 297)
+offset_left = -55.00003
+offset_top = 386.0
+offset_right = 547.0
+offset_bottom = 987.0
+scale = Vector2(0.2, 0.2)
+pivot_offset = Vector2(395, 212)
+icon = ExtResource("19_ivg7b")
 
 [node name="UndoButton" type="Button" parent="." unique_id=904154048]
-offset_left = 301.0
-offset_top = 823.0
-offset_right = 376.0
-offset_bottom = 898.0
-text = "xóa mực"
+offset_left = 1128.0
+offset_top = 631.0
+offset_right = 1203.0
+offset_bottom = 706.0
+text = "Hoàn tác"
 
 [node name="TextureRect" type="TextureRect" parent="." unique_id=452280271]
 visible = false
