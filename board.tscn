@@ -8,6 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://d1qts2nneiir3" path="res://bg.png" id="5_vf5bc"]
 [ext_resource type="Texture2D" uid="uid://bewgvfwr2r65q" path="res://king.png" id="6_mgc1s"]
 [ext_resource type="Texture2D" uid="uid://d27t3ao3w6xj7" path="res://scroll close.png" id="8_c4ttu"]
+[ext_resource type="PackedScene" uid="uid://7dodg2gy67v" path="res://notebook_panel.tscn" id="9_c4ttu"]
 
 [node name="board" type="Node2D" unique_id=1273165699]
 script = ExtResource("1_tngv2")
@@ -35,7 +36,7 @@ layout_mode = 2
 columns = 8
 script = ExtResource("1_p0ybc")
 
-[node name="logicgame" type="Node2D" parent="." unique_id=542120282]
+[node name="logicgame" type="Node2D" parent="." unique_id=542120282 groups=["logic_board"]]
 y_sort_enabled = true
 script = ExtResource("3_jqgjh")
 move_indicator_scene = ExtResource("4_nk23n")
@@ -283,6 +284,8 @@ offset_top = 400.0
 offset_right = 253.0
 offset_bottom = 1065.0
 texture_normal = ExtResource("8_c4ttu")
+
+[node name="UI_Layer" parent="." unique_id=469427497 instance=ExtResource("9_c4ttu")]
 
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Attack" to="logicgame" method="_on_attack_pressed"]
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Defend" to="logicgame" method="_on_defend_pressed"]

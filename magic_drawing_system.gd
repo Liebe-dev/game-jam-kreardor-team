@@ -173,28 +173,32 @@ func _on_end_turn_button_pressed():
 		print("Cần ít nhất 1 nguyên tố!")
 		return 
 		
-	var final_coords = []
+	var final_coords_text = [] # Chỉ sử dụng 1 biến này để lưu tọa độ
 	
-# Thu thập tọa độ Cặp 1 (Trên & Trái)
-	# Kiểm tra xem cả 2 ô có được nhập chữ/số chưa (text khác rỗng)
+	# Thu thập Cặp 1 (Trên & Trái)
 	if coord_edits[0].text != "" and coord_edits[1].text != "":
-		final_coords.append(coord_edits[0].text.to_upper()) 
-		final_coords.append(coord_edits[1].text.to_upper()) 
+		final_coords_text.append(coord_edits[0].text.to_upper()) 
+		final_coords_text.append(coord_edits[1].text)
 		
-	# Thu thập tọa độ Cặp 2 (Dưới & Phải)
+	# Thu thập Cặp 2 (Dưới & Phải)
 	if coord_edits[2].text != "" and coord_edits[3].text != "":
-		final_coords.append(coord_edits[2].text.to_upper())
-		final_coords.append(coord_edits[3].text.to_upper())
+		final_coords_text.append(coord_edits[2].text.to_upper())
+		final_coords_text.append(coord_edits[3].text)
+		
 	Global.paper_count -= 1 
 	update_ui() 
-	print("Niệm: ", cast_elements, " | Tọa độ: ", final_coords, " | Hướng: ", cast_directions)
+	
+	# Sửa lỗi in sai: In trực tiếp mảng final_coords_text
+	print("Niệm: ", cast_elements, " | Tọa độ: ", final_coords_text, " | Hướng: ", cast_directions)
+	
 	Global.has_casted_spell = true
-	spell_casted.emit(cast_elements, final_coords, cast_directions)
-	get_tree().call_group("logic_board", "cast_complex_spell", cast_elements, final_coords, cast_directions)
+	spell_casted.emit(cast_elements, final_coords_text, cast_directions)
+	
+	# Gửi dữ liệu sạch sang Logic Bàn Cờ
+	get_tree().call_group("logic_board", "cast_complex_spell", cast_elements.duplicate(), final_coords_text.duplicate(), cast_directions.duplicate())
 	
 	clear_all_inputs()
 	close_scroll()
-
 # --- TIỆN ÍCH ---
 func update_ui():
 	if paper_label: paper_label.text = "Giấy: " + str(Global.paper_count)
@@ -291,3 +295,4 @@ func _on_undo_button_pressed():
 func _on_close_area_button_pressed():
 	self.hide()
 	scroll_closed.emit()
+# Hàm dịch chữ cái và số thành tọa độ Vector2 cho Board dễ hiểu
