@@ -308,10 +308,9 @@ texture_normal = ExtResource("8_c4ttu")
 [node name="UI_Layer" parent="." unique_id=469427497 instance=ExtResource("9_c4ttu")]
 
 [node name="WinPanel" type="CanvasLayer" parent="." unique_id=55295669]
-visible = false
 
 [node name="ColorRect" type="ColorRect" parent="WinPanel" unique_id=31935011]
-modulate = Color(1, 1, 1, 0.36078432)
+modulate = Color(0, 0, 0, 0.36078432)
 offset_right = 1928.0
 offset_bottom = 1084.0
 mouse_filter = 2
@@ -341,6 +340,7 @@ offset_bottom = 759.0
 text = "Chơi lại"
 
 [node name="LosePanel" type="CanvasLayer" parent="." unique_id=1368490513]
+visible = false
 
 [node name="Chơi lại" type="Button" parent="LosePanel" unique_id=1543149950]
 process_mode = 3
@@ -357,6 +357,7 @@ modulate = Color(1, 1, 1, 0.27450982)
 offset_right = 1926.0
 offset_bottom = 1076.0
 mouse_filter = 2
+color = Color(0, 0, 0, 1)
 
 [node name="LoseIcon" type="TextureRect" parent="LosePanel" unique_id=293067524]
 anchors_preset = 8
