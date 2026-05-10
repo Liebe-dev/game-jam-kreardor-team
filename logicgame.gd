@@ -1,4 +1,6 @@
 extends Node2D
+@onready var win_screen = get_node("/root/board/WinPanel")
+@onready var lose_screen = get_node("/root/board/LosePanel")
 @export var move_indicator_scene: PackedScene
 @export var endgame_menu: Control
 @export var endgame_title: Label
@@ -30,8 +32,12 @@ var is_player_turn = true
 var board_origin = Vector2(450, 250)
 var cell_size = 80
 var player_unit
+
 const FIRE_TILE_SCENE = preload("res://fire_tile.tscn")
+var max_waves = 5
 func _ready():
+	win_screen.hide()
+	lose_screen.hide()
 	add_to_group("logic_board")
 	player_unit = get_tree().get_first_node_in_group("player")
 	if wave_label:
@@ -129,11 +135,18 @@ func transition_to_next_wave():
 						child.play("up")
 					else:
 						child.play("down")
+# Khai báo biến ở đầu file logicgame.gd để sau này dễ sửa màn 6
+
+
 func check_and_trigger_next_wave():
-	if Global.current_wave >= 5:
-		trigger_victory()
-		return
-	transition_to_next_wave()
+	if count_enemies_alive() <= 0:
+		if Global.current_wave >= max_waves:
+			# Nếu hết wave, hiện màn hình thắng (có sẵn ảnh trong đó)
+			win_screen.show()
+			get_tree().paused = true # Tạm dừng game
+		else:
+			transition_to_next_wave()
+	get_tree().paused = false # Hoặc true tùy cách bạn xử lý
 func spawn_initial_army():
 	if Global.current_wave == 1:
 		for i in range(8):
@@ -237,12 +250,22 @@ func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 		if new_unit.has_node("HealthBar"):
 			new_unit.get_node("HealthBar").modulate = Color(1, 0, 0)
 	all_pieces.append(new_unit)
-func deal_damage(target, amount):
-	if not is_instance_valid(target):
-		return
-	if amount <= 0: return
-	if target.has_method("take_damage"):
-		target.take_damage(amount)
+func deal_damage(unit, amount):
+	if not is_instance_valid(unit): return
+	
+	unit.hp -= amount
+	if unit.has_node("HealthBar"):
+		unit.get_node("HealthBar").value = unit.hp
+		
+	# Check nếu KING chết
+	if "King" in unit.name and unit.hp <= 0:
+		# Hiện màn hình thua (có sẵn ảnh trong đó)
+		lose_screen.show()
+		get_tree().paused = true # Tạm dừng game
+	elif unit.hp <= 0:
+		# Lính thường chết
+		all_pieces.erase(unit)
+		unit.queue_free()
 func _input(event):
 	if has_moved_main_piece: return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -1945,39 +1968,35 @@ func process_all_tile_effects():
 								grids_to_remove.append(grid_pos)
 			"firestorm_tile":
 				var base_dmg = 15.0 # Sát thương cơ bản
+				var center_pos_i = Vector2i(grid_pos)
 				
-				# Quét vùng 3x3 xung quanh TÂM BÃO
-				for dx in range(-1, 2):
-					for dy in range(-1, 2):
-						var check_pos = grid_pos + Vector2i(dx, dy)
-						var unit = get_unit_at(check_pos)
-						
-						if is_instance_valid(unit):
-							if dx == 0 and dy == 0:
-								# Ở TÂM BÃO: Không bị đẩy, nhận sát thương bình thường
-								deal_damage(unit, base_dmg)
-							else:
-								# Ở RÌA BÃO: Bị văng ra xa tâm 1 ô
-								var push_dir = Vector2i(dx, dy)
-								var target_push_pos = check_pos + push_dir
-								
-								# Kiểm tra xem ô phía sau có bị kẹt tường hoặc kẹt lính khác không
-								var is_blocked = not is_within_board(target_push_pos) or is_instance_valid(get_unit_at(target_push_pos))
-								
-								if is_blocked:
-									# KHÔNG THỂ LÙI -> KẸT GÓC -> NHẬN X2 SÁT THƯƠNG
-									deal_damage(unit, base_dmg * 2.0)
-									print("[Bão Lửa] Mục tiêu kẹt tường! Nhận X2 Sát thương.")
-								else:
-									# BỊ ĐẨY LÙI BÌNH THƯỜNG
-									if unit.has_method("apply_knockback"):
-										unit.apply_knockback(push_dir, 1) # Gọi hàm đẩy lùi của lính
-									deal_damage(unit, base_dmg)
+				# 1. NỔ NGAY TẠI CHỖ HIỆN TẠI
+				apply_firestorm_impact(center_pos_i, base_dmg)
 				
 				# Logic di chuyển Tâm bão
 				if effect.get("is_center", false):
 					for dir in effect.get("spread_dirs", []):
-						var next_pos = grid_pos + dir
+						var next_pos = center_pos_i + dir
+						
+						if is_within_board(next_pos) and not active_tile_effects.has(next_pos):
+							new_firestorm_tiles.append({
+								"pos": next_pos,
+								"turns": effect["turns"], 
+								"dirs": [dir] 
+							})
+							
+							# 2. CHỐT CHẶN: QUÉT SÁT THƯƠNG Ở Ô TIẾP THEO MÀ BÃO VỪA ĐI TỚI
+							# Điều này khiến lính không thể kịp chạy thoát
+							apply_firestorm_impact(next_pos, base_dmg)
+							
+							# Xóa tâm bão ở ô cũ để nó di chuyển dứt khoát
+							if not grids_to_remove.has(center_pos_i):
+								grids_to_remove.append(center_pos_i)
+				
+				# Logic di chuyển Tâm bão
+				if effect.get("is_center", false):
+					for dir in effect.get("spread_dirs", []):
+						var next_pos = center_pos_i + dir
 						
 						if is_within_board(next_pos) and not active_tile_effects.has(next_pos):
 							new_firestorm_tiles.append({
@@ -1987,8 +2006,8 @@ func process_all_tile_effects():
 							})
 							
 							# Xóa tâm bão ở ô cũ để nó di chuyển dứt khoát
-							if not grids_to_remove.has(grid_pos):
-								grids_to_remove.append(grid_pos)
+							if not grids_to_remove.has(center_pos_i):
+								grids_to_remove.append(center_pos_i)
 			
 		# --- LOGIC LAN TRUYỀN 3x3 GỘP CHUNG (LAVA & SWAMP) ---
 		if effect["type"] in ["lava_tile", "swamp_tile"] and effect.get("is_center", false):
@@ -2133,3 +2152,52 @@ func play_wind_visual(grid_pos: Vector2i, anim_name: String):
 	spawned_visual.play(anim_name)
 	
 	spawned_visual.animation_finished.connect(func(): spawned_visual.queue_free(), CONNECT_ONE_SHOT)
+# TRONG LOGICGAME.GD
+func check_trap_at(unit, grid_pos):
+	# Kiểm tra xem ô quái vừa bước vào có nằm trong vùng bão không
+	for effect_pos in active_tile_effects:
+		var effect = active_tile_effects[effect_pos]
+		
+		if effect.name == "firestorm_tile":
+			# Tính khoảng cách từ quái đến TÂM BÃO
+			var distance = grid_pos - effect_pos
+			
+			# Nếu quái nằm trong vùng 3x3 (Khoảng cách dx, dy từ -1 đến 1)
+			if abs(distance.x) <= 1 and abs(distance.y) <= 1:
+				
+				# Bưng nguyên logic sát thương và knockback của bạn xuống đây!
+				var push_dir = distance
+				# ... (thực hiện đẩy lùi quái và deal damage ngay lập tức) ...
+# TRONG LOGICGAME.GD
+
+func apply_firestorm_impact(center_pos_i: Vector2i, base_dmg: float):
+	# Quét vùng 3x3 xung quanh tâm được chỉ định
+	for dx in range(-1, 2):
+		for dy in range(-1, 2):
+			var check_pos = center_pos_i + Vector2i(dx, dy)
+			var unit = get_unit_at(check_pos)
+			
+			if is_instance_valid(unit):
+				if dx == 0 and dy == 0:
+					deal_damage(unit, base_dmg)
+				else:
+					var push_dir = Vector2i(dx, dy)
+					var target_push_pos = check_pos + push_dir
+					
+					var is_blocked = not is_within_board(target_push_pos) or is_instance_valid(get_unit_at(target_push_pos))
+					
+					if is_blocked:
+						deal_damage(unit, base_dmg * 2.0)
+					else:
+						if unit.has_method("move_to_grid"):
+							# Dùng đúng 2 tham số như hàm move_to_grid yêu cầu
+							var target_pixel_pos = grid_to_pixel(target_push_pos)
+							unit.move_to_grid(target_push_pos, target_pixel_pos)
+						deal_damage(unit, base_dmg)
+
+
+func _on_chơi_lại_pressed():
+	
+	Global.current_wave = 1
+	get_tree().paused = false
+	get_tree().reload_current_scene()

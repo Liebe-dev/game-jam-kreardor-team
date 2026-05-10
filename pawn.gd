@@ -86,6 +86,10 @@ func move_to_grid(new_grid_pos: Vector2i, new_world_pos: Vector2):
 	var tween = create_tween()
 	tween.tween_property(self, "global_position", new_world_pos, 0.3).set_trans(Tween.TRANS_SINE)
 	await tween.finished
+	var logic_game = get_node("/root/board") 
+	if logic_game.has_method("check_trap_at"):
+		# Sửa current_grid_pos thành grid_pos
+		logic_game.check_trap_at(self, grid_pos)
 func update_visuals():
 	if is_grabbed:
 		modulate = Color(0.5, 0.5, 0.5) # Vẫn giữ màu xám khi bị ôm

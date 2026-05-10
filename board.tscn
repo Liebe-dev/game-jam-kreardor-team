@@ -12,6 +12,8 @@
 [ext_resource type="Texture2D" uid="uid://d27t3ao3w6xj7" path="res://scroll close.png" id="8_c4ttu"]
 [ext_resource type="Texture2D" uid="uid://d4fsdqequxq77" path="res://endturn.png" id="9_1rang"]
 [ext_resource type="PackedScene" uid="uid://7dodg2gy67v" path="res://notebook_panel.tscn" id="9_c4ttu"]
+[ext_resource type="Texture2D" uid="uid://brm7rv7af3odq" path="res://victory.png" id="13_o821d"]
+[ext_resource type="Texture2D" uid="uid://n0dk5tnppmj3" path="res://defeat.png" id="14_enpss"]
 
 [node name="board" type="Node2D" unique_id=1273165699]
 script = ExtResource("1_tngv2")
@@ -305,7 +307,70 @@ texture_normal = ExtResource("8_c4ttu")
 
 [node name="UI_Layer" parent="." unique_id=469427497 instance=ExtResource("9_c4ttu")]
 
+[node name="WinPanel" type="CanvasLayer" parent="." unique_id=55295669]
+visible = false
+
+[node name="ColorRect" type="ColorRect" parent="WinPanel" unique_id=31935011]
+offset_right = 1928.0
+offset_bottom = 1084.0
+
+[node name="WinIcon" type="TextureRect" parent="WinPanel" unique_id=1129696806]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -619.5
+offset_top = -509.5
+offset_right = 619.5
+offset_bottom = 509.5
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("13_o821d")
+
+[node name="Chơi Lại" type="Button" parent="WinPanel" unique_id=1983911442]
+z_index = 100
+offset_left = 869.0
+offset_top = 658.0
+offset_right = 1048.0
+offset_bottom = 759.0
+text = "Chơi lại"
+
+[node name="LosePanel" type="CanvasLayer" parent="." unique_id=1368490513]
+visible = false
+
+[node name="Chơi lại" type="Button" parent="LosePanel" unique_id=1543149950]
+z_index = 100
+offset_left = 877.0
+offset_top = 711.0
+offset_right = 1053.0
+offset_bottom = 792.0
+text = "Chơi lại
+"
+
+[node name="ColorRect" type="ColorRect" parent="LosePanel" unique_id=1479465502]
+offset_right = 1926.0
+offset_bottom = 1076.0
+
+[node name="LoseIcon" type="TextureRect" parent="LosePanel" unique_id=293067524]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -288.0
+offset_top = -319.5
+offset_right = 288.0
+offset_bottom = 319.5
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("14_enpss")
+
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Attack" to="logicgame" method="_on_attack_pressed"]
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Defend" to="logicgame" method="_on_defend_pressed"]
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/EndTurn" to="logicgame" method="_on_end_turn_pressed"]
 [connection signal="pressed" from="ClosedScrollButton" to="." method="_on_closed_scroll_button_pressed"]
+[connection signal="pressed" from="WinPanel/Chơi Lại" to="logicgame" method="_on_chơi_lại_pressed"]
+[connection signal="pressed" from="LosePanel/Chơi lại" to="logicgame" method="_on_chơi_lại_pressed"]
