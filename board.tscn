@@ -7,7 +7,10 @@
 [ext_resource type="PackedScene" uid="uid://ctte4mualqncs" path="res://magic_drawing_system.tscn" id="5_mgc1s"]
 [ext_resource type="Texture2D" uid="uid://d1qts2nneiir3" path="res://bg.png" id="5_vf5bc"]
 [ext_resource type="Texture2D" uid="uid://bewgvfwr2r65q" path="res://king.png" id="6_mgc1s"]
+[ext_resource type="Texture2D" uid="uid://btc00vwefxtvm" path="res://attack.png" id="7_nk23n"]
+[ext_resource type="Texture2D" uid="uid://dn2gcutcb422w" path="res://defence.png" id="8_5qf1t"]
 [ext_resource type="Texture2D" uid="uid://d27t3ao3w6xj7" path="res://scroll close.png" id="8_c4ttu"]
+[ext_resource type="Texture2D" uid="uid://d4fsdqequxq77" path="res://endturn.png" id="9_1rang"]
 [ext_resource type="PackedScene" uid="uid://7dodg2gy67v" path="res://notebook_panel.tscn" id="9_c4ttu"]
 
 [node name="board" type="Node2D" unique_id=1273165699]
@@ -44,39 +47,54 @@ move_indicator_scene = ExtResource("4_nk23n")
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=514856525]
 
 [node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer" unique_id=490537809]
-offset_left = 1522.0
-offset_top = 309.0
-offset_right = 1919.0
-offset_bottom = 405.0
+offset_left = 1504.0
+offset_top = 303.0
+offset_right = 1838.9999
+offset_bottom = 454.0
+scale = Vector2(0.8, 0.8)
 
 [node name="Attack" type="Button" parent="CanvasLayer/HBoxContainer" unique_id=982852196]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "ATTACK"
+icon = ExtResource("7_nk23n")
+icon_alignment = 1
+vertical_icon_alignment = 0
 
 [node name="Defend" type="Button" parent="CanvasLayer/HBoxContainer" unique_id=1743062738]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "DEFEND"
+icon = ExtResource("8_5qf1t")
+icon_alignment = 1
+vertical_icon_alignment = 0
 
 [node name="EndTurn" type="Button" parent="CanvasLayer/HBoxContainer" unique_id=183649162]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "ENDTURN"
+icon = ExtResource("9_1rang")
+icon_alignment = 1
+vertical_icon_alignment = 0
 
 [node name="TurnLabel" type="Label" parent="CanvasLayer" unique_id=1671972637]
 texture_filter = 1
-offset_left = 1525.0
-offset_top = 249.0
-offset_right = 1597.6666
-offset_bottom = 272.0
+offset_left = 1507.0
+offset_top = 243.0
+offset_right = 1579.6666
+offset_bottom = 266.0
 scale = Vector2(2, 2)
+theme_override_font_sizes/font_size = 20
 text = "Turn: 1"
 
 [node name="WaveLabel" type="Label" parent="CanvasLayer" unique_id=166825750]
 texture_filter = 1
-offset_left = 1527.0
-offset_top = 200.0
-offset_right = 1599.6666
-offset_bottom = 223.0
+offset_left = 1509.0
+offset_top = 194.0
+offset_right = 1581.6666
+offset_bottom = 217.0
 scale = Vector2(2, 2)
+theme_override_font_sizes/font_size = 20
 text = "Wave: 1"
 
 [node name="GridPoints" type="Node2D" parent="." unique_id=715706376]

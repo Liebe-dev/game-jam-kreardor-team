@@ -20,7 +20,15 @@
 [ext_resource type="Texture2D" uid="uid://c5bl6lrdt16b6" path="res://spell/water+wind.png" id="14_b6mp0"]
 [ext_resource type="Texture2D" uid="uid://13igkwfq21vb" path="res://spell/wind+earth.png" id="15_m3yhp"]
 [ext_resource type="FontFile" uid="uid://dgsadco7qna6k" path="res://spell/Romantic Sunrise.otf" id="18_bsgm6"]
-[ext_resource type="Texture2D" uid="uid://bbf13uklnn0sv" path="res://spell/casting spell.png" id="19_ivg7b"]
+[ext_resource type="Texture2D" uid="uid://chkoqr7r684wc" path="res://spell/pen.png" id="18_dgoko"]
+[ext_resource type="Texture2D" uid="uid://ccbyu80gybqet" path="res://spell/ink.png" id="19_vsgki"]
+[ext_resource type="Texture2D" uid="uid://b2oijo16ddc1b" path="res://spell/cast holver.png" id="22_b6mp0"]
+[ext_resource type="Texture2D" uid="uid://q06mqbo5pu3o" path="res://spell/cast.png" id="22_hnkdm"]
+[ext_resource type="Texture2D" uid="uid://bdqfdsroh37hu" path="res://spell/cast press.png" id="22_m3yhp"]
+[ext_resource type="FontFile" uid="uid://bwai7luhvbovc" path="res://spell/iCiel Altus Serif.otf" id="22_q4of7"]
+[ext_resource type="Texture2D" uid="uid://dhqtgh2hiotbc" path="res://spell/undo.png" id="22_vsgki"]
+[ext_resource type="Texture2D" uid="uid://dediv4kmrd21s" path="res://spell/undo press.png" id="25_b72sy"]
+[ext_resource type="Texture2D" uid="uid://bhjd5uex40pe" path="res://spell/undo hover.png" id="26_q4of7"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_gaanc"]
 
@@ -39,6 +47,22 @@
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_hnkdm"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_b6mp0"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_qnuj2"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_b72sy"]
+texture = ExtResource("22_m3yhp")
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_m3yhp"]
+texture = ExtResource("22_b6mp0")
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_m3yhp"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_qnuj2"]
+texture = ExtResource("25_b72sy")
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_c0fcj"]
+texture = ExtResource("26_q4of7")
 
 [node name="MagicDrawingSystem" type="CanvasLayer" unique_id=1222554842]
 script = ExtResource("1_eigxu")
@@ -82,6 +106,22 @@ offset_bottom = -15.0
 grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("2_rxjga")
+
+[node name="pen" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1984345201]
+layout_mode = 0
+offset_left = 380.0
+offset_top = 155.0
+offset_right = 457.0
+offset_bottom = 559.0
+texture = ExtResource("18_dgoko")
+
+[node name="ink" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=1134831830]
+layout_mode = 0
+offset_left = 241.0
+offset_top = 408.0
+offset_right = 339.0
+offset_bottom = 568.0
+texture = ExtResource("19_vsgki")
 
 [node name="MagicCircleImage" type="TextureRect" parent="UI_Container/SpellScroll" unique_id=795506052]
 unique_name_in_owner = true
@@ -455,8 +495,9 @@ offset_bottom = 650.0
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_font_sizes/font_size = 30
-text = "Lượng mực còn lại"
+theme_override_fonts/font = ExtResource("22_q4of7")
+theme_override_font_sizes/font_size = 40
+text = "paper"
 vertical_alignment = 1
 
 [node name="InkBar" type="ProgressBar" parent="ResourceUI" unique_id=851355291]
@@ -470,14 +511,21 @@ offset_right = 547.0
 offset_bottom = 987.0
 scale = Vector2(0.2, 0.2)
 pivot_offset = Vector2(395, 212)
-icon = ExtResource("19_ivg7b")
+theme_override_styles/normal = SubResource("StyleBoxEmpty_qnuj2")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_b72sy")
+theme_override_styles/hover = SubResource("StyleBoxTexture_m3yhp")
+icon = ExtResource("22_hnkdm")
+expand_icon = true
 
 [node name="UndoButton" type="Button" parent="." unique_id=904154048]
-offset_left = 1128.0
-offset_top = 631.0
-offset_right = 1203.0
-offset_bottom = 706.0
-text = "Hoàn tác"
+offset_left = 1119.0
+offset_top = 666.0
+offset_right = 1233.0
+offset_bottom = 780.0
+theme_override_styles/normal = SubResource("StyleBoxEmpty_m3yhp")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_qnuj2")
+theme_override_styles/hover = SubResource("StyleBoxTexture_c0fcj")
+icon = ExtResource("22_vsgki")
 
 [node name="TextureRect" type="TextureRect" parent="." unique_id=452280271]
 visible = false

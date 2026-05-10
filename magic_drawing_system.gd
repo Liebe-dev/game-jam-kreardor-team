@@ -143,7 +143,7 @@ func _on_coord_submitted(new_text: String, index: int):
 # --- XỬ LÝ LỚP 3 (HƯỚNG) ---
 func _on_dir_submitted(new_text: String, index: int):
 	var text_lower = new_text.to_lower().strip_edges()
-	if text_lower == "sagitta":
+	if text_lower == "sagta":
 		var final_dir = index_to_direction[index]
 		cast_directions.append(final_dir)
 		

@@ -4,6 +4,35 @@
 [ext_resource type="Texture2D" uid="uid://clu5a78ye0m7b" path="res://spellbook/book of spell.png" id="1_y6wl3"]
 [ext_resource type="Texture2D" uid="uid://dlwg22oahagsc" path="res://spellbook/sample 3.png" id="2_nkkch"]
 [ext_resource type="Texture2D" uid="uid://bmxbwjwfl33f1" path="res://spellbook/spellbook open.png" id="4_yijuf"]
+[ext_resource type="Texture2D" uid="uid://d3lowyu14lglb" path="res://spellbook/bookopenhover.png" id="5_uuf8a"]
+[ext_resource type="FontFile" uid="uid://bwai7luhvbovc" path="res://spell/iCiel Altus Serif.otf" id="5_yijuf"]
+[ext_resource type="Texture2D" uid="uid://dla2ob4ktssw" path="res://spellbook/bookopen.png" id="6_hq2io"]
+[ext_resource type="Texture2D" uid="uid://dycw67da1h336" path="res://spell/pevpage.png" id="6_lonlx"]
+[ext_resource type="Texture2D" uid="uid://uxqdvnx5dwrg" path="res://spell/nextpage.png" id="7_luvex"]
+[ext_resource type="Texture2D" uid="uid://b0r3qol8p2etl" path="res://spellbook/ấn đơn.png" id="8_f4804"]
+[ext_resource type="Texture2D" uid="uid://ppfv5w1you2" path="res://spellbook/baisis.png" id="8_ne7ip"]
+[ext_resource type="Texture2D" uid="uid://bb18cbvwtx1ru" path="res://spellbook/ấn gia cường.png" id="9_ne7ip"]
+[ext_resource type="Texture2D" uid="uid://bjb78lhrrtkcj" path="res://spellbook/hợp ấn.png" id="10_4fy40"]
+[ext_resource type="Texture2D" uid="uid://cvt41ggya2mil" path="res://spellbook/ênmy.png" id="12_4fy40"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_qvbg3"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_jx6uc"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_v4lvv"]
+texture = ExtResource("5_uuf8a")
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ij761"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_uuf8a"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_hq2io"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_x7dsk"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_rmmr4"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_h2e2o"]
 
 [node name="UI_Layer" type="CanvasLayer" unique_id=469427497]
 script = ExtResource("1_fy6vt")
@@ -17,36 +46,206 @@ texture = ExtResource("2_nkkch")
 
 [node name="ClosedBookButton" type="TextureButton" parent="." unique_id=1040116683]
 offset_left = 28.0
-offset_top = 23.0
-offset_right = 284.0
-offset_bottom = 392.0
+offset_top = 9.0
+offset_right = 414.0
+offset_bottom = 460.0
 texture_normal = ExtResource("1_y6wl3")
 
 [node name="OpenedBookPanel" type="TextureRect" parent="." unique_id=1532800430]
 offset_left = 513.0
 offset_top = 9.0
-offset_right = 1197.0
-offset_bottom = 423.0
+offset_right = 1337.4348
+offset_bottom = 508.0
 texture = ExtResource("4_yijuf")
 
-[node name="CloseBotton" type="Button" parent="OpenedBookPanel" unique_id=1874679488]
+[node name="CloseButton" type="Button" parent="OpenedBookPanel" unique_id=1874679488]
 layout_mode = 0
-offset_left = -454.0
-offset_top = 439.0
-offset_right = -206.0
-offset_bottom = 670.0
+offset_left = -483.0
+offset_top = 35.0
+offset_right = -45.719543
+offset_bottom = 332.0
+theme_override_styles/normal = SubResource("StyleBoxEmpty_qvbg3")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_jx6uc")
+theme_override_styles/hover = SubResource("StyleBoxTexture_v4lvv")
+icon = ExtResource("6_hq2io")
+expand_icon = true
 
-[node name="ContentMargin" type="MarginContainer" parent="." unique_id=1307148176]
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="PrevButton" type="TextureButton" parent="OpenedBookPanel" unique_id=319338591]
+z_index = 2
+layout_mode = 0
+offset_left = 30.0
+offset_top = 14.0
+offset_right = 382.0
+offset_bottom = 465.0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="ContentMargin" unique_id=232335819]
+[node name="NextButton" type="TextureButton" parent="OpenedBookPanel" unique_id=91574288]
+z_index = 2
+layout_mode = 0
+offset_left = 398.0
+offset_top = 18.0
+offset_right = 755.0
+offset_bottom = 481.0
+
+[node name="LeftPage" type="VBoxContainer" parent="OpenedBookPanel" unique_id=101335846]
+layout_mode = 0
+offset_left = 76.0
+offset_top = 67.0
+offset_right = 372.0
+offset_bottom = 436.0
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="Illustration" type="TextureRect" parent="OpenedBookPanel/LeftPage" unique_id=931306626]
+custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
 
-[node name="TitleLabel" type="Label" parent="ContentMargin/VBoxContainer" unique_id=547684424]
+[node name="TitleLabel" type="Label" parent="OpenedBookPanel/LeftPage" unique_id=355193534]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.18039216, 0.11372549, 0.050980393, 1)
+theme_override_fonts/font = ExtResource("5_yijuf")
+theme_override_font_sizes/font_size = 60
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
 
-[node name="InfoLabel" type="Label" parent="ContentMargin/VBoxContainer" unique_id=751450980]
+[node name="RightPage" type="VBoxContainer" parent="OpenedBookPanel" unique_id=469701606]
+layout_mode = 0
+offset_left = 413.0
+offset_top = 43.0
+offset_right = 694.0
+offset_bottom = 432.0
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="InfoLabel" type="Label" parent="OpenedBookPanel/RightPage" unique_id=1129382637]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.18039216, 0.11372549, 0.050980393, 1)
+theme_override_fonts/font = ExtResource("5_yijuf")
+theme_override_font_sizes/font_size = 25
+autowrap_mode = 2
 
-[connection signal="pressed" from="OpenedBookPanel/CloseBotton" to="." method="_on_close_botton_pressed"]
+[node name="LeftArrow" type="TextureRect" parent="OpenedBookPanel" unique_id=410429790]
+layout_mode = 0
+offset_left = 78.0
+offset_top = 410.0
+offset_right = 128.0
+offset_bottom = 450.0
+mouse_filter = 2
+texture = ExtResource("6_lonlx")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RightArrow" type="TextureRect" parent="OpenedBookPanel" unique_id=1285362288]
+layout_mode = 0
+offset_left = 647.0
+offset_top = 410.0
+offset_right = 697.0
+offset_bottom = 450.0
+mouse_filter = 2
+texture = ExtResource("7_luvex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BookmarkTabs" type="VBoxContainer" parent="OpenedBookPanel" unique_id=766769958]
+layout_mode = 0
+offset_left = -192.0
+offset_top = 62.0
+offset_right = -6.0
+offset_bottom = 267.0
+theme_override_constants/separation = 13
+
+[node name="TabBasis" type="Button" parent="OpenedBookPanel/BookmarkTabs" unique_id=1013954498]
+layout_mode = 2
+theme_override_colors/font_hover_color = Color(0.6877648, 0.08077025, 3.6771893e-05, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("5_yijuf")
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxEmpty_ij761")
+theme_override_styles/normal_mirrored = SubResource("StyleBoxEmpty_uuf8a")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_hq2io")
+theme_override_styles/pressed_mirrored = SubResource("StyleBoxEmpty_x7dsk")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_rmmr4")
+theme_override_styles/hover_mirrored = SubResource("StyleBoxEmpty_h2e2o")
+text = "Ấn ký"
+icon = ExtResource("8_ne7ip")
+alignment = 2
+icon_alignment = 2
+
+[node name="TabBasic" type="Button" parent="OpenedBookPanel/BookmarkTabs" unique_id=1702267142]
+layout_mode = 2
+theme_override_colors/font_hover_color = Color(0.6877648, 0.08077025, 3.6771893e-05, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("5_yijuf")
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxEmpty_ij761")
+theme_override_styles/normal_mirrored = SubResource("StyleBoxEmpty_uuf8a")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_hq2io")
+theme_override_styles/pressed_mirrored = SubResource("StyleBoxEmpty_x7dsk")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_rmmr4")
+theme_override_styles/hover_mirrored = SubResource("StyleBoxEmpty_h2e2o")
+text = "Ấn đơn"
+icon = ExtResource("8_f4804")
+alignment = 2
+icon_alignment = 2
+
+[node name="TabEnhanced" type="Button" parent="OpenedBookPanel/BookmarkTabs" unique_id=1352101272]
+layout_mode = 2
+theme_override_colors/font_hover_color = Color(0.6877648, 0.08077025, 3.6771893e-05, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("5_yijuf")
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxEmpty_ij761")
+theme_override_styles/normal_mirrored = SubResource("StyleBoxEmpty_uuf8a")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_hq2io")
+theme_override_styles/pressed_mirrored = SubResource("StyleBoxEmpty_x7dsk")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_rmmr4")
+theme_override_styles/hover_mirrored = SubResource("StyleBoxEmpty_h2e2o")
+text = "Ấn gia cường"
+icon = ExtResource("9_ne7ip")
+alignment = 2
+icon_alignment = 2
+
+[node name="TabCombine" type="Button" parent="OpenedBookPanel/BookmarkTabs" unique_id=1151546940]
+layout_mode = 2
+theme_override_colors/font_hover_color = Color(0.6877648, 0.08077025, 3.6771893e-05, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("5_yijuf")
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxEmpty_ij761")
+theme_override_styles/normal_mirrored = SubResource("StyleBoxEmpty_uuf8a")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_hq2io")
+theme_override_styles/pressed_mirrored = SubResource("StyleBoxEmpty_x7dsk")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_rmmr4")
+theme_override_styles/hover_mirrored = SubResource("StyleBoxEmpty_h2e2o")
+text = "Hợp ấn"
+icon = ExtResource("10_4fy40")
+alignment = 2
+icon_alignment = 2
+
+[node name="Tabenemy" type="Button" parent="OpenedBookPanel/BookmarkTabs" unique_id=2098531504]
+layout_mode = 2
+theme_override_colors/font_hover_color = Color(0.6877648, 0.08077025, 3.6771893e-05, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("5_yijuf")
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxEmpty_ij761")
+theme_override_styles/normal_mirrored = SubResource("StyleBoxEmpty_uuf8a")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_hq2io")
+theme_override_styles/pressed_mirrored = SubResource("StyleBoxEmpty_x7dsk")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_rmmr4")
+theme_override_styles/hover_mirrored = SubResource("StyleBoxEmpty_h2e2o")
+text = "Kẻ địch"
+icon = ExtResource("12_4fy40")
+alignment = 2
+icon_alignment = 2
+
+[connection signal="pressed" from="OpenedBookPanel/CloseButton" to="." method="_on_close_botton_pressed"]
