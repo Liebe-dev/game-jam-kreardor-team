@@ -95,10 +95,14 @@ func _ready():
 		dir_edits[i].text_submitted.connect(_on_dir_submitted.bind(i))
 		dir_edits[i].focus_exited.connect(func(): if dir_edits[i].text != "": _on_dir_submitted(dir_edits[i].text, i))
 # --- XỬ LÝ LỚP 1 (NGUYÊN TỐ) ---
+# --- XỬ LÝ LỚP 1 (NGUYÊN TỐ) ---
 func _on_element_submitted(new_text: String, index: int):
 	var text_lower = new_text.to_lower().strip_edges()
 	
 	if dict_elements.has(text_lower):
+		# [SỬA LỖI Ở ĐÂY]: Xóa chữ ngay lập tức để chặn hệ thống nhận đúp!
+		elem_edits[index].text = "" 
+		
 		var elem_str = dict_elements[text_lower] # Trả về "fire", "water"...
 		
 		# 1. Lưu vào logic game
@@ -116,19 +120,17 @@ func _on_element_submitted(new_text: String, index: int):
 		
 		# 4. XỬ LÝ HÌNH ẢNH
 		if cast_elements_str.size() == 1:
-			# Lần 1: Hiện ảnh nguyên tố đơn lẻ ở vị trí Icon 1 (Chính giữa)
+			# Lần 1: Hiện ảnh nguyên tố đơn lẻ
 			elem_icons[0].texture = get_single_icon(elem_str)
 			elem_icons[0].show()
 			
 		elif cast_elements_str.size() == 2:
 			# Lần 2: Đổi ảnh ở Icon 1 thành ảnh KẾT HỢP
 			elem_icons[0].texture = get_combined_icon(cast_elements_str[0], cast_elements_str[1])
-			elem_icons[1].hide() # Đảm bảo Icon 2 không hiện ra vì đã gộp vào Icon 1 rồi
+			elem_icons[1].hide()
 			
 	else:
 		elem_edits[index].text = "" # Gõ sai thì xóa chữ
-# --- XỬ LÝ LỚP 2 (TỌA ĐỘ) ---
-# --- XỬ LÝ LỚP 2 (TỌA ĐỘ) ---
 func _on_coord_submitted(new_text: String, index: int):
 	var text_upper = new_text.to_upper().strip_edges()
 	var is_valid = false
@@ -149,11 +151,14 @@ func _on_coord_submitted(new_text: String, index: int):
 func _on_dir_submitted(new_text: String, index: int):
 	var text_lower = new_text.to_lower().strip_edges()
 	if text_lower == "sagta":
+		# [SỬA LỖI Ở ĐÂY]: Xóa chữ để tránh lỗi đúp
+		dir_edits[index].text = ""
+		
 		var final_dir = index_to_direction[index]
 		cast_directions.append(final_dir)
 		
-		# 1. TỰ ĐẶT KÍCH THƯỚC CHO MŨI TÊN (Đổi số 80 thành độ to bạn muốn)
-		var custom_size = Vector2(70, 70) # <--- BẠN CHỈNH SỐ NÀY ĐỂ PHÓNG TO THU NHỎ
+		# 1. TỰ ĐẶT KÍCH THƯỚC CHO MŨI TÊN
+		var custom_size = Vector2(70, 70) 
 		dir_icons[index].size = custom_size
 		
 		# 2. TỰ ĐỘNG CĂN VÀO CHÍNH GIỮA Ô CHỮ
@@ -172,7 +177,6 @@ func _on_dir_submitted(new_text: String, index: int):
 		dir_icons[index].show()
 		
 		print("Đã giải phóng ấn Sagitta tại ô số ", index, ", hướng bay: ", final_dir)
-# --- THỰC THI PHÉP ---
 func _on_end_turn_button_pressed():
 	if cast_elements.is_empty(): 
 		print("Cần ít nhất 1 nguyên tố!")

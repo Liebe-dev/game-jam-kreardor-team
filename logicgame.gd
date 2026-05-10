@@ -1,5 +1,4 @@
 extends Node2D
-
 @export var move_indicator_scene: PackedScene
 @export var endgame_menu: Control
 @export var endgame_title: Label
