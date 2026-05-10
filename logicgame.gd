@@ -32,7 +32,7 @@ var is_player_turn = true
 var board_origin = Vector2(450, 250)
 var cell_size = 80
 var player_unit
-
+var player_pieces_backup = []
 const FIRE_TILE_SCENE = preload("res://fire_tile.tscn")
 var max_waves = 5
 func _ready():
@@ -253,16 +253,16 @@ func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 func deal_damage(unit, amount):
 	if not is_instance_valid(unit): return
 	
-	unit.hp -= amount
+	unit.current_health -= amount
 	if unit.has_node("HealthBar"):
-		unit.get_node("HealthBar").value = unit.hp
+		unit.get_node("HealthBar").value = unit.current_health
 		
 	# Check nếu KING chết
 	if "King" in unit.name and unit.hp <= 0:
 		# Hiện màn hình thua (có sẵn ảnh trong đó)
 		lose_screen.show()
 		get_tree().paused = true # Tạm dừng game
-	elif unit.hp <= 0:
+	elif unit.current_health <= 0:
 		# Lính thường chết
 		all_pieces.erase(unit)
 		unit.queue_free()
@@ -2195,9 +2195,54 @@ func apply_firestorm_impact(center_pos_i: Vector2i, base_dmg: float):
 							unit.move_to_grid(target_push_pos, target_pixel_pos)
 						deal_damage(unit, base_dmg)
 
+func backup_player_pieces():
+	player_pieces_backup.clear()
+	for p in all_pieces:
+		if is_instance_valid(p) and p.team == 1:
+			# Lưu lại thông tin quan trọng: loại lính, vị trí, và máu hiện tại
+			var data = {
+				"scene": p.filename, # Đường dẫn file .tscn của con lính đó
+				"grid_pos": p.grid_pos,
+				"hp": p.hp,
+				"name": p.name
+			}
+			player_pieces_backup.append(data)
 
 func _on_chơi_lại_pressed():
 	
 	Global.current_wave = 1
 	get_tree().paused = false
 	get_tree().reload_current_scene()
+
+
+func _on_chơi_lại_2_pressed() :
+	restart_current_wave()
+func restart_current_wave():
+	# 1. Xóa toàn bộ quân lính đang có trên bàn (cả ta lẫn địch)
+	for p in all_pieces:
+		if is_instance_valid(p):
+			p.queue_free()
+	all_pieces.clear()
+	
+	# 2. Hồi sinh quân ta từ bản Backup
+	for data in player_pieces_backup:
+		var p_scene = load(data["scene"])
+		var p = p_scene.instantiate()
+		add_child(p)
+		
+		p.grid_pos = data["grid_pos"]
+		p.health = data["health"]
+		p.name = data["name"]
+		p.team = 1
+		all_pieces.append(p)
+		
+		# Cập nhật thanh máu cho lính vừa hồi sinh
+		if p.has_node("HealthBar"):
+			p.get_node("HealthBar").value = p.health
+			
+	# 3. Tạo lại quân địch của wave đó
+	spawn_enemy_wave() 
+	
+	# 4. Ẩn màn hình thua và tiếp tục game
+	lose_screen.hide()
+	get_tree().paused = false

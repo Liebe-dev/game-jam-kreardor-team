@@ -345,7 +345,7 @@ offset_left = 877.0
 offset_top = 711.0
 offset_right = 1053.0
 offset_bottom = 792.0
-text = "Chơi lại
+text = "Chơi lại từ đầu
 "
 
 [node name="ColorRect" type="ColorRect" parent="LosePanel" unique_id=1479465502]
@@ -368,9 +368,15 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 texture = ExtResource("14_enpss")
 
+[node name="Chơi lại 2" type="Button" parent="LosePanel" unique_id=1692811950]
+offset_right = 8.0
+offset_bottom = 8.0
+text = "Chơi lại wave này"
+
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Attack" to="logicgame" method="_on_attack_pressed"]
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Defend" to="logicgame" method="_on_defend_pressed"]
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/EndTurn" to="logicgame" method="_on_end_turn_pressed"]
 [connection signal="pressed" from="ClosedScrollButton" to="." method="_on_closed_scroll_button_pressed"]
 [connection signal="pressed" from="WinPanel/Chơi Lại" to="logicgame" method="_on_chơi_lại_pressed"]
 [connection signal="pressed" from="LosePanel/Chơi lại" to="logicgame" method="_on_chơi_lại_pressed"]
+[connection signal="pressed" from="LosePanel/Chơi lại 2" to="logicgame" method="_on_chơi_lại_2_pressed"]
