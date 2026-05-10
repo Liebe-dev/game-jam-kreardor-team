@@ -3,6 +3,9 @@
 [ext_resource type="Script" uid="uid://dij6nc3syws5q" path="res://pawn.gd" id="1_f14ny"]
 [ext_resource type="Texture2D" uid="uid://dbaiawuo1f62y" path="res://pawn_sheet.png" id="2_iexdo"]
 [ext_resource type="Texture2D" uid="uid://b2kwp7gew6sun" path="res://anim/earth.png" id="3_q4exq"]
+[ext_resource type="Texture2D" uid="uid://cveb611uk1g7g" path="res://anim/p1-sheet.png" id="4_u8bt4"]
+[ext_resource type="Texture2D" uid="uid://bygi1l82tkck6" path="res://anim/p2-sheet.png" id="5_fhw20"]
+[ext_resource type="Texture2D" uid="uid://ck7c5mbmvpyhg" path="res://anim/p3-sheet.png" id="6_n0igd"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_q4exq"]
 bg_color = Color(0.9607843, 0.2509804, 0.078431375, 1)
@@ -25,6 +28,87 @@ animations = [{
 "speed": 5.0
 }]
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_gnco5"]
+atlas = ExtResource("4_u8bt4")
+region = Rect2(0, 0, 150, 177)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jhmkb"]
+atlas = ExtResource("4_u8bt4")
+region = Rect2(150, 0, 150, 177)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yjgku"]
+atlas = ExtResource("4_u8bt4")
+region = Rect2(300, 0, 150, 177)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_35ae6"]
+atlas = ExtResource("5_fhw20")
+region = Rect2(0, 0, 167, 175)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ja585"]
+atlas = ExtResource("5_fhw20")
+region = Rect2(167, 0, 167, 175)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_568qe"]
+atlas = ExtResource("5_fhw20")
+region = Rect2(334, 0, 167, 175)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jpbp5"]
+atlas = ExtResource("6_n0igd")
+region = Rect2(0, 0, 191, 176)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mpstn"]
+atlas = ExtResource("6_n0igd")
+region = Rect2(191, 0, 191, 176)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qlv2n"]
+atlas = ExtResource("6_n0igd")
+region = Rect2(382, 0, 191, 176)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_da5ec"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gnco5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jhmkb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yjgku")
+}],
+"loop": true,
+"name": &"p1",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_35ae6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ja585")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_568qe")
+}],
+"loop": true,
+"name": &"p2",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jpbp5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mpstn")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qlv2n")
+}],
+"loop": true,
+"name": &"p3",
+"speed": 5.0
+}]
+
 [node name="Pawn" type="Node2D" unique_id=271536388]
 z_index = 50
 script = ExtResource("1_f14ny")
@@ -35,6 +119,7 @@ damage = 200
 position = Vector2(0, -47)
 texture = ExtResource("2_iexdo")
 hframes = 4
+frame = 1
 
 [node name="HealthBar" type="ProgressBar" parent="." unique_id=1792561652]
 anchors_preset = 8
@@ -57,5 +142,11 @@ show_percentage = false
 
 [node name="ShieldAnim" type="AnimatedSprite2D" parent="." unique_id=852637612]
 visible = false
+position = Vector2(10, -37)
 sprite_frames = SubResource("SpriteFrames_bxy7p")
 animation = &"ShieldAnim"
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=572257104]
+position = Vector2(-6, -45)
+sprite_frames = SubResource("SpriteFrames_da5ec")
+animation = &"p2"
