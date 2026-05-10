@@ -63,7 +63,8 @@ func die():
 		queue_free()
 func move_to_grid(new_grid_pos: Vector2i, new_world_pos: Vector2):
 	if stun_turns > 0 or root_turns > 0:
-		print("Đang bị choáng hoặc lún đầm lầy: Chặn di chuyển!")
+		var loai_buff = "Choáng" if stun_turns > 0 else "Trói chân"
+		print("Không thể đi! Quân lính đang bị: ", loai_buff)
 		return
 		
 	# Vectơ hướng di chuyển (Mới - Cũ)
@@ -109,7 +110,7 @@ func add_buff(buff_name: String, value: float, duration_turns: int):
 	if buff_name == "stun":
 		self.stun_turns = duration_turns
 	elif buff_name == "root":
-		root_turns = duration_turns
+		self.root_turns = duration_turns
 		# Nếu đang có hiệu ứng gió cũ thì xóa đi trước khi tạo cái mới
 		if is_instance_valid(current_wind_visual):
 			current_wind_visual.queue_free()
@@ -145,6 +146,7 @@ func on_turn_end():
 				$ShieldAnim.stop()
 				
 			print("[Pawn] Đã vỡ khiên Đất trên ", name)
+	
 	if stun_turns > 0:
 		
 		print("Số lượt choáng còn lại: ", stun_turns)

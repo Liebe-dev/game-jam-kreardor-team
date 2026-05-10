@@ -435,34 +435,48 @@ func _on_defend_pressed():
 		btn_attack.modulate = Color(1, 1, 1)
 
 func _on_end_turn_pressed():
+	
 	for p in all_pieces:
-		if is_instance_valid(p) and "stun_turns" in p and p.stun_turns > 0:
+		# Gộp chung is_instance_valid cho gọn
+		if is_instance_valid(p):
+			# [LỖI 1: BẠN QUÊN TRỪ LƯỢT CHOÁNG]
+			if "stun_turns" in p and p.stun_turns > 0:
+				p.stun_turns -= 1 # Trừ lượt choáng
 			
+		if "root_turns" in p and p.root_turns > 0:
+			p.root_turns -= 1 # Trừ lượt trói chân
 			
-			# Hết choáng thì mới xóa hình ảnh vòng xoáy
-			if p.stun_turns <= 0:
-				p.stun_turns = 0
-				var wind_visual = p.get("current_wind_visual")
+		var s_turns = p.stun_turns if "stun_turns" in p else 0
+		var r_turns = p.root_turns if "root_turns" in p else 0
+		
+		if s_turns <= 0 and r_turns <= 0:
+			if "current_wind_visual" in p:
+				var wind_visual = p.current_wind_visual
 				if is_instance_valid(wind_visual):
 					wind_visual.queue_free()
-	
+				p.current_wind_visual = null # Xóa dấu vết
+
 	# 1. BÁO CHO TRẠM QUẢN LÝ Ô HIỆU ỨNG CHẠY
 	# Lửa sẽ đốt máu và tự đếm ngược lượt tắt
 	process_all_tile_effects()
 	
-
 	# Vì bàn cờ của bạn là 8x8, ta sẽ dùng 2 vòng lặp quét qua tất cả các ô
 	for x in range(8):
 		for y in range(8):
 			var pos = Vector2i(x, y)
-			var unit = get_unit_at(pos)
+			
+			# [LỖI 2 - NGUYÊN NHÂN CHÍNH GÂY LIỆT NÚT]
+			# Code cũ của bạn là get_unit_at, nhưng hàm của bạn tên là get_piece_at!
+			var unit = get_piece_at(pos) # <--- SỬA LẠI THÀNH get_piece_at
 			
 			if unit != null and unit.has_method("on_turn_end"):
 				unit.on_turn_end()
+				
 	move_team_logic(1)
 	await get_tree().create_timer(0.3).timeout
 	move_team_logic(2)
 	await get_tree().create_timer(0.2).timeout
+	
 	for p in all_pieces:
 		if is_instance_valid(p):
 			check_and_execute_grab(p)
@@ -473,17 +487,23 @@ func _on_end_turn_pressed():
 		if is_instance_valid(p):
 			if "has_moved" in p:
 				p.has_moved = false
+				
 	has_moved_main_piece = false
 	selected_piece = null
 	current_turn += 1
+	
 	if turn_label:
 		turn_label.text = "Turn: " + str(current_turn)
+		
 	Global.has_casted_spell = false
 	%ClosedScrollButton.show()
 	process_ammo_reloads()
+	
 	if count_enemies_alive() <= 0:
 		check_and_trigger_next_wave()
-	process_all_tile_effects()
+		
+	process_all_tile_effects() # (Lưu ý: Bạn đang gọi hàm này 2 lần ở đầu và cuối, nếu không phải chủ đích thì có thể xóa bớt 1 cái đi nhé)
+	
 	var pieces_to_remove = [] # Tạo mảng phụ để chứa các tường sắp vỡ
 	
 	for p in all_pieces:
@@ -534,22 +554,28 @@ func move_team_logic(team_num: int):
 	for p in all_pieces:
 		if not is_instance_valid(p) or p.team != team_num: continue
 		
-		# --- CHỐT CHẶN VÀ TRỪ LƯỢT CHOÁNG Ở ĐÂY ---
-		if "stun_turns" in p and p.stun_turns > 0:
-			print("Lính ", p.name, " đang bị choáng: Chặn di chuyển!")
+		# --- CHỐT CHẶN CẢ CHOÁNG VÀ TRÓI CHÂN Ở ĐÂY ---
+		var is_stunned = "stun_turns" in p and p.stun_turns > 0
+		var is_rooted = "root_turns" in p and p.root_turns > 0
+		
+		if is_stunned or is_rooted:
+			var reason = "Choáng (Gió)" if is_stunned else "Trói chân (Đầm lầy)"
+			print("Lính ", p.name, " đang bị ", reason, " -> AI bỏ qua di chuyển!")
 			
-			# Lính bị mất 1 nhịp đi -> Trừ đi 1 lượt
-			p.stun_turns -= 1
-			print("Số lượt choáng còn lại: ", p.stun_turns)
+			# -- TRỪ LƯỢT CHOÁNG --
+			if is_stunned:
+				p.stun_turns -= 1
+				if p.stun_turns <= 0:
+					var wind_visual = p.get("current_wind_visual")
+					if is_instance_valid(wind_visual):
+						wind_visual.queue_free()
+						p.set("current_wind_visual", null)
 			
-			# Trả hết nợ thì dọn dẹp vòng xoáy
-			if p.stun_turns <= 0:
-				p.stun_turns = 0
-				var wind_visual = p.get("current_wind_visual")
-				if is_instance_valid(wind_visual):
-					wind_visual.queue_free()
-					
-			# Lệnh continue này sẽ hất văng lính, không cho chạy code đi bộ ở dưới
+			# -- TRỪ LƯỢT TRÓI CHÂN --
+			if is_rooted:
+				p.root_turns -= 1
+				
+			# Lệnh continue này sẽ hất văng lính, AI KHÔNG THỂ bắt nó đi bộ được nữa
 			continue
 	for p in all_pieces:
 		if not is_instance_valid(p) or p.team != team_num: continue
@@ -1486,7 +1512,6 @@ func execute_new_water_earth_spell(target_grids: Array, directions: Array):
 	
 	# Nhận thưởng ngay khi niệm
 	Global.paper_count += 1
-	Global.add_ink(50)
 	
 	# Tính toán số lượt (Giống hệt Lava)
 	var duration = 10
@@ -1718,6 +1743,17 @@ var active_tile_effects = {} # Cấu trúc: { Vector2i(x,y) : {"type": "fire", "
 
 # 1. Hàm tạo ô hiệu ứng
 func add_tile_effect(grid_pos: Vector2i, effect_type: String, duration: int, spread_dirs: Array = [], is_center: bool = true, is_first_spawn: bool = true):
+	# --- TRẠM KIỂM SOÁT ĐÁ/TƯỜNG (Chuẩn 100%) ---
+	var piece = get_piece_at(grid_pos)
+	if is_instance_valid(piece):
+		var p_name = piece.name.to_lower() # Chuyển tên thành chữ thường để dễ bắt
+		# Chỉ cần tên có chữ wall, earth hoặc rock là chặn đứng ngay lập tức
+		if "wall" in p_name or "earth" in p_name or "rock" in p_name:
+			print("Vướng cục đá/tường đất tại ", grid_pos, " -> Hủy phép!")
+			return 
+	# --------------------------------------------
+	# ------------------------------------------
+	
 	if active_tile_effects.has(grid_pos):
 		return
 		
@@ -1778,17 +1814,28 @@ func add_tile_effect(grid_pos: Vector2i, effect_type: String, duration: int, spr
 		
 	spawned_visual.global_position = base_pos + final_offset
 	
+	# 1. Khai báo thông tin lưu trữ vào mảng (Giữ nguyên như cũ)
 	active_tile_effects[grid_pos] = {
-		
-		
 		"type": effect_type,
 		"turns": duration,
 		"visual_node": spawned_visual,
-		"is_new": true, # <--- TRẢ LẠI LÀ TRUE (Bắt buộc)
+		"is_new": true,
 		"spread_dirs": spread_dirs,
 		"is_center": is_center, 
 		"age": 0              
-	}
+	} # <--- LƯU Ý DẤU ĐÓNG NGOẶC NHỌN Ở ĐÂY
+	
+	# 2. DÁN ĐOẠN CODE GÂY SÁT THƯƠNG RA BÊN NGOÀI (Nằm dưới dấu } ở trên)
+	if is_first_spawn and is_instance_valid(piece):
+		match effect_type:
+			"swamp_tile":
+				if piece.has_method("add_buff"): piece.add_buff("root", 0, 3)
+				print("-> Đầm lầy vừa trúng đích, trói chân ngay lập tức: ", piece.name)
+			"fire_tile", "lava_tile", "firestorm_tile":
+				if piece.has_method("take_damage"): piece.take_damage(10.0) 
+				print("-> Lửa vừa rơi trúng đầu, đốt ngay lập tức: ", piece.name)
+			"water_tile", "rain_tile":
+				if piece.has_method("heal"): piece.heal(20)
 func process_all_tile_effects():
 	var grids_to_remove = []
 	var new_puddle_tiles = [] # Dùng chung cho cả Dung Nham và Đầm Lầy
@@ -1812,7 +1859,7 @@ func process_all_tile_effects():
 			
 		effect["age"] = effect.get("age", 0) + 1
 		var current_age = effect["age"]
-			
+		
 		match effect["type"]:
 			"water_tile":
 				var unit = get_unit_at(grid_pos)
@@ -1835,7 +1882,10 @@ func process_all_tile_effects():
 						unit.heal(20) 
 					# Trói chân (Root)
 					if unit.has_method("add_buff"):
-						unit.add_buff("root", 0, 1) # Hàm buff ("tên", giá_trị, số_lượt) của bạn
+						unit.add_buff("root", 0, 2)
+					if unit.get("team") == 1: 
+						Global.add_ink(50)
+					
 								
 			"rain_tile":
 				# --- PHẦN 1: CODE HỒI MÁU VÀ NHẬN MỰC CỦA BẠN (Đã giữ nguyên) ---
@@ -2063,7 +2113,7 @@ func _trigger_immediate_tile_effect(grid_pos: Vector2i, type: String, unit):
 		"water_tile", "swamp_tile":
 			if unit.has_method("heal"): unit.heal(20)
 			if type == "water_tile" and unit.get("team") == 1: Global.add_ink(50)
-			if type == "swamp_tile" and unit.has_method("add_buff"): unit.add_buff("root", 0, 1)
+			if type == "swamp_tile" and unit.has_method("add_buff"): unit.add_buff("root", 0, 2)
 			
 		"fire_tile", "lava_tile", "firestorm_tile":
 			# Sửa lại sát thương cho chuẩn với unit của bạn
