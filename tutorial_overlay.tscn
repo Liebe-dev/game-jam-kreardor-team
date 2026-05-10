@@ -1,0 +1,41 @@
+[gd_scene format=3 uid="uid://bmm4mnryre7f1"]
+
+[ext_resource type="Texture2D" uid="uid://o7c15cp46hde" path="res://tutorial/tutorial1.png" id="1_u4lmm"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_qwqh4"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_v54sr"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_2ev3b"]
+
+[node name="TutorialOverlay" type="CanvasLayer" unique_id=287250527]
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=1993547537]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("1_u4lmm")
+
+[node name="DimBG" type="ColorRect" parent="." unique_id=1545607756]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1254902, 0.047058824, 0.007843138, 0.39215687)
+
+[node name="GuideText" type="Label" parent="." unique_id=689394458]
+offset_right = 40.0
+offset_bottom = 23.0
+
+[node name="NextButton" type="Button" parent="." unique_id=920536951]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_qwqh4")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_v54sr")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_2ev3b")

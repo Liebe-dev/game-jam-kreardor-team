@@ -67,7 +67,7 @@ var index_to_direction = {
 	7: Vector2(-1, -1)   # Lên Trái
 }
 
-func _ready(): # Đã sửa lỗi khoảng trắng ở đây
+func _ready(): 
 	Global.magic_system = self
 	max_scroll_width = %UI_Container.size.x
 	
@@ -81,14 +81,19 @@ func _ready(): # Đã sửa lỗi khoảng trắng ở đây
 		edit_node.set_meta("prev_len", 0)
 		edit_node.text_changed.connect(_on_any_text_changed.bind(edit_node))
 		
-	# 2. Cài đặt nhấn phím Enter (Gửi dữ liệu)
+	# 2. Cài đặt nhấn phím Enter HOẶC Click ra ngoài (Gửi dữ liệu)
 	for i in range(elem_edits.size()):
 		elem_edits[i].text_submitted.connect(_on_element_submitted.bind(i))
+		# Thêm dòng này: Khi click ra ngoài, tự lấy chữ trong ô và đem đi xác nhận
+		elem_edits[i].focus_exited.connect(func(): if elem_edits[i].text != "": _on_element_submitted(elem_edits[i].text, i))
+		
 	for i in range(coord_edits.size()):
 		coord_edits[i].text_submitted.connect(_on_coord_submitted.bind(i))
+		coord_edits[i].focus_exited.connect(func(): if coord_edits[i].text != "": _on_coord_submitted(coord_edits[i].text, i))
+		
 	for i in range(dir_edits.size()):
 		dir_edits[i].text_submitted.connect(_on_dir_submitted.bind(i))
-
+		dir_edits[i].focus_exited.connect(func(): if dir_edits[i].text != "": _on_dir_submitted(dir_edits[i].text, i))
 # --- XỬ LÝ LỚP 1 (NGUYÊN TỐ) ---
 func _on_element_submitted(new_text: String, index: int):
 	var text_lower = new_text.to_lower().strip_edges()
