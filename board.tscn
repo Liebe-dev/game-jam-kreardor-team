@@ -311,8 +311,10 @@ texture_normal = ExtResource("8_c4ttu")
 visible = false
 
 [node name="ColorRect" type="ColorRect" parent="WinPanel" unique_id=31935011]
+modulate = Color(1, 1, 1, 0.36078432)
 offset_right = 1928.0
 offset_bottom = 1084.0
+mouse_filter = 2
 
 [node name="WinIcon" type="TextureRect" parent="WinPanel" unique_id=1129696806]
 anchors_preset = 8
@@ -326,9 +328,11 @@ offset_right = 619.5
 offset_bottom = 509.5
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 texture = ExtResource("13_o821d")
 
 [node name="Chơi Lại" type="Button" parent="WinPanel" unique_id=1983911442]
+process_mode = 3
 z_index = 100
 offset_left = 869.0
 offset_top = 658.0
@@ -337,9 +341,9 @@ offset_bottom = 759.0
 text = "Chơi lại"
 
 [node name="LosePanel" type="CanvasLayer" parent="." unique_id=1368490513]
-visible = false
 
 [node name="Chơi lại" type="Button" parent="LosePanel" unique_id=1543149950]
+process_mode = 3
 z_index = 100
 offset_left = 877.0
 offset_top = 711.0
@@ -349,8 +353,10 @@ text = "Chơi lại từ đầu
 "
 
 [node name="ColorRect" type="ColorRect" parent="LosePanel" unique_id=1479465502]
+modulate = Color(1, 1, 1, 0.27450982)
 offset_right = 1926.0
 offset_bottom = 1076.0
+mouse_filter = 2
 
 [node name="LoseIcon" type="TextureRect" parent="LosePanel" unique_id=293067524]
 anchors_preset = 8
@@ -366,11 +372,15 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+mouse_filter = 2
 texture = ExtResource("14_enpss")
 
 [node name="Chơi lại 2" type="Button" parent="LosePanel" unique_id=1692811950]
-offset_right = 8.0
-offset_bottom = 8.0
+process_mode = 3
+offset_left = 892.0
+offset_top = 820.0
+offset_right = 1034.0
+offset_bottom = 889.0
 text = "Chơi lại wave này"
 
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Attack" to="logicgame" method="_on_attack_pressed"]

@@ -47,6 +47,7 @@ func _ready():
 	add_child(piece_layer)
 	
 	spawn_initial_army()
+	backup_player_pieces()
 # Hàm phụ để đếm số lần 1 ô bị trúng phép
 func _add_to_impact_map(map: Dictionary, pos: Vector2i):
 	if map.has(pos):
@@ -135,7 +136,7 @@ func transition_to_next_wave():
 						child.play("up")
 					else:
 						child.play("down")
-# Khai báo biến ở đầu file logicgame.gd để sau này dễ sửa màn 6
+	backup_player_pieces()
 
 
 func check_and_trigger_next_wave():
@@ -147,6 +148,7 @@ func check_and_trigger_next_wave():
 		else:
 			transition_to_next_wave()
 	get_tree().paused = false # Hoặc true tùy cách bạn xử lý
+	force_release_all_grabs()
 func spawn_initial_army():
 	if Global.current_wave == 1:
 		for i in range(8):
@@ -258,14 +260,28 @@ func deal_damage(unit, amount):
 		unit.get_node("HealthBar").value = unit.current_health
 		
 	# Check nếu KING chết
-	if "King" in unit.name and unit.hp <= 0:
-		# Hiện màn hình thua (có sẵn ảnh trong đó)
-		lose_screen.show()
-		get_tree().paused = true # Tạm dừng game
-	elif unit.current_health <= 0:
-		# Lính thường chết
-		all_pieces.erase(unit)
-		unit.queue_free()
+	if unit.current_health <= 0:
+		if "King" in unit.name:
+			show_lose_screen()
+		else:
+			# --- CHÈN ĐOẠN NÀY VÀO TRƯỚC KHI XÓA LÍNH ---
+			# Quét xem có ai đang ôm cái xác này, hoặc bị cái xác này ôm không thì gỡ ra
+			for p in all_pieces:
+				if is_instance_valid(p):
+					if p.get("grabbed_by") == unit or p == unit.get("grabbed_by"):
+						p.set("is_grabbed", false)
+						p.set("grabbed_by", null)
+						p.z_index = 0
+						# Kéo người sống sót thả lại xuống đất
+						if "grid_pos" in p and p.has_method("grid_to_pixel"):
+							p.position = grid_to_pixel(p.grid_pos)
+						if p.has_method("update_visuals"):
+							p.update_visuals()
+			# ---------------------------------------------
+			
+			# Xóa lính chết khỏi bàn cờ
+			all_pieces.erase(unit)
+			unit.queue_free()
 func _input(event):
 	if has_moved_main_piece: return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -280,7 +296,7 @@ func _input(event):
 			var valid_moves = get_valid_moves(selected_piece)
 			if clicked_grid in valid_moves:
 				if selected_piece.is_grabbed:
-					break_grab(selected_piece)
+					force_release_all_grabs(selected_piece)
 				move_piece(selected_piece, clicked_grid)
 				selected_piece.has_moved = true
 				has_moved_main_piece = true
@@ -1025,16 +1041,22 @@ func check_and_execute_grab(pawn):
 		
 	chosen_target.modulate = Color(0.5, 0.5, 0.5)
 
-func break_grab(piece):
-	piece.is_grabbed = false
-	piece.grabbed_by = null
-	if piece.has_method("update_visuals"): piece.update_visuals()
+func force_release_all_grabs(piece = null):
+	selected_piece = null
 	
+	# Quét toàn bộ bàn cờ và thả tất cả lính ra
 	for p in all_pieces:
-		if is_instance_valid(p) and p.grabbed_by == piece:
-			p.is_grabbed = false
-			p.grabbed_by = null
-			if p.has_method("update_visuals"): p.update_visuals()
+		if is_instance_valid(p):
+			p.set("is_grabbed", false)
+			p.set("grabbed_by", null)
+			
+			# Đưa lính về chính giữa ô vuông (chống kẹt lơ lửng)
+			if "grid_pos" in p and has_method("grid_to_pixel"):
+				p.position = grid_to_pixel(p.grid_pos)
+			
+			# Tắt hiệu ứng viền/bóng
+			if p.has_method("update_visuals"):
+				p.update_visuals()
 
 func kill_piece(piece):
 	for p in all_pieces:
@@ -2199,15 +2221,15 @@ func backup_player_pieces():
 	player_pieces_backup.clear()
 	for p in all_pieces:
 		if is_instance_valid(p) and p.team == 1:
-			# Lưu lại thông tin quan trọng: loại lính, vị trí, và máu hiện tại
 			var data = {
-				"scene": p.filename, # Đường dẫn file .tscn của con lính đó
+				# Dùng scene_file_path thay vì filename cho Godot 4
+				"scene_path": p.scene_file_path, 
 				"grid_pos": p.grid_pos,
-				"hp": p.hp,
+				"hp": p.current_health,
 				"name": p.name
 			}
 			player_pieces_backup.append(data)
-
+	print("Đã lưu trạng thái lính! Số lượng: ", player_pieces_backup.size())
 func _on_chơi_lại_pressed():
 	
 	Global.current_wave = 1
@@ -2218,31 +2240,66 @@ func _on_chơi_lại_pressed():
 func _on_chơi_lại_2_pressed() :
 	restart_current_wave()
 func restart_current_wave():
-	# 1. Xóa toàn bộ quân lính đang có trên bàn (cả ta lẫn địch)
+	force_release_all_grabs()
+	
+	# 1. RESET TURN VỀ 1
+	current_turn = 1
+	if turn_label: 
+		turn_label.text = "Turn: 1"
+	
+	# 2. DỌN SẠCH BÀN CỜ
 	for p in all_pieces:
 		if is_instance_valid(p):
 			p.queue_free()
 	all_pieces.clear()
 	
-	# 2. Hồi sinh quân ta từ bản Backup
+	# 3. HỒI SINH QUÂN TA
 	for data in player_pieces_backup:
-		var p_scene = load(data["scene"])
-		var p = p_scene.instantiate()
-		add_child(p)
-		
-		p.grid_pos = data["grid_pos"]
-		p.health = data["health"]
-		p.name = data["name"]
-		p.team = 1
-		all_pieces.append(p)
-		
-		# Cập nhật thanh máu cho lính vừa hồi sinh
-		if p.has_node("HealthBar"):
-			p.get_node("HealthBar").value = p.health
+		# Đảm bảo đường dẫn tồn tại thì mới load
+		if data["scene_path"] != null and data["scene_path"] != "":
+			var p_scene = load(data["scene_path"])
+			var p = p_scene.instantiate()
 			
-	# 3. Tạo lại quân địch của wave đó
-	spawn_enemy_wave() 
-	
-	# 4. Ẩn màn hình thua và tiếp tục game
-	lose_screen.hide()
+			p.team = 1
+			# Phải add vào piece_layer thì lính mới hiện lên đúng vị trí
+			if has_node("PieceLayer"):
+				get_node("PieceLayer").add_child(p)
+			else:
+				add_child(p) 
+				
+			all_pieces.append(p)
+			
+			# Phục hồi chỉ số
+			p.grid_pos = data["grid_pos"]
+			p.position = grid_to_pixel(p.grid_pos) # Đặt đúng tọa độ
+			p.current_health = data["hp"]
+			p.name = data["name"]
+			
+			if p.has_node("HealthBar"):
+				p.get_node("HealthBar").value = p.current_health
+			if p.has_method("update_visuals"):
+				p.update_visuals()
+
+	# 4. TẠO LẠI ĐỊCH & SỬA HƯỚNG MẶT
+	spawn_enemy_wave()
+
+		
+	# 5. TẮT MÀN HÌNH THUA
+	if lose_screen: lose_screen.hide()
+	set("can_interact", true) # Mở khóa click chuột
 	get_tree().paused = false
+func show_lose_screen():
+	print("Vua đã băng hà! GAME OVER!")
+	
+	# Khóa tương tác chuột (nếu bạn có dùng biến này)
+	if "can_interact" in self:
+		set("can_interact", false)
+	
+	# Hiện màn hình Thua
+	if "lose_screen" in self and lose_screen:
+		lose_screen.show()
+	elif has_node("CanvasLayer/LosePanel"):
+		get_node("CanvasLayer/LosePanel").show()
+		
+	# Tạm dừng game
+	get_tree().paused = true
