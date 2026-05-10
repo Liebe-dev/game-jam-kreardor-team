@@ -67,7 +67,7 @@ var tutorial_pages = [
 		"image": preload("res://spell/earth earth.png")
 	},
 	{
-		"title": "Ventus+Ventust",
+		"title": "Ventus+Ventus",
 		"info": "Ấn gió gia cường: vô hiệu hóa mục tiêu trên ô đó 1 lượt.",
 		"image": preload("res://spell/wind wind.png")
 	},
