@@ -94,6 +94,8 @@ func _ready():
 	for i in range(dir_edits.size()):
 		dir_edits[i].text_submitted.connect(_on_dir_submitted.bind(i))
 		dir_edits[i].focus_exited.connect(func(): if dir_edits[i].text != "": _on_dir_submitted(dir_edits[i].text, i))
+# --- XỬ LÝ LỚP 1 (NGUYÊN TỐ) ---
+# --- XỬ LÝ LỚP 1 (NGUYÊN TỐ) ---
 func _on_element_submitted(new_text: String, index: int):
 	var text_lower = new_text.to_lower().strip_edges()
 	
@@ -121,7 +123,7 @@ func _on_element_submitted(new_text: String, index: int):
 			# Lần 1: Hiện ảnh nguyên tố đơn lẻ
 			elem_icons[0].texture = get_single_icon(elem_str)
 			elem_icons[0].show()
-			Global.tutorial_rune_ignis_drawn.emit()
+			
 		elif cast_elements_str.size() == 2:
 			# Lần 2: Đổi ảnh ở Icon 1 thành ảnh KẾT HỢP
 			elem_icons[0].texture = get_combined_icon(cast_elements_str[0], cast_elements_str[1])
@@ -141,18 +143,7 @@ func _on_coord_submitted(new_text: String, index: int):
 	if is_valid:
 		# Tọa độ ĐÚNG: Để nguyên chữ, KHÔNG ẩn ô nhập, KHÔNG hiện ảnh
 		coord_edits[index].text = text_upper # Ép thành chữ in hoa cho đẹp
-		coord_edits[index].release_focus()
-		if text_upper == "B" and index == 0: 
-			Global.tutorial_rune_B_drawn.emit() # Vẽ B ở Trên (Ảnh 12)
-			
-		elif text_upper == "2" and index == 1: 
-			Global.tutorial_rune_2_drawn.emit() # Vẽ 2 ở Trái (Ảnh 13)
-			
-		elif text_upper == "2" and index == 3: 
-			Global.tutorial_rune_2_right_drawn.emit() # Vẽ 2 ở Phải (SAU ẢNH 15)
-			
-		elif text_upper == "D" and index == 2:
-			Global.tutorial_rune_D_drawn.emit() # Báo đã vẽ số 2   # Nhả con trỏ chuột ra khỏi ô để người chơi không lỡ gõ thêm
+		coord_edits[index].release_focus()   # Nhả con trỏ chuột ra khỏi ô để người chơi không lỡ gõ thêm
 	else:
 		# Tọa độ SAI: Xóa chữ bắt gõ lại
 		coord_edits[index].text = ""
@@ -217,7 +208,6 @@ func _on_end_turn_button_pressed():
 	
 	clear_all_inputs()
 	close_scroll()
-	Global.tutorial_spell_cast.emit()
 # --- TIỆN ÍCH ---
 func update_ui():
 	if paper_label: paper_label.text = "Giấy: " + str(Global.paper_count)

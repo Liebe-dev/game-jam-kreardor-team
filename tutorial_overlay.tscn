@@ -1,8 +1,7 @@
 [gd_scene format=3 uid="uid://bmm4mnryre7f1"]
 
 [ext_resource type="Script" uid="uid://d24yw1kcfgueg" path="res://tutorial_overlay.gd" id="1_qwqh4"]
-[ext_resource type="FontFile" uid="uid://bwai7luhvbovc" path="res://spell/iCiel Altus Serif.otf" id="2_v54sr"]
-[ext_resource type="Texture2D" uid="uid://uxqdvnx5dwrg" path="res://spell/nextpage.png" id="3_2ev3b"]
+[ext_resource type="Texture2D" uid="uid://o7c15cp46hde" path="res://tutorial/tutorial1.png" id="1_u4lmm"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_qwqh4"]
 
@@ -10,16 +9,26 @@
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_2ev3b"]
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_n4y2v"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_v54sr"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_d17pb"]
-
 [node name="TutorialOverlay" type="CanvasLayer" unique_id=287250527]
 script = ExtResource("1_qwqh4")
 
-[node name="TutorialRect" type="TextureRect" parent="." unique_id=1993547537]
+[node name="TextureRect" type="TextureRect" parent="." unique_id=1993547537]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("1_u4lmm")
+
+[node name="DimBG" type="ColorRect" parent="." unique_id=1545607756]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1254902, 0.047058824, 0.007843138, 0.39215687)
+
+[node name="GuideText" type="TextureRect" parent="." unique_id=71925639]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -35,21 +44,3 @@ grow_vertical = 2
 theme_override_styles/normal = SubResource("StyleBoxEmpty_qwqh4")
 theme_override_styles/pressed = SubResource("StyleBoxEmpty_v54sr")
 theme_override_styles/hover = SubResource("StyleBoxEmpty_2ev3b")
-
-[node name="SkipButton" type="Button" parent="." unique_id=2092911640]
-offset_left = 1704.0
-offset_top = 20.0
-offset_right = 1887.0
-offset_bottom = 77.0
-theme_override_fonts/font = ExtResource("2_v54sr")
-theme_override_font_sizes/font_size = 40
-theme_override_styles/normal = SubResource("StyleBoxEmpty_n4y2v")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_v54sr")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_d17pb")
-text = "Bỏ qua"
-icon = ExtResource("3_2ev3b")
-alignment = 0
-icon_alignment = 2
-expand_icon = true
-
-[connection signal="pressed" from="SkipButton" to="." method="_on_skip_button_pressed"]
