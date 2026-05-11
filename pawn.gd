@@ -4,20 +4,16 @@ class_name Piece
 # Các thuộc tính cơ bản
 @export var team: int = 0
 @export var grid_pos: Vector2i = Vector2i.ZERO
-
-# --- THÔNG SỐ CHIẾN ĐẤU ---
 @export var max_health: int = 250
 @export var damage: int = 20
 @onready var current_health: int = max_health
 
-# Túi chứa buff
 var active_buffs: Dictionary = {}
 var is_charging: bool = false
 var is_grabbed: bool = false
 var grabbed_by: Node2D = null
 var has_moved: bool = false
 
-# --- BIẾN QUẢN LÝ ĐẠN ---
 var max_ammo = 3
 var current_ammo = 3
 var is_reloading = false
@@ -28,21 +24,16 @@ var current_wind_visual = null
 var stun_turns = 0
 var root_turns = 0
 
-# --- THAM CHIẾU NODE ---
-# Sử dụng AnimatedSprite2D thay vì Sprite2D
 @onready var anim_sprite = $anim_sprite
-
 func _ready():
 	if has_node("HealthBar"):
 		get_node("HealthBar").max_value = max_health
 		get_node("HealthBar").value = current_health
-
-	# --- ĐOẠN CODE ÉP LÍNH ĐỨNG NGHIÊM KHI VỪA SINH RA ---
 	if anim_sprite:
 		if team == 1:
-			anim_sprite.play("idle_up") # Quân ta (team 1) nhìn lên
+			anim_sprite.play("idle_up")
 		else:
-			anim_sprite.play("idle_down") # Quân địch nhìn xuống
+			anim_sprite.play("idle_down")
 func take_damage(amount: float):
 	var final_damage = amount * (1.0 - damage_reduction_rate)
 	current_health -= final_damage 
@@ -72,8 +63,6 @@ func move_to_grid(new_grid_pos: Vector2i, new_world_pos: Vector2):
 		
 	var direction_vector = new_grid_pos - grid_pos 
 	
-	# --- CẬP NHẬT HƯỚNG BẰNG ANIMATION THAY VÌ FRAME ---
-	# Đảm bảo bạn đã tạo các animation: "idle_down", "idle_right", "idle_left", "idle_up"
 	if anim_sprite:
 		if direction_vector.x > 0:
 			anim_sprite.play("idle_right")
@@ -84,25 +73,19 @@ func move_to_grid(new_grid_pos: Vector2i, new_world_pos: Vector2):
 		elif direction_vector.y < 0:
 			anim_sprite.play("idle_up")
 
-	# Logic di chuyển
 	grid_pos = new_grid_pos
 	var tween = create_tween()
 	tween.tween_property(self, "global_position", new_world_pos, 0.3).set_trans(Tween.TRANS_SINE)
 	await tween.finished
-	
 	Global.tutorial_pawn_moved.emit()
 	var logic_game = get_node("/root/board") 
 	if logic_game.has_method("check_trap_at"):
 		logic_game.check_trap_at(self, grid_pos)
-
-# --- HÀM MỚI: PHÁT ANIMATION TẤN CÔNG ---
 func play_attack_animation(target_pos: Vector2i):
 	if not anim_sprite: return
-	
 	var dir = target_pos - grid_pos
 	var anim_name = "attack_down"
 	var idle_name = "idle_down"
-	
 	if dir.x > 0: 
 		anim_name = "attack_right"
 		idle_name = "idle_right"
@@ -112,18 +95,13 @@ func play_attack_animation(target_pos: Vector2i):
 	elif dir.y < 0: 
 		anim_name = "attack_up"
 		idle_name = "idle_up"
-		
-	# 1. Reset lại animation từ đầu cho chắc chắn
 	anim_sprite.stop()
-	anim_sprite.play(anim_name)
-	
-	# 2. SỬ DỤNG TIMER THAY VÌ CHỜ TÍN HIỆU ĐỂ CHỐNG KẸT
-	# (0.6 giây là thời gian vừa đủ cho 3 frames ở tốc độ 5 FPS)
-	await get_tree().create_timer(0.6).timeout
-	
-	# 3. Ép buộc thu kiếm về tư thế thủ
+	if anim_sprite.sprite_frames.has_animation(anim_name):
+		anim_sprite.play(anim_name)
+	await get_tree().create_timer(0.4).timeout
 	if is_instance_valid(anim_sprite):
-		anim_sprite.play(idle_name)
+		if anim_sprite.sprite_frames.has_animation(idle_name):
+			anim_sprite.play(idle_name)
 func update_visuals():
 	if is_grabbed:
 		modulate = Color(0.5, 0.5, 0.5)

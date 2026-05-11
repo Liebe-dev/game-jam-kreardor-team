@@ -192,7 +192,7 @@ damage = 200
 [node name="anim_sprite" type="AnimatedSprite2D" parent="." unique_id=1810919822]
 position = Vector2(0, -47)
 sprite_frames = SubResource("SpriteFrames_o40kf")
-animation = &"attack_right"
+animation = &"attack_up"
 
 [node name="HealthBar" type="ProgressBar" parent="." unique_id=1792561652]
 anchors_preset = 8

@@ -140,73 +140,49 @@ var tutorial_pages = [
 		"image": preload("res://spellbook/queen.png")
 	},
 ]
-
 func _ready() -> void:
 	opened_book_panel.hide()
 	closed_book_btn.show()
-	
 	closed_book_btn.pressed.connect(open_book)
 	if close_btn: close_btn.pressed.connect(close_book)
-		
 	if prev_btn: prev_btn.pressed.connect(turn_prev_page)
 	if next_btn: next_btn.pressed.connect(turn_next_page)
-	
-	# --- KẾT NỐI DẤU TRANG ---
-	# Giả sử "Ấn đơn" bắt đầu từ trang 0 (Ignis)
 	if tab_basis: tab_basis.pressed.connect(go_to_page.bind(0))
 	if tab_basic: tab_basic.pressed.connect(go_to_page.bind(2))
-	# Giả sử "Ấn gia cường" bạn sẽ viết ở trang số 4 (Trang thứ 5 trong mảng)
 	if tab_enhanced: tab_enhanced.pressed.connect(go_to_page.bind(6)) 
-	
-	# Giả sử "Hợp ấn" bạn sẽ viết ở trang số 6 (Trang thứ 7 trong mảng)
 	if tab_combine: tab_combine.pressed.connect(go_to_page.bind(10))
 	if tab_enemy: tab_enemy.pressed.connect(go_to_page.bind(16))
 func open_book() -> void:
 	closed_book_btn.hide()
 	opened_book_panel.show()
 	update_page_ui()
-
 func close_book() -> void:
 	opened_book_panel.hide()
 	closed_book_btn.show()
-
 func turn_next_page() -> void:
 	if current_page < tutorial_pages.size() - 1:
 		current_page += 1
 		update_page_ui()
-
 func turn_prev_page() -> void:
 	if current_page > 0:
 		current_page -= 1
 		update_page_ui()
-
-# --- HÀM GẮN DỮ LIỆU VÀO GIAO DIỆN ---
 func update_page_ui() -> void:
 	var page_data = tutorial_pages[current_page]
-	
-	# Gắn chữ
 	title_label.text = page_data["title"]
 	info_label.text = page_data["info"]
-	
-	# Gắn ảnh minh họa
 	if page_data["image"] != null:
 		illustration.texture = page_data["image"]
 		illustration.show()
 	else:
 		illustration.hide()
-		
-	# 3. ẨN/HIỆN VÙNG CLICK (Mới sửa)
 	if prev_btn: prev_btn.visible = current_page > 0
 	if next_btn: next_btn.visible = current_page < tutorial_pages.size() - 1
-		
-	# 4. ẨN/HIỆN MŨI TÊN TRANG TRÍ (Mới thêm)
 	if left_arrow: left_arrow.visible = current_page > 0
 	if right_arrow: right_arrow.visible = current_page < tutorial_pages.size() - 1
-# --- HÀM NHẢY ĐẾN TRANG CHỈ ĐỊNH ---
 func go_to_page(page_index: int) -> void:
-	# Kiểm tra phòng hờ: Nếu mảng dữ liệu có chứa trang này thì mới nhảy
 	if page_index >= 0 and page_index < tutorial_pages.size():
 		current_page = page_index
 		update_page_ui()
 	else:
-		print("Trang này chưa được viết dữ liệu!")
+		print("Trang này chưa được viết dữ liệu")
