@@ -17,4 +17,3 @@ func _on_closed_scroll_button_pressed():
 	closed_scroll_btn.hide()
 	# Hiển thị giao diện vẽ phép lên
 	magic_system.show_scroll()
-	Global.tutorial_scroll_opened.emit()

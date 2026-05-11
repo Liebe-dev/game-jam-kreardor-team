@@ -1,25 +1,4 @@
 extends Node
-@warning_ignore("unused_signal")
-signal tutorial_pawn_moved
-@warning_ignore("unused_signal")
-signal tutorial_attack_performed
-@warning_ignore("unused_signal")
-signal tutorial_scroll_opened      # Mở cuộn giấy
-@warning_ignore("unused_signal")
-signal tutorial_rune_ignis_drawn   # Vẽ thành công chữ "ignis"
-@warning_ignore("unused_signal")
-signal tutorial_rune_B_drawn       # Vẽ thành công chữ "B"
-@warning_ignore("unused_signal")
-signal tutorial_rune_2_drawn
-@warning_ignore("unused_signal")
-signal tutorial_rune_2_right_drawn # Nhập số 2 ở ô BÊN PHẢI
-@warning_ignore("unused_signal")
-signal tutorial_rune_D_drawn
-@warning_ignore("unused_signal")
-signal tutorial_spell_cast         # Người chơi nhấn nút Thi triển phép
-@warning_ignore("unused_signal")
-signal tutorial_end_turn_pressed
-var is_tutorial_done: bool = false
 var current_wave = 1
 var paper_count: int = 10
 var has_casted_spell: bool = false

@@ -7,25 +7,24 @@ class_name Piece
 @export var max_health: int = 250
 @export var damage: int = 20
 @onready var current_health: int = max_health
-
 var active_buffs: Dictionary = {}
-var is_charging: bool = false
+var is_charging: bool = false # Trạng thái đang nạp đạn
 var is_grabbed: bool = false
 var grabbed_by: Node2D = null
 var has_moved: bool = false
-
 var max_ammo = 3
 var current_ammo = 3
 var is_reloading = false
 var reload_turns_left = 0
 var damage_reduction_rate = 0.0
-var is_shield_new = false
+var is_shield_new = false # Biến cờ đánh dấu khiên mới
 var current_wind_visual = null
 var stun_turns = 0
 var root_turns = 0
 
 @onready var anim_sprite = $anim_sprite
 func _ready():
+	# Đảm bảo thanh máu khớp với chỉ số khi vừa sinh ra
 	if has_node("HealthBar"):
 		get_node("HealthBar").max_value = max_health
 		get_node("HealthBar").value = current_health
@@ -35,32 +34,41 @@ func _ready():
 		else:
 			anim_sprite.play("idle_down")
 func take_damage(amount: float):
+	# Tính toán sát thương sau khi giảm trừ
 	var final_damage = amount * (1.0 - damage_reduction_rate)
+	
+	# Trừ lượng sát thương ĐÃ GIẢM vào máu hiện tại
 	current_health -= final_damage 
+	
+	if has_node("HealthBar"):
+		get_node("HealthBar").value = current_health
 	
 	if has_node("HealthBar"):
 		$HealthBar.value = current_health
 	
 	var t = create_tween()
 	t.tween_property(self, "modulate", Color.RED, 0.1)
+	
+	# SỬA Ở ĐÂY: Trả về trạng thái màu hiện tại (Cam nạp đạn, Xám bị ôm, hoặc Trắng bình thường)
 	t.tween_callback(update_visuals)
 	
 	if current_health <= 0:
 		die()
-
+# Hàm xử lý khi quân cờ chết
 func die():
-	var logic_game = get_node("/root/board/logicgame")
+	# Gọi hàm xử lý xóa quân cờ từ logicgame.gd
+	var logic_game = get_node("/root/board/logicgame") # Chỉnh lại đường dẫn chuẩn đến logicgame của bạn
 	if logic_game:
 		logic_game.kill_piece(self)
 	else:
 		queue_free()
-
 func move_to_grid(new_grid_pos: Vector2i, new_world_pos: Vector2):
 	if stun_turns > 0 or root_turns > 0:
 		var loai_buff = "Choáng" if stun_turns > 0 else "Trói chân"
 		print("Không thể đi! Quân lính đang bị: ", loai_buff)
 		return
 		
+	# Vectơ hướng di chuyển (Mới - Cũ)
 	var direction_vector = new_grid_pos - grid_pos 
 	
 	if anim_sprite:
@@ -80,6 +88,7 @@ func move_to_grid(new_grid_pos: Vector2i, new_world_pos: Vector2):
 	Global.tutorial_pawn_moved.emit()
 	var logic_game = get_node("/root/board") 
 	if logic_game.has_method("check_trap_at"):
+		# Sửa current_grid_pos thành grid_pos
 		logic_game.check_trap_at(self, grid_pos)
 func play_attack_animation(target_pos: Vector2i):
 	if not anim_sprite: return
@@ -104,12 +113,16 @@ func play_attack_animation(target_pos: Vector2i):
 			anim_sprite.play(idle_name)
 func update_visuals():
 	if is_grabbed:
-		modulate = Color(0.5, 0.5, 0.5)
-	elif is_charging:
-		modulate = Color(2.0, 1.2, 0.5)
+		modulate = Color(0.5, 0.5, 0.5) # Vẫn giữ màu xám khi bị ôm
+	elif "is_charging" in self and is_charging:
+		modulate = Color(2.0, 1.2, 0.5) # Màu cam rực rỡ khi nạp đạn
 	else:
+		# SỬA Ở ĐÂY: Xóa bỏ việc chia team. Trả tất cả về màu gốc của ảnh (Trắng)
 		modulate = Color(1, 1, 1)
+var burn_ticks = 0
 
+
+# 1. BẬT ANIMATION KHI NHẬN BUFF
 func add_buff(buff_name: String, value: float, duration_turns: int):
 	active_buffs[buff_name] = duration_turns
 	
@@ -118,56 +131,83 @@ func add_buff(buff_name: String, value: float, duration_turns: int):
 		self.is_shield_new = true
 		if has_node("ShieldAnim"):
 			$ShieldAnim.visible = true
-			$ShieldAnim.play("ShieldAnim")
+			$ShieldAnim.play("ShieldAnim") # Điền tên animation loop của khiên vào
 	if buff_name == "stun":
 		self.stun_turns = duration_turns
 	elif buff_name == "root":
 		self.root_turns = duration_turns
+		# Nếu đang có hiệu ứng gió cũ thì xóa đi trước khi tạo cái mới
 		if is_instance_valid(current_wind_visual):
 			current_wind_visual.queue_free()
 			
+		# Gọi Scene chứa animation
 		var effect = preload("res://spell_effect.tscn").instantiate()
-		add_child(effect)
-		effect.position = Vector2(0, -15)
+		add_child(effect) # Gắn trực tiếp làm con của lính
+		
+		# Chỉnh vị trí và thứ tự hiển thị
+		effect.position = Vector2(0, -15) # Chỉnh số này cho vừa với thân lính
 		effect.z_index = 1
+		
+		# Phát animation buff
 		effect.play("gio") 
+		
+		# Lưu lại vào biến để xóa khi lính hết bị stun
 		self.current_wind_visual = effect
 
+
+# 2. TẮT ANIMATION KHI HẾT LƯỢT
 func on_turn_end():
 	if active_buffs.has("damage_reduction"):
 		active_buffs["damage_reduction"] -= 1 
 		
+		# Hết lượt -> Tắt buff
 		if active_buffs["damage_reduction"] <= 0:
 			active_buffs.erase("damage_reduction")
 			damage_reduction_rate = 0.0
+			
+			# --- Tắt Animation Khiên đi ---
 			if has_node("ShieldAnim"):
 				$ShieldAnim.visible = false
 				$ShieldAnim.stop()
 				
+			print("[Pawn] Đã vỡ khiên Đất trên ", name)
+	
 	if stun_turns > 0:
+		
+		print("Số lượt choáng còn lại: ", stun_turns)
+		
+		# Khi hết choáng thì xóa hiệu ứng hình ảnh
 		if stun_turns == 0:
 			if is_instance_valid(current_wind_visual):
 				current_wind_visual.queue_free()
-
+				print("Đã hết choáng!")
 func process_buffs():
+	# 1. Gây tác dụng của các buff bất lợi đầu hiệp (như rút máu do cháy)
 	if active_buffs.has("burn"):
-		take_damage(10)
+		take_damage(10) # Cháy thì mất 10 máu mỗi hiệp
+		print(name, " bị mất máu do thiêu đốt!")
 
+	# 2. Giảm số lượt của tất cả các buff đi 1
 	var expired_buffs = []
 	for buff in active_buffs.keys():
 		active_buffs[buff] -= 1
+		
+		# Nếu hết lượt thì đánh dấu để xóa
 		if active_buffs[buff] <= 0:
 			expired_buffs.append(buff)
 			
+	# 3. Xóa các buff đã hết hạn
 	for buff in expired_buffs:
 		active_buffs.erase(buff)
+		# Khôi phục màu sắc gốc nếu cần
 		if active_buffs.is_empty():
 			modulate = Color(1, 1, 1)
-
 func heal(amount):
 	current_health += amount
+	# Chặn không cho máu vượt mức tối đa (Giả sử max_current_health là biến máu tối đa của bạn)
 	if current_health > max_health: 
 		current_health = max_health
 		
+	# Cập nhật lại cái thanh máu hiển thị trên đầu
 	if has_node("HealthBar"):
 		get_node("HealthBar").value = current_health

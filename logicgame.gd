@@ -134,11 +134,9 @@ func transition_to_next_wave():
 						child.frame = 0
 				elif child is AnimatedSprite2D:
 					if p.team == 1:
-						if child.sprite_frames.has_animation("idle_up"):
-							child.play("idle_up")
+						child.play("up")
 					else:
-						if child.sprite_frames.has_animation("idle_down"):
-							child.play("idle_down")
+						child.play("down")
 	backup_player_pieces()
 
 
@@ -296,14 +294,12 @@ func _input(event):
 			selected_piece = piece_at_click
 			show_highlights(selected_piece)
 		elif selected_piece != null:
-			var p = selected_piece # <--- LƯU TẠM VÀO BIẾN p ĐỂ KHÔNG BỊ MẤT DỮ LIỆU
-			var valid_moves = get_valid_moves(p)
+			var valid_moves = get_valid_moves(selected_piece)
 			if clicked_grid in valid_moves:
-				if p.get("is_grabbed"):
-					force_release_all_grabs(p) # Lệnh này làm selected_piece = null, nhưng biến p vẫn còn sống!
-					
-				move_piece(p, clicked_grid) # Bắt biến p di chuyển
-				p.has_moved = true
+				if selected_piece.is_grabbed:
+					force_release_all_grabs(selected_piece)
+				move_piece(selected_piece, clicked_grid)
+				selected_piece.has_moved = true
 				has_moved_main_piece = true
 				clear_highlights()
 				selected_piece = null
@@ -320,9 +316,8 @@ func is_cell_vacant(grid_pos: Vector2i) -> bool:
 	return get_piece_at(grid_pos) == null
 
 func move_piece(piece, target_grid: Vector2i):
-	if not is_instance_valid(piece):
-		return
-	if piece.get("is_grabbed"):
+	
+	if piece.is_grabbed:
 		return
 	var target_world = calculate_world_position(target_grid)
 	if piece.has_method("move_to_grid"):
@@ -398,8 +393,7 @@ func _on_attack_pressed():
 		current_command = Command.ATTACK
 		btn_attack.modulate = Color(1, 0.5, 0.5)
 		btn_defend.modulate = Color(1, 1, 1)
-		Global.tutorial_attack_performed.emit()
-	
+
 func _on_defend_pressed():
 	if current_command == Command.DEFEND:
 		current_command = Command.IDLE
@@ -491,7 +485,7 @@ func _on_end_turn_pressed():
 					print("[Khối Đất] Tường đã sụp đổ!")
 					pieces_to_remove.append(p)
 					
-	Global.tutorial_end_turn_pressed.emit()
+	# Xóa các khối đất hết hạn khỏi mảng và bàn cờ
 	for p in pieces_to_remove:
 		all_pieces.erase(p)
 		p.queue_free()
@@ -505,6 +499,7 @@ func execute_all_combat_logic():
 		# BÊN NÀY CHỈ CHẶN ĐÁNH, KHÔNG CÓ DẤU TRỪ (-) NÀO HẾT
 		if "stun_turns" in p and p.stun_turns > 0:
 			continue
+		# ------------------------------------
 	for p in all_pieces:
 		if not is_instance_valid(p): continue
 		if p.is_grabbed:
@@ -517,8 +512,6 @@ func execute_all_combat_logic():
 				execute_bishop_logic(p)
 			else:
 				if is_instance_valid(p.grabbed_by):
-					if p.has_method("play_attack_animation"):
-						p.play_attack_animation(p.grabbed_by.grid_pos)
 					deal_damage(p.grabbed_by, 10)
 		else:
 			var p_name = p.name.to_lower()
@@ -553,26 +546,10 @@ func move_team_logic(team_num: int):
 				
 			# Lệnh continue này sẽ hất văng lính, AI KHÔNG THỂ bắt nó đi bộ được nữa
 			continue
-			
 	for p in all_pieces:
 		if not is_instance_valid(p) or p.team != team_num: continue
-		
-		# ==========================================
-		# --- ĐOẠN MỚI SỬA: ƯU TIÊN LỆNH CỐ THỦ ---
-		# ==========================================
-		if p.get("is_grabbed") == true:
-			# Nếu là quân mình và được lệnh Cố thủ -> Ép buông tay để chạy
-			if team_num == 1 and current_command == Command.DEFEND:
-				force_release_all_grabs(p) 
-			else:
-				# Nếu không thì vẫn bị kẹt lại đánh nhau
-				continue
-				
-		# Bỏ qua Vua và Boss (không tự di chuyển)
-		if "King" in p.name or "boss" in p.name.to_lower() or "dragon" in p.name.to_lower():
+		if p.get("is_grabbed") == true or "King" in p.name or "boss" in p.name.to_lower() or "dragon" in p.name.to_lower():
 			continue
-		# ==========================================
-		
 		if "EarthBlock" in p.name: 
 			continue
 		if p.has_moved: continue
@@ -637,26 +614,18 @@ func get_closest(for_piece, list):
 			min_dist = d
 			closest = p
 	return closest
+
 func get_next_step_towards(start: Vector2i, target: Vector2i) -> Vector2i:
-	var dirs = [
-		Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0),
-		Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1)
-	]
-	var valid_moves = []
-	for d in dirs:
-		var test_pos = start + d
-		if is_within_board(test_pos) and is_cell_vacant(test_pos):
-			var dist = Vector2(test_pos).distance_to(Vector2(target))
-			if abs(d.x) + abs(d.y) == 1:
-				dist -= 0.1 
-			valid_moves.append({"pos": test_pos, "dist": dist})
-	valid_moves.sort_custom(func(a, b): return a["dist"] < b["dist"])
-	if valid_moves.size() > 0:
-		var current_dist = Vector2(start).distance_to(Vector2(target))
-		if valid_moves[0]["dist"] <= current_dist:
-			return valid_moves[0]["pos"]
-		return valid_moves[0]["pos"] 
-	return start
+	var diff = target - start
+	var step = Vector2i(0, 0)
+	
+	if abs(diff.y) > 0:
+		step.y = sign(diff.y)
+	elif abs(diff.x) > 0:
+		step.x = sign(diff.x)
+		
+	return start + step
+
 func execute_queen_logic(queen):
 	if queen.is_reloading:
 		return
