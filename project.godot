@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="GameJam Kreardor Team"
-run/main_scene="uid://d2w2lo4rs3t78"
+run/main_scene="uid://34kvupq38yxk"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="uid://xpfgrbkmo7eq"
 

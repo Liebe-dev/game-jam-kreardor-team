@@ -15,6 +15,7 @@
 [ext_resource type="Texture2D" uid="uid://brm7rv7af3odq" path="res://victory.png" id="13_o821d"]
 [ext_resource type="Texture2D" uid="uid://n0dk5tnppmj3" path="res://defeat.png" id="14_enpss"]
 [ext_resource type="PackedScene" uid="uid://bmm4mnryre7f1" path="res://tutorial_overlay.tscn" id="15_enpss"]
+[ext_resource type="PackedScene" uid="uid://dg0msu7bnit88" path="res://thewworldrudooo.tscn" id="16_7plpp"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_enpss"]
 
@@ -429,6 +430,10 @@ text = "Chơi lại wave này"
 metadata/_edit_use_anchors_ = true
 
 [node name="TutorialOverlay" parent="." unique_id=287250527 instance=ExtResource("15_enpss")]
+
+[node name="CanvasLayer2" type="CanvasLayer" parent="." unique_id=468033253]
+
+[node name="pause" parent="CanvasLayer2" unique_id=1427835890 instance=ExtResource("16_7plpp")]
 
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Attack" to="logicgame" method="_on_attack_pressed"]
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Defend" to="logicgame" method="_on_defend_pressed"]

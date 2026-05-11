@@ -50,6 +50,12 @@ func _ready():
 	backup_player_pieces()
 	if Global.current_wave == 1:
 		SoundManager.play_bgm(SoundManager.bgm_wave1)
+	if Global.is_continuing == true:
+		Global.is_continuing = false # Tắt cờ đi
+		restore_from_save() # Gọi hàm phục hồi từ file save
+	else:
+		spawn_initial_army()
+		backup_player_pieces()
 func _add_to_impact_map(map: Dictionary, pos: Vector2i):
 	if map.has(pos):
 		map[pos] += 1
@@ -1814,6 +1820,7 @@ func apply_firestorm_impact(center_pos_i: Vector2i, base_dmg: float):
 							var target_pixel_pos = grid_to_pixel(target_push_pos)
 							unit.move_to_grid(target_push_pos, target_pixel_pos)
 						deal_damage(unit, base_dmg)
+						
 func backup_player_pieces():
 	player_pieces_backup.clear()
 	for p in all_pieces:
@@ -1826,6 +1833,7 @@ func backup_player_pieces():
 			}
 			player_pieces_backup.append(data)
 	print("Đã lưu trạng thái lính! Số lượng: ", player_pieces_backup.size())
+	Global.save_game(player_pieces_backup)
 func _on_chơi_lại_pressed():
 	Global.current_wave = 1
 	get_tree().paused = false
@@ -1876,3 +1884,9 @@ func show_lose_screen():
 	elif has_node("CanvasLayer/LosePanel"):
 		get_node("CanvasLayer/LosePanel").show()
 	get_tree().paused = true
+
+func restore_from_save():
+	# Lấy dữ liệu từ Global đổ vào bảng backup hiện tại
+	player_pieces_backup = Global.saved_pieces.duplicate(true)
+	# Tái sử dụng hàm chơi lại wave để xếp lính ra bàn cờ!
+	restart_current_wave()

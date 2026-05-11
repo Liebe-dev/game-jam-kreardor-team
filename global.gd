@@ -64,3 +64,21 @@ func calculate_world_position(grid_pos: Vector2i) -> Vector2:
 	var pixel_x = (grid_pos.x * tile_size) + board_offset_x + (tile_size / 2.0)
 	var pixel_y = (grid_pos.y * tile_size) + board_offset_y + (tile_size / 2.0)
 	return Vector2(pixel_x, pixel_y)
+# --- THÊM PHẦN NÀY VÀO DƯỚI CÙNG FILE GLOBAL.GD ---
+
+var is_continuing = false
+var saved_pieces = []
+
+func save_game(pieces_backup: Array):
+	var file = FileAccess.open("user://soujourn_save.dat", FileAccess.WRITE)
+	file.store_var(current_wave) 
+	file.store_var(pieces_backup) 
+
+func load_game() -> bool:
+	if FileAccess.file_exists("user://soujourn_save.dat"):
+		var file = FileAccess.open("user://soujourn_save.dat", FileAccess.READ)
+		current_wave = file.get_var()
+		saved_pieces = file.get_var()
+		is_continuing = true
+		return true
+	return false
