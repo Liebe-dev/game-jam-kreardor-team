@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://c6g6rrmxqqtn7"
+path="res://.godot/imported/Echoes of the Soul.wav-50138581df89b6240a9dbca70dbb5731.sample"
+
+[deps]
+
+source_file="res://mainscreen/Echoes of the Soul.wav"
+dest_files=["res://.godot/imported/Echoes of the Soul.wav-50138581df89b6240a9dbca70dbb5731.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2
