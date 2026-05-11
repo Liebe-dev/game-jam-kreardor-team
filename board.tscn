@@ -14,6 +14,19 @@
 [ext_resource type="PackedScene" uid="uid://7dodg2gy67v" path="res://notebook_panel.tscn" id="9_c4ttu"]
 [ext_resource type="Texture2D" uid="uid://brm7rv7af3odq" path="res://victory.png" id="13_o821d"]
 [ext_resource type="Texture2D" uid="uid://n0dk5tnppmj3" path="res://defeat.png" id="14_enpss"]
+[ext_resource type="PackedScene" uid="uid://bmm4mnryre7f1" path="res://tutorial_overlay.tscn" id="15_enpss"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_enpss"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_7plpp"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_lxheh"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_r6t13"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_y1vqq"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_b65qd"]
 
 [node name="board" type="Node2D" unique_id=1273165699]
 script = ExtResource("1_tngv2")
@@ -58,7 +71,7 @@ scale = Vector2(0.8, 0.8)
 [node name="Attack" type="Button" parent="CanvasLayer/HBoxContainer" unique_id=982852196]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "ATTACK"
+text = "TIẾN CÔNG"
 icon = ExtResource("7_nk23n")
 icon_alignment = 1
 vertical_icon_alignment = 0
@@ -66,7 +79,7 @@ vertical_icon_alignment = 0
 [node name="Defend" type="Button" parent="CanvasLayer/HBoxContainer" unique_id=1743062738]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "DEFEND"
+text = "CỐ THỦ"
 icon = ExtResource("8_5qf1t")
 icon_alignment = 1
 vertical_icon_alignment = 0
@@ -74,7 +87,7 @@ vertical_icon_alignment = 0
 [node name="EndTurn" type="Button" parent="CanvasLayer/HBoxContainer" unique_id=183649162]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "ENDTURN"
+text = "KẾT THÚC LƯỢT"
 icon = ExtResource("9_1rang")
 icon_alignment = 1
 vertical_icon_alignment = 0
@@ -86,8 +99,7 @@ offset_top = 243.0
 offset_right = 1579.6666
 offset_bottom = 266.0
 scale = Vector2(2, 2)
-theme_override_font_sizes/font_size = 20
-text = "Turn: 1"
+text = "Lượt: 1"
 
 [node name="WaveLabel" type="Label" parent="CanvasLayer" unique_id=166825750]
 texture_filter = 1
@@ -96,8 +108,7 @@ offset_top = 194.0
 offset_right = 1581.6666
 offset_bottom = 217.0
 scale = Vector2(2, 2)
-theme_override_font_sizes/font_size = 20
-text = "Wave: 1"
+text = "Đợt: 1"
 
 [node name="GridPoints" type="Node2D" parent="." unique_id=715706376]
 
@@ -311,10 +322,15 @@ texture_normal = ExtResource("8_c4ttu")
 visible = false
 
 [node name="ColorRect" type="ColorRect" parent="WinPanel" unique_id=31935011]
-modulate = Color(1, 1, 1, 0.36078432)
-offset_right = 1928.0
-offset_bottom = 1084.0
+modulate = Color(0, 0, 0, 0.5882353)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
+color = Color(0, 0, 0, 1)
+metadata/_edit_use_anchors_ = true
 
 [node name="WinIcon" type="TextureRect" parent="WinPanel" unique_id=1129696806]
 anchors_preset = 8
@@ -330,33 +346,55 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("13_o821d")
+metadata/_edit_use_anchors_ = true
 
 [node name="Chơi Lại" type="Button" parent="WinPanel" unique_id=1983911442]
 process_mode = 3
 z_index = 100
-offset_left = 869.0
-offset_top = 658.0
-offset_right = 1048.0
-offset_bottom = 759.0
+offset_left = 855.0
+offset_top = 716.0
+offset_right = 1071.0
+offset_bottom = 817.0
+theme_override_colors/font_pressed_color = Color(0.38321832, 0.38321835, 0.38321832, 1)
+theme_override_colors/font_hover_color = Color(0.9607843, 0.60784316, 0.14901961, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 60
+theme_override_styles/normal = SubResource("StyleBoxEmpty_enpss")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_7plpp")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_lxheh")
 text = "Chơi lại"
+metadata/_edit_use_anchors_ = true
 
 [node name="LosePanel" type="CanvasLayer" parent="." unique_id=1368490513]
 
 [node name="Chơi lại" type="Button" parent="LosePanel" unique_id=1543149950]
 process_mode = 3
 z_index = 100
-offset_left = 877.0
-offset_top = 711.0
-offset_right = 1053.0
-offset_bottom = 792.0
+offset_left = 823.0
+offset_top = 729.0
+offset_right = 1106.0
+offset_bottom = 810.0
+theme_override_colors/font_pressed_color = Color(0.4351923, 0.43519226, 0.43519226, 1)
+theme_override_colors/font_hover_color = Color(0.80167943, 0.4057704, 0.015619583, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 40
+theme_override_styles/normal = SubResource("StyleBoxEmpty_r6t13")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_y1vqq")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_b65qd")
 text = "Chơi lại từ đầu
 "
+metadata/_edit_use_anchors_ = true
 
 [node name="ColorRect" type="ColorRect" parent="LosePanel" unique_id=1479465502]
-modulate = Color(1, 1, 1, 0.27450982)
-offset_right = 1926.0
-offset_bottom = 1076.0
+modulate = Color(0, 0, 0, 0.5921569)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
+color = Color(0, 0, 0, 1)
+metadata/_edit_use_anchors_ = true
 
 [node name="LoseIcon" type="TextureRect" parent="LosePanel" unique_id=293067524]
 anchors_preset = 8
@@ -374,14 +412,26 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 mouse_filter = 2
 texture = ExtResource("14_enpss")
+stretch_mode = 5
+metadata/_edit_use_anchors_ = true
 
 [node name="Chơi lại 2" type="Button" parent="LosePanel" unique_id=1692811950]
 process_mode = 3
-offset_left = 892.0
-offset_top = 820.0
-offset_right = 1034.0
-offset_bottom = 889.0
+offset_left = 794.0
+offset_top = 821.0
+offset_right = 1129.0
+offset_bottom = 890.0
+theme_override_colors/font_pressed_color = Color(0.4351923, 0.43519226, 0.43519226, 1)
+theme_override_colors/font_hover_color = Color(0.80167943, 0.4057704, 0.015619583, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 40
+theme_override_styles/normal = SubResource("StyleBoxEmpty_r6t13")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_y1vqq")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_b65qd")
 text = "Chơi lại wave này"
+metadata/_edit_use_anchors_ = true
+
+[node name="TutorialOverlay" parent="." unique_id=287250527 instance=ExtResource("15_enpss")]
 
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Attack" to="logicgame" method="_on_attack_pressed"]
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Defend" to="logicgame" method="_on_defend_pressed"]
