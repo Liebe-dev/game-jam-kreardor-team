@@ -75,8 +75,6 @@ func _ready():
 	for i in range(dir_edits.size()):
 		dir_edits[i].text_submitted.connect(_on_dir_submitted.bind(i))
 		dir_edits[i].focus_exited.connect(func(): if dir_edits[i].text != "": _on_dir_submitted(dir_edits[i].text, i))
-# --- XỬ LÝ LỚP 1 (NGUYÊN TỐ) ---
-# --- XỬ LÝ LỚP 1 (NGUYÊN TỐ) ---
 func _on_element_submitted(new_text: String, index: int):
 	var text_lower = new_text.to_lower().strip_edges()
 	
@@ -98,7 +96,7 @@ func _on_element_submitted(new_text: String, index: int):
 		if cast_elements_str.size() == 1:
 			elem_icons[0].texture = get_single_icon(elem_str)
 			elem_icons[0].show()
-			
+			Global.tutorial_rune_ignis_drawn.emit()
 		elif cast_elements_str.size() == 2:
 			elem_icons[0].texture = get_combined_icon(cast_elements_str[0], cast_elements_str[1])
 			elem_icons[1].hide()

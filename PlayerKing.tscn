@@ -3,13 +3,64 @@
 [ext_resource type="PackedScene" uid="uid://qtgv1mmnvanv" path="res://Pawn.tscn" id="1_gs1rm"]
 [ext_resource type="Texture2D" uid="uid://co5ybs6u3x5dp" path="res://king_sheet.png" id="2_rmyy5"]
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_b3t0d"]
+atlas = ExtResource("2_rmyy5")
+region = Rect2(0, 0, 171, 185)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ew2pg"]
+atlas = ExtResource("2_rmyy5")
+region = Rect2(0, 0, 171, 185)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_36eky"]
+atlas = ExtResource("2_rmyy5")
+region = Rect2(0, 0, 171, 185)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bv60j"]
+atlas = ExtResource("2_rmyy5")
+region = Rect2(0, 0, 171, 185)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_ujdwo"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_b3t0d")
+}],
+"loop": false,
+"name": &"idle_down",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ew2pg")
+}],
+"loop": false,
+"name": &"idle_left",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_36eky")
+}],
+"loop": false,
+"name": &"idle_right",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bv60j")
+}],
+"loop": false,
+"name": &"idle_up",
+"speed": 5.0
+}]
+
 [node name="King" unique_id=271536388 instance=ExtResource("1_gs1rm")]
 max_health = 400
 damage = 0
 
-[node name="Sprite2D" parent="." index="0" unique_id=286426425]
-texture = ExtResource("2_rmyy5")
-hframes = 1
+[node name="anim_sprite" parent="." index="0" unique_id=1810919822]
+sprite_frames = SubResource("SpriteFrames_ujdwo")
+animation = &"idle_up"
 
 [node name="HealthBar" parent="." index="1" unique_id=1792561652]
 offset_top = 33.0

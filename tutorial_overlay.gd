@@ -109,7 +109,7 @@ func resume_after_2():
 		waiting_for_action = false
 		show_tutorial(13)
 func finish_tutorial():
-	# Kết thúc hướng dẫn
+	Global.is_tutorial_done = true
 	queue_free()
 func resume_after_2_right():
 	if waiting_for_action and current_index == 15:
