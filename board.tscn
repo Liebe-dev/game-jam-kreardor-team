@@ -365,6 +365,7 @@ text = "Chơi lại"
 metadata/_edit_use_anchors_ = true
 
 [node name="LosePanel" type="CanvasLayer" parent="." unique_id=1368490513]
+visible = false
 
 [node name="Chơi lại" type="Button" parent="LosePanel" unique_id=1543149950]
 process_mode = 3

@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" uid="uid://dlfanqbyiay64" path="res://notebook_panel.gd" id="1_fy6vt"]
 [ext_resource type="Texture2D" uid="uid://clu5a78ye0m7b" path="res://spellbook/book of spell.png" id="1_y6wl3"]
-[ext_resource type="Texture2D" uid="uid://dlwg22oahagsc" path="res://spellbook/sample 3.png" id="2_nkkch"]
 [ext_resource type="Texture2D" uid="uid://bmxbwjwfl33f1" path="res://spellbook/spellbook open.png" id="4_yijuf"]
 [ext_resource type="Texture2D" uid="uid://d3lowyu14lglb" path="res://spellbook/bookopenhover.png" id="5_uuf8a"]
 [ext_resource type="FontFile" uid="uid://bwai7luhvbovc" path="res://spell/iCiel Altus Serif.otf" id="5_yijuf"]
@@ -36,13 +35,6 @@ texture = ExtResource("5_uuf8a")
 
 [node name="UI_Layer" type="CanvasLayer" unique_id=469427497]
 script = ExtResource("1_fy6vt")
-
-[node name="TextureRect" type="TextureRect" parent="." unique_id=779015828]
-visible = false
-modulate = Color(1, 1, 1, 0.30980393)
-offset_right = 1920.0
-offset_bottom = 1080.0
-texture = ExtResource("2_nkkch")
 
 [node name="ClosedBookButton" type="TextureButton" parent="." unique_id=1040116683]
 offset_left = 28.0

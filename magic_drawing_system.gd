@@ -103,6 +103,7 @@ func _on_element_submitted(new_text: String, index: int):
 			
 	else:
 		elem_edits[index].text = ""
+	SoundManager.play_sound(SoundManager.sfx_mantra)
 func _on_coord_submitted(new_text: String, index: int):
 	var text_upper = new_text.to_upper().strip_edges()
 	var is_valid = false
@@ -143,7 +144,9 @@ func _on_dir_submitted(new_text: String, index: int):
 		dir_icons[index].rotation_degrees = index * 45.0
 		dir_edits[index].hide()
 		dir_icons[index].show()
+	SoundManager.play_sound(SoundManager.sfx_mantra)
 func _on_end_turn_button_pressed():
+	SoundManager.play_sound(SoundManager.sfx_castingspell)
 	if cast_elements.is_empty(): 
 		return 
 	var final_coords_text = []
@@ -232,9 +235,11 @@ func get_combined_icon(e1: String, e2: String) -> Texture2D:
 		"water_wind": return icon_water_wind 
 	return null
 func _on_undo_button_pressed():
+	SoundManager.play_sound(SoundManager.sfx_undo)
 	clear_all_inputs()
 	current_ink = max_ink 
 	update_ui()
 func _on_close_area_button_pressed():
+	SoundManager.play_sound(SoundManager.sfx_open_scroll)
 	self.hide()
 	scroll_closed.emit()

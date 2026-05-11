@@ -153,17 +153,21 @@ func _ready() -> void:
 	if tab_combine: tab_combine.pressed.connect(go_to_page.bind(10))
 	if tab_enemy: tab_enemy.pressed.connect(go_to_page.bind(16))
 func open_book() -> void:
+	SoundManager.play_sound(SoundManager.sfx_open_book)
 	closed_book_btn.hide()
 	opened_book_panel.show()
 	update_page_ui()
 func close_book() -> void:
+	SoundManager.play_sound(SoundManager.sfx_open_book)
 	opened_book_panel.hide()
 	closed_book_btn.show()
 func turn_next_page() -> void:
+	SoundManager.play_sound(SoundManager.sfx_turnpage)
 	if current_page < tutorial_pages.size() - 1:
 		current_page += 1
 		update_page_ui()
 func turn_prev_page() -> void:
+	SoundManager.play_sound(SoundManager.sfx_turnpage)
 	if current_page > 0:
 		current_page -= 1
 		update_page_ui()
@@ -181,6 +185,7 @@ func update_page_ui() -> void:
 	if left_arrow: left_arrow.visible = current_page > 0
 	if right_arrow: right_arrow.visible = current_page < tutorial_pages.size() - 1
 func go_to_page(page_index: int) -> void:
+	SoundManager.play_sound(SoundManager.sfx_turnpage)
 	if page_index >= 0 and page_index < tutorial_pages.size():
 		current_page = page_index
 		update_page_ui()

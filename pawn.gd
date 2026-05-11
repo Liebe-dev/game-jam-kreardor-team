@@ -111,6 +111,7 @@ func update_visuals():
 		modulate = Color(1, 1, 1)
 
 func add_buff(buff_name: String, value: float, duration_turns: int):
+	SoundManager.play_sound(SoundManager.buffspell)
 	active_buffs[buff_name] = duration_turns
 	
 	if buff_name == "damage_reduction":

@@ -1,5 +1,5 @@
 extends Node2D
-#mmb
+
 @onready var win_screen = get_node("/root/board/WinPanel")
 @onready var lose_screen = get_node("/root/board/LosePanel")
 @export var move_indicator_scene: PackedScene
@@ -9,7 +9,7 @@ const SPELL_EFFECT_SCENE = preload("res://spell_effect.tscn")
 var active_indicators = []
 var player_pawn_scene = preload("res://Pawn.tscn")
 var player_king_scene = preload("res://PlayerKing.tscn")
-var enemy_pawn_scene = preload("res://Enemy_pawn.tscn")
+var enemy_pawn_scene = preload("res://enemy_pawn.tscn")
 var enemy_knight_scene = preload("res://Knight.tscn")
 var enemy_bishop_scene = preload("res://Bishop.tscn")
 var enemy_rook_scene = preload("res://Rook.tscn")
@@ -46,17 +46,15 @@ func _ready():
 	piece_layer = Node2D.new()
 	piece_layer.name = "PieceLayer"
 	add_child(piece_layer)
-	
 	spawn_initial_army()
 	backup_player_pieces()
-# Hàm phụ để đếm số lần 1 ô bị trúng phép
+	if Global.current_wave == 1:
+		SoundManager.play_bgm(SoundManager.bgm_wave1)
 func _add_to_impact_map(map: Dictionary, pos: Vector2i):
 	if map.has(pos):
 		map[pos] += 1
 	else:
 		map[pos] = 1
-
-# Kiểm tra xem tọa độ có nằm trong bàn cờ 8x8 không
 func is_within_board(pos: Vector2i) -> bool:
 	return pos.x >= 0 and pos.x < 8 and pos.y >= 0 and pos.y < 8
 func count_enemies_alive() -> int:
@@ -68,9 +66,16 @@ func count_enemies_alive() -> int:
 func transition_to_next_wave():
 	Global.current_wave += 1
 	current_turn = 1
-	
 	if wave_label: wave_label.text = "Wave: " + str(Global.current_wave)
 	if turn_label: turn_label.text = "Turn: 1"
+	if Global.current_wave == 2:
+		SoundManager.play_bgm(SoundManager.bgm_wave2)
+	elif Global.current_wave == 3:
+		SoundManager.play_bgm(SoundManager.bgm_wave3)
+	elif Global.current_wave == 4:
+		SoundManager.play_bgm(SoundManager.bgm_wave4)
+	elif Global.current_wave == 5:
+		SoundManager.play_bgm(SoundManager.bgm_wave5)
 	for i in range(all_pieces.size() - 1, -1, -1):
 		var p = all_pieces[i]
 		if is_instance_valid(p) and p.team == 2:
@@ -96,7 +101,6 @@ func transition_to_next_wave():
 			var p = current_pawns[i]
 			p.grid_pos = Vector2i(i, 6)
 			p.position = grid_to_pixel(p.grid_pos)
-			
 			if "hp" in p:
 				p.hp += 30
 				if p.has_node("HealthBar"):
@@ -140,17 +144,16 @@ func transition_to_next_wave():
 						if child.sprite_frames.has_animation("idle_down"):
 							child.play("idle_down")
 	backup_player_pieces()
-
-
 func check_and_trigger_next_wave():
 	if count_enemies_alive() <= 0:
 		if Global.current_wave >= max_waves:
-			# Nếu hết wave, hiện màn hình thắng (có sẵn ảnh trong đó)
+			SoundManager.stop_bgm()
+			SoundManager.play_sound(SoundManager.sfx_victory)
 			win_screen.show()
-			get_tree().paused = true # Tạm dừng game
+			get_tree().paused = true
 		else:
 			transition_to_next_wave()
-	get_tree().paused = false # Hoặc true tùy cách bạn xử lý
+	get_tree().paused = false
 	force_release_all_grabs()
 func spawn_initial_army():
 	if Global.current_wave == 1:
@@ -171,7 +174,6 @@ func spawn_initial_army():
 	spawn_enemy_wave()
 func spawn_enemy_wave():
 	var wave_setup = []
-	
 	match Global.current_wave:
 		1:
 			wave_setup = [
@@ -212,7 +214,6 @@ func spawn_enemy_wave():
 				{"scene": enemy_pawn_scene, "pos": Vector2(2, 1)},
 				{"scene": enemy_pawn_scene, "pos": Vector2(5, 1)}
 			]
-			
 	for data in wave_setup:
 		if data["scene"] == null: continue
 		var enemy = data["scene"].instantiate()
@@ -257,32 +258,23 @@ func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 	all_pieces.append(new_unit)
 func deal_damage(unit, amount):
 	if not is_instance_valid(unit): return
-	
 	unit.current_health -= amount
 	if unit.has_node("HealthBar"):
 		unit.get_node("HealthBar").value = unit.current_health
-		
-	# Check nếu KING chết
 	if unit.current_health <= 0:
 		if "King" in unit.name:
 			show_lose_screen()
 		else:
-			# --- CHÈN ĐOẠN NÀY VÀO TRƯỚC KHI XÓA LÍNH ---
-			# Quét xem có ai đang ôm cái xác này, hoặc bị cái xác này ôm không thì gỡ ra
 			for p in all_pieces:
 				if is_instance_valid(p):
 					if p.get("grabbed_by") == unit or p == unit.get("grabbed_by"):
 						p.set("is_grabbed", false)
 						p.set("grabbed_by", null)
 						p.z_index = 0
-						# Kéo người sống sót thả lại xuống đất
 						if "grid_pos" in p and p.has_method("grid_to_pixel"):
 							p.position = grid_to_pixel(p.grid_pos)
 						if p.has_method("update_visuals"):
 							p.update_visuals()
-			# ---------------------------------------------
-			
-			# Xóa lính chết khỏi bàn cờ
 			all_pieces.erase(unit)
 			unit.queue_free()
 func _input(event):
@@ -296,13 +288,12 @@ func _input(event):
 			selected_piece = piece_at_click
 			show_highlights(selected_piece)
 		elif selected_piece != null:
-			var p = selected_piece # <--- LƯU TẠM VÀO BIẾN p ĐỂ KHÔNG BỊ MẤT DỮ LIỆU
+			var p = selected_piece 
 			var valid_moves = get_valid_moves(p)
 			if clicked_grid in valid_moves:
 				if p.get("is_grabbed"):
-					force_release_all_grabs(p) # Lệnh này làm selected_piece = null, nhưng biến p vẫn còn sống!
-					
-				move_piece(p, clicked_grid) # Bắt biến p di chuyển
+					force_release_all_grabs(p)
+				move_piece(p, clicked_grid)
 				p.has_moved = true
 				has_moved_main_piece = true
 				clear_highlights()
@@ -315,10 +306,8 @@ func get_piece_at(grid_pos: Vector2i):
 		if is_instance_valid(p) and p.grid_pos == grid_pos:
 			return p
 	return null
-
 func is_cell_vacant(grid_pos: Vector2i) -> bool:
 	return get_piece_at(grid_pos) == null
-
 func move_piece(piece, target_grid: Vector2i):
 	if not is_instance_valid(piece):
 		return
@@ -332,16 +321,13 @@ func move_piece(piece, target_grid: Vector2i):
 		piece.global_position = target_world
 		
 	check_and_execute_grab(piece)
-
 func find_my_king(my_team: int):
 	for p in all_pieces:
 		if is_instance_valid(p) and p.team == my_team and "King" in p.name:
 			return p
 	return null
-
 func queen_grab_counter(queen):
 	var grabber = queen.grabbed_by
-	
 	if is_instance_valid(grabber):
 		var aim_dir = grabber.grid_pos - queen.grid_pos
 		var sprite = queen.get_node_or_null("Sprite2D")
@@ -353,21 +339,17 @@ func queen_grab_counter(queen):
 				
 	var target_to_hit = queen.grabbed_by
 	if not is_instance_valid(target_to_hit): return
-	
 	var dir_to_grabber = target_to_hit.grid_pos - queen.grid_pos
 	var side_dirs = [
 		Vector2i(-dir_to_grabber.y, dir_to_grabber.x),
 		Vector2i(dir_to_grabber.y, -dir_to_grabber.x)
 	]
-	
 	deal_damage(target_to_hit, 35)
-	
 	for side in side_dirs:
 		var side_pos = target_to_hit.grid_pos + side
 		var side_unit = get_piece_at(side_pos)
 		if side_unit and side_unit.team != queen.team:
 			deal_damage(side_unit, 35)
-
 func find_queen_ranged_target(queen):
 	var directions = [
 		Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT,
@@ -375,12 +357,10 @@ func find_queen_ranged_target(queen):
 	]
 	var closest_target = null
 	var min_dist = 999
-	
 	for dir in directions:
 		for i in range(1, 8):
 			var scan_pos = queen.grid_pos + dir * i
 			if not is_within_board(scan_pos): break
-			
 			var unit = get_piece_at(scan_pos)
 			if unit:
 				if unit.team != queen.team:
@@ -389,8 +369,8 @@ func find_queen_ranged_target(queen):
 						closest_target = unit
 				break
 	return closest_target
-
 func _on_attack_pressed():
+	SoundManager.play_sound(SoundManager.sfx_attack)
 	if current_command == Command.ATTACK:
 		current_command = Command.IDLE
 		btn_attack.modulate = Color(1, 1, 1)
@@ -399,8 +379,8 @@ func _on_attack_pressed():
 		btn_attack.modulate = Color(1, 0.5, 0.5)
 		btn_defend.modulate = Color(1, 1, 1)
 		Global.tutorial_attack_performed.emit()
-	
 func _on_defend_pressed():
+	SoundManager.play_sound(SoundManager.sfx_defend)
 	if current_command == Command.DEFEND:
 		current_command = Command.IDLE
 		btn_defend.modulate = Color(1, 1, 1)
@@ -408,89 +388,61 @@ func _on_defend_pressed():
 		current_command = Command.DEFEND
 		btn_defend.modulate = Color(0.5, 0.5, 1)
 		btn_attack.modulate = Color(1, 1, 1)
-
 func _on_end_turn_pressed():
-	
+	SoundManager.play_sound(SoundManager.sfx_end_turn)
 	for p in all_pieces:
-		# Gộp chung is_instance_valid cho gọn
 		if is_instance_valid(p):
-			# [LỖI 1: BẠN QUÊN TRỪ LƯỢT CHOÁNG]
 			if "stun_turns" in p and p.stun_turns > 0:
-				p.stun_turns -= 1 # Trừ lượt choáng
-			
+				p.stun_turns -= 1
 		if "root_turns" in p and p.root_turns > 0:
-			p.root_turns -= 1 # Trừ lượt trói chân
-			
+			p.root_turns -= 1
 		var s_turns = p.stun_turns if "stun_turns" in p else 0
 		var r_turns = p.root_turns if "root_turns" in p else 0
-		
 		if s_turns <= 0 and r_turns <= 0:
 			if "current_wind_visual" in p:
 				var wind_visual = p.current_wind_visual
 				if is_instance_valid(wind_visual):
 					wind_visual.queue_free()
-				p.current_wind_visual = null # Xóa dấu vết
-
-	# 1. BÁO CHO TRẠM QUẢN LÝ Ô HIỆU ỨNG CHẠY
-	# Lửa sẽ đốt máu và tự đếm ngược lượt tắt
+				p.current_wind_visual = null
 	process_all_tile_effects()
-	
-	# Vì bàn cờ của bạn là 8x8, ta sẽ dùng 2 vòng lặp quét qua tất cả các ô
 	for x in range(8):
 		for y in range(8):
 			var pos = Vector2i(x, y)
-			
-			# [LỖI 2 - NGUYÊN NHÂN CHÍNH GÂY LIỆT NÚT]
-			# Code cũ của bạn là get_unit_at, nhưng hàm của bạn tên là get_piece_at!
-			var unit = get_piece_at(pos) # <--- SỬA LẠI THÀNH get_piece_at
-			
+			var unit = get_piece_at(pos)
 			if unit != null and unit.has_method("on_turn_end"):
 				unit.on_turn_end()
-				
 	move_team_logic(1)
 	await get_tree().create_timer(0.3).timeout
 	move_team_logic(2)
 	await get_tree().create_timer(0.2).timeout
-	
 	for p in all_pieces:
 		if is_instance_valid(p):
 			check_and_execute_grab(p)
-			
 	execute_all_combat_logic()
-	
 	for p in all_pieces:
 		if is_instance_valid(p):
 			if "has_moved" in p:
 				p.has_moved = false
-				
 	has_moved_main_piece = false
 	selected_piece = null
 	current_turn += 1
-	
 	if turn_label:
 		turn_label.text = "Turn: " + str(current_turn)
-		
 	Global.has_casted_spell = false
 	%ClosedScrollButton.show()
 	process_ammo_reloads()
-	
 	if count_enemies_alive() <= 0:
 		check_and_trigger_next_wave()
-		
-	process_all_tile_effects() # (Lưu ý: Bạn đang gọi hàm này 2 lần ở đầu và cuối, nếu không phải chủ đích thì có thể xóa bớt 1 cái đi nhé)
-	
-	var pieces_to_remove = [] # Tạo mảng phụ để chứa các tường sắp vỡ
-	
+	process_all_tile_effects()
+	var pieces_to_remove = []
 	for p in all_pieces:
 		if is_instance_valid(p) and "EarthBlock" in p.name:
 			if "duration" in p:
 				p.duration -= 1
 				print("[Khối Đất] Thời gian còn: ", p.duration, " lượt")
-				
 				if p.duration <= 0:
 					print("[Khối Đất] Tường đã sụp đổ!")
 					pieces_to_remove.append(p)
-					
 	Global.tutorial_end_turn_pressed.emit()
 	for p in pieces_to_remove:
 		all_pieces.erase(p)
@@ -502,7 +454,6 @@ func execute_all_combat_logic():
 		if is_tile_foggy(p.grid_pos):
 			print(p.name, " đang ở trong Sương Mù, mất lượt tấn công/grab!")
 			continue
-		# BÊN NÀY CHỈ CHẶN ĐÁNH, KHÔNG CÓ DẤU TRỪ (-) NÀO HẾT
 		if "stun_turns" in p and p.stun_turns > 0:
 			continue
 	for p in all_pieces:
@@ -529,16 +480,11 @@ func execute_all_combat_logic():
 func move_team_logic(team_num: int):
 	for p in all_pieces:
 		if not is_instance_valid(p) or p.team != team_num: continue
-		
-		# --- CHỐT CHẶN CẢ CHOÁNG VÀ TRÓI CHÂN Ở ĐÂY ---
 		var is_stunned = "stun_turns" in p and p.stun_turns > 0
 		var is_rooted = "root_turns" in p and p.root_turns > 0
-		
 		if is_stunned or is_rooted:
 			var reason = "Choáng (Gió)" if is_stunned else "Trói chân (Đầm lầy)"
 			print("Lính ", p.name, " đang bị ", reason, " -> AI bỏ qua di chuyển!")
-			
-			# -- TRỪ LƯỢT CHOÁNG --
 			if is_stunned:
 				p.stun_turns -= 1
 				if p.stun_turns <= 0:
@@ -546,33 +492,18 @@ func move_team_logic(team_num: int):
 					if is_instance_valid(wind_visual):
 						wind_visual.queue_free()
 						p.set("current_wind_visual", null)
-			
-			# -- TRỪ LƯỢT TRÓI CHÂN --
 			if is_rooted:
 				p.root_turns -= 1
-				
-			# Lệnh continue này sẽ hất văng lính, AI KHÔNG THỂ bắt nó đi bộ được nữa
 			continue
-			
 	for p in all_pieces:
 		if not is_instance_valid(p) or p.team != team_num: continue
-		
-		# ==========================================
-		# --- ĐOẠN MỚI SỬA: ƯU TIÊN LỆNH CỐ THỦ ---
-		# ==========================================
 		if p.get("is_grabbed") == true:
-			# Nếu là quân mình và được lệnh Cố thủ -> Ép buông tay để chạy
 			if team_num == 1 and current_command == Command.DEFEND:
 				force_release_all_grabs(p) 
 			else:
-				# Nếu không thì vẫn bị kẹt lại đánh nhau
 				continue
-				
-		# Bỏ qua Vua và Boss (không tự di chuyển)
 		if "King" in p.name or "boss" in p.name.to_lower() or "dragon" in p.name.to_lower():
 			continue
-		# ==========================================
-		
 		if "EarthBlock" in p.name: 
 			continue
 		if p.has_moved: continue
@@ -627,7 +558,6 @@ func find_best_target(for_piece):
 		if enemy_king:
 			return enemy_king
 		return get_closest(for_piece, enemy_soldiers)
-
 func get_closest(for_piece, list):
 	var closest = null
 	var min_dist = 9999
@@ -660,12 +590,10 @@ func get_next_step_towards(start: Vector2i, target: Vector2i) -> Vector2i:
 func execute_queen_logic(queen):
 	if queen.is_reloading:
 		return
-
 	var target = find_queen_ranged_target(queen)
 	if target:
 		create_projectile_effect(queen.global_position, target.global_position)
 		deal_damage(target, 25)
-
 		queen.current_ammo -= 1
 		if queen.has_node("AmmoBar"):
 			queen.get_node("AmmoBar").value = queen.current_ammo
@@ -673,7 +601,6 @@ func execute_queen_logic(queen):
 		if queen.current_ammo <= 0:
 			queen.is_reloading = true
 			queen.reload_turns_left = 2
-
 func get_surrounding_cells(pos: Vector2i, dist: int) -> Array:
 	var cells = []
 	for x in range(-dist, dist + 1):
@@ -682,32 +609,27 @@ func get_surrounding_cells(pos: Vector2i, dist: int) -> Array:
 			var c = pos + Vector2i(x, y)
 			if is_within_board(c): cells.append(c)
 	return cells
-
 func execute_rook_attack(rook, target_unit):
 	var dir = (target_unit.grid_pos - rook.grid_pos)
 	var forward = Vector2i(sign(dir.x), sign(dir.y))
 	var side = Vector2i(-forward.y, forward.x)
-	
 	var sprite = rook.get_node_or_null("Sprite2D")
 	if sprite:
 		if forward.x > 0: sprite.frame = 1
 		elif forward.x < 0: sprite.frame = 2
 		elif forward.y > 0: sprite.frame = 0
 		elif forward.y < 0: sprite.frame = 3
-		
 	for i in range(1, 4):
 		var pos = rook.grid_pos + forward * i
 		var unit = get_piece_at(pos)
 		if unit and unit.team != rook.team:
 			deal_damage(unit, 20)
 			apply_knockback(unit, forward, 3, 15)
-			
 	var sides = [rook.grid_pos + side, rook.grid_pos - side]
 	for s_pos in sides:
 		var unit = get_piece_at(s_pos)
 		if unit and unit.team != rook.team:
 			deal_damage(unit, 10)
-
 	var back_pos = rook.grid_pos - forward
 	
 	if not is_within_board(back_pos):
@@ -718,7 +640,6 @@ func execute_rook_attack(rook, target_unit):
 		deal_damage(back_unit, 5)
 	else:
 		move_piece(rook, back_pos)
-
 func execute_rook_logic(rook):
 	if not rook.is_charging:
 		return
@@ -1005,28 +926,20 @@ func check_and_execute_grab(pawn):
 
 func force_release_all_grabs(piece = null):
 	selected_piece = null
-	
-	# Quét toàn bộ bàn cờ và thả tất cả lính ra
 	for p in all_pieces:
 		if is_instance_valid(p):
 			p.set("is_grabbed", false)
 			p.set("grabbed_by", null)
-			
-			# Đưa lính về chính giữa ô vuông (chống kẹt lơ lửng)
 			if "grid_pos" in p and has_method("grid_to_pixel"):
 				p.position = grid_to_pixel(p.grid_pos)
-			
-			# Tắt hiệu ứng viền/bóng
 			if p.has_method("update_visuals"):
 				p.update_visuals()
-
 func kill_piece(piece):
 	for p in all_pieces:
 		if is_instance_valid(p) and p.grabbed_by == piece:
 			p.is_grabbed = false
 			p.grabbed_by = null
 			if p.has_method("update_visuals"): p.update_visuals()
-	
 	if piece in all_pieces:
 		all_pieces.erase(piece)
 	
@@ -1068,10 +981,7 @@ func apply_knockback(unit, push_dir: Vector2i, max_dist: int, impact_damage: int
 	if current_grid != start_grid:
 		print("3. Cập nhật lính tới đích: ", current_grid)
 		
-		# Cập nhật logic bàn cờ của bạn
 		move_piece(unit, current_grid)
-		
-		# ÉP ĐỔI HÌNH ẢNH (Phòng trường hợp move_piece của bạn quên làm)
 		var tween = create_tween()
 		tween.tween_property(unit, "global_position", grid_to_pixel(current_grid), 0.2).set_trans(Tween.TRANS_SINE)
 		
@@ -1099,7 +1009,6 @@ func get_valid_moves(piece) -> Array:
 	var moves = []
 	var directions = []
 	var max_dist = 1
-
 	if "Knight" in piece.name:
 		var l_moves = [Vector2i(1,2), Vector2i(2,1), Vector2i(-1,2), Vector2i(-2,1),
 			Vector2i(1,-2), Vector2i(2,-1), Vector2i(-1,-2), Vector2i(-2,-1)]
@@ -1107,7 +1016,6 @@ func get_valid_moves(piece) -> Array:
 			var target = piece.grid_pos + m
 			if is_within_board(target) and is_cell_vacant(target): moves.append(target)
 		return moves
-
 	if "Rook" in piece.name:
 		directions = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
 		max_dist = 3
@@ -1122,7 +1030,6 @@ func get_valid_moves(piece) -> Array:
 		directions = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT,
 			Vector2i(1,1), Vector2i(1,-1), Vector2i(-1,1), Vector2i(-1,-1)]
 		max_dist = 1
-
 	for d in directions:
 		for i in range(1, max_dist + 1):
 			var target = piece.grid_pos + d * i
@@ -1131,16 +1038,13 @@ func get_valid_moves(piece) -> Array:
 			else:
 				break
 	return moves
-
 func clear_highlights():
 	for indicator in active_indicators:
 		indicator.queue_free()
 	active_indicators.clear()
-	
 	for p in all_pieces:
 		if is_instance_valid(p) and p.has_node("Selector"):
 			p.get_node("Selector").visible = false
-
 func show_highlights(piece):
 	clear_highlights()
 	
@@ -1154,7 +1058,6 @@ func show_highlights(piece):
 			add_child(indicator)
 			indicator.global_position = calculate_world_position(m_pos)
 			active_indicators.append(indicator)
-
 func process_ammo_reloads():
 	for p in all_pieces:
 		if is_instance_valid(p) and "Queen" in p.name:
@@ -1167,7 +1070,6 @@ func process_ammo_reloads():
 					
 					if p.has_node("AmmoBar"):
 						p.get_node("AmmoBar").value = p.current_ammo
-
 func is_cell_empty(grid_pos: Vector2i) -> bool:
 	if grid_pos.x < 0 or grid_pos.x >= 8 or grid_pos.y < 0 or grid_pos.y >= 8:
 		return false
@@ -1366,6 +1268,7 @@ func execute_new_wind_spell(target_grids: Array, directions: Array):
 					if unit.has_method("add_buff"):
 						unit.add_buff("stun", 0, 1)
 func execute_new_wind_wind_spell(target_grids: Array, directions: Array):
+	SoundManager.play_sound(SoundManager.sfx_wind)
 	var dir_count = directions.size()
 	if dir_count == 0:
 		for grid_pos in target_grids:
@@ -1417,6 +1320,7 @@ func execute_new_fire_water_spell(target_grids: Array, directions: Array):
 	var center_pos = target_grids[0]
 	add_tile_effect(center_pos, "fog_tile", duration, spread_dirs, true)
 func execute_new_fire_wind_spell(target_grids: Array, directions: Array):
+	SoundManager.play_sound(SoundManager.sfx_fire)
 	print("[Bão Lửa] Kích hoạt bão lửa 3x3!")
 	if target_grids.is_empty(): return
 	var duration = 5
@@ -1455,6 +1359,7 @@ func execute_new_fire_earth_spell(target_grids: Array, directions: Array):
 	for grid_pos in target_grids:
 		add_tile_effect(grid_pos, "lava_tile", duration, directions)
 func execute_new_water_wind_spell(target_grids: Array, directions: Array):
+	SoundManager.play_sound(SoundManager.sfx_water)
 	print("[Cơn Mưa] Kích hoạt đám mây di chuyển!")
 	if target_grids.is_empty(): return
 	var duration = 6
@@ -1471,6 +1376,7 @@ func execute_new_water_wind_spell(target_grids: Array, directions: Array):
 	for grid_pos in target_grids:
 		add_tile_effect(grid_pos, "rain_tile", duration, spread_dirs)
 func execute_new_wind_earth_spell(target_grids: Array, directions: Array, aoe_value_modifier: float = 1.0):
+	SoundManager.play_sound(SoundManager.sfx_earthwind)
 	if target_grids.is_empty(): return
 	var origin = target_grids[0]
 	var dir_count = directions.size()
@@ -1961,6 +1867,8 @@ func restart_current_wave():
 	get_tree().paused = false
 func show_lose_screen():
 	print("Vua đã băng hà! GAME OVER!")
+	SoundManager.stop_bgm()
+	SoundManager.play_sound(SoundManager.sfx_defeat)
 	if "can_interact" in self:
 		set("can_interact", false)
 	if "lose_screen" in self and lose_screen:

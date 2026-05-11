@@ -13,18 +13,20 @@ config_version=5
 config/name="GameJam Kreardor Team"
 run/main_scene="uid://d2w2lo4rs3t78"
 config/features=PackedStringArray("4.6", "Forward Plus")
-config/icon="res://icon.svg"
+config/icon="uid://xpfgrbkmo7eq"
 
 [autoload]
 
 Global="*uid://djcrmtr5rfiy5"
 SpellDictionary="*uid://d2u54w6v2qafs"
+SoundManager="*uid://ceb5xoh4iir08"
 
 [display]
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
 window/size/mode=3
+mouse_cursor/custom_image="uid://domsf0byj8ee1"
 
 [editor_plugins]
 
