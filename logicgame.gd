@@ -50,8 +50,8 @@ func _ready():
 	if Global.current_wave == 1:
 		SoundManager.play_bgm(SoundManager.bgm_wave1)
 	if Global.is_continuing == true:
-		Global.is_continuing = false # Tắt cờ đi
-		restore_from_save() # Gọi hàm phục hồi từ file save
+		Global.is_continuing = false 
+		restore_from_save() 
 	else:
 		spawn_initial_army()
 		backup_player_pieces()
@@ -1167,7 +1167,6 @@ func get_first_unit_in_direction(start_pos: Vector2i, direction: Vector2i, max_r
 	return null
 
 func cast_complex_spell(elements, coordinates, directions):
-	# 1. Kiểm tra an toàn
 	if elements.is_empty() or coordinates.size() < 2:
 		print("[LogicGame] Bỏ qua vì thiếu nguyên tố hoặc tọa độ!")
 		return
@@ -1886,7 +1885,5 @@ func show_lose_screen():
 	get_tree().paused = true
 
 func restore_from_save():
-	# Lấy dữ liệu từ Global đổ vào bảng backup hiện tại
 	player_pieces_backup = Global.saved_pieces.duplicate(true)
-	# Tái sử dụng hàm chơi lại wave để xếp lính ra bàn cờ!
 	restart_current_wave()

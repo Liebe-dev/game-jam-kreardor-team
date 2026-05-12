@@ -5,7 +5,7 @@ func _ready():
 	hover_image.hide()
 	original_scale = hover_image.scale
 	hover_image.pivot_offset = hover_image.size / 2
-# Called when the node enters the scene tree for the first time.
+
 func _on_mouse_entered() -> void:
 	hover_image.show()
 

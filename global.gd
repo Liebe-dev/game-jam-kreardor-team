@@ -64,7 +64,7 @@ func calculate_world_position(grid_pos: Vector2i) -> Vector2:
 	var pixel_x = (grid_pos.x * tile_size) + board_offset_x + (tile_size / 2.0)
 	var pixel_y = (grid_pos.y * tile_size) + board_offset_y + (tile_size / 2.0)
 	return Vector2(pixel_x, pixel_y)
-# --- THÊM PHẦN NÀY VÀO DƯỚI CÙNG FILE GLOBAL.GD ---
+
 
 var is_continuing = false
 var saved_pieces = []

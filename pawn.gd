@@ -1,7 +1,7 @@
 extends Node2D
 class_name Piece
 
-# Các thuộc tính cơ bản
+
 @export var team: int = 0
 @export var grid_pos: Vector2i = Vector2i.ZERO
 @export var max_health: int = 250

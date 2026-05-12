@@ -24,14 +24,14 @@ func _ready():
 	menu_buttons.hide()
 	press_start_label.hide()
 	for btn in menu_buttons.get_children():
-		# Nếu node đó đúng là một nút bấm (Button)
+
 		if btn is Button:
-			# Bắt tín hiệu "chuột lia vào" và nối nó với hàm phát âm thanh
+
 			btn.mouse_entered.connect(_on_button_hovered)
 	for btn in menu_buttons.get_children():
-		# Nếu node đó đúng là một nút bấm (Button)
+
 		if btn is Button:
-			# Bắt tín hiệu "chuột lia vào" và nối nó với hàm phát âm thanh
+
 			btn.pressed.connect(_on_button_click)
 	if fade_rect:
 		fade_rect.modulate.a = 1.0
@@ -108,18 +108,17 @@ func _on_start_pressed() -> void:
 	tween.tween_property(bgm_player, "volume_db", -50.0, 2)
 	await tween.finished
 
-	# ---> FIX MÀN HÌNH XÁM: Bắt Godot đợi vẽ xong màn hình đen rồi mới tải <---
+
 	await get_tree().process_frame 
 
-	Global.is_continuing = false # Chắc chắn là chơi mới
-	Global.current_wave = 1      # Reset lại từ đợt 1
+	Global.is_continuing = false 
+	Global.current_wave = 1      
 	get_tree().change_scene_to_file("res://board.tscn")
 	
 
 func _on_continue_pressed() -> void:
-	if Global.load_game() == true: # Lấy dữ liệu từ ổ cứng ra thành công
+	if Global.load_game() == true: 
 		
-		# COPY HIỆU ỨNG TỪ NÚT START XUỐNG ĐỂ CHUYỂN CẢNH CHO MƯỢT
 		fade_rect.mouse_filter = Control.MOUSE_FILTER_STOP
 		fade_rect.show() 
 		
