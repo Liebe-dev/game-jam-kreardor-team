@@ -65,8 +65,16 @@ layout_mode = 2
 text = "I dont want to be there anymore please release me from this shit this"
 
 [node name="mutez" type="CheckBox" parent="VBoxContain" unique_id=1768051490]
+process_mode = 3
 layout_mode = 2
-text = "tắt sfx leng keng"
+text = "Tắt sfx leng keng"
+
+[node name="MuteBGMCheckBox" type="CheckBox" parent="VBoxContain" unique_id=756645633]
+process_mode = 3
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+text = "Tắt BGM"
 
 [node name="zw" type="AudioStreamPlayer" parent="." unique_id=1825500106]
 stream = ExtResource("2_gn12n")
@@ -80,9 +88,9 @@ volume_db = -26.561
 [node name="fade_trans" parent="." unique_id=2011386021 instance=ExtResource("4_y1682")]
 process_mode = 3
 layout_mode = 0
-offset_left = -1054.0
+offset_left = -1042.0
 offset_top = -573.0
-offset_right = 1028.0
+offset_right = 1040.0
 offset_bottom = 579.0
 mouse_filter = 2
 
@@ -91,3 +99,4 @@ mouse_filter = 2
 [connection signal="pressed" from="VBoxContain/restart2" to="." method="_on_restart_2_pressed"]
 [connection signal="pressed" from="VBoxContain/quit" to="." method="_on_quit_pressed"]
 [connection signal="toggled" from="VBoxContain/mutez" to="." method="_on_mutezwc_toggled"]
+[connection signal="toggled" from="VBoxContain/MuteBGMCheckBox" to="." method="_on_mute_bgm_check_box_toggled"]

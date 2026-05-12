@@ -47,3 +47,15 @@ func _on_mutez_toggled(toggled_on: bool) -> void:
 		c.volume_db = 0.0
 func _on_pause_pressed() -> void:
 	pause_and_unpause()
+
+
+func _on_mute_bgm_check_box_toggled(toggled_on: bool):
+	# Lấy ID của kênh âm thanh tổng (Nếu bạn tạo kênh riêng thì đổi "Master" thành tên kênh đó)
+	var bus_idx = AudioServer.get_bus_index("Master")
+	
+	# Bật/tắt tiếng dựa vào trạng thái của dấu tick
+	AudioServer.set_bus_mute(bus_idx, toggled_on)
+	
+	# Lưu vào Global để các chỗ khác biết là người chơi đang tắt nhạc
+	if Global.get("is_bgm_muted") != null:
+		Global.is_bgm_muted = toggled_on

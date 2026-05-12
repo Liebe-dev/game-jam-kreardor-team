@@ -14,7 +14,7 @@
 [ext_resource type="Texture2D" uid="uid://bc7dvqwr6jdh2" path="res://mainscreen/p.png" id="13_3ls4m"]
 [ext_resource type="Texture2D" uid="uid://bg7r5fd08asrf" path="res://mainscreen/QuitGameSelect.png" id="13_jspdm"]
 [ext_resource type="Texture2D" uid="uid://4q6vqwjw8n8m" path="res://mainscreen/ContinueSelect.png" id="13_w25hu"]
-[ext_resource type="Script" uid="uid://dsl3khdvm7e6g" path="res://parallax_background.gd" id="17_3ls4m"]
+[ext_resource type="Script" path="res://parallax_background.gd" id="17_3ls4m"]
 [ext_resource type="AudioStream" uid="uid://c6g6rrmxqqtn7" path="res://mainscreen/Echoes of the Soul.wav" id="19_5h80m"]
 [ext_resource type="AudioStream" uid="uid://fxmvl3al43hw" path="res://mainscreen/Hover.wav" id="20_w25hu"]
 [ext_resource type="AudioStream" uid="uid://dw3p4nlb4cryg" path="res://mainscreen/Click.wav" id="21_td6mg"]
