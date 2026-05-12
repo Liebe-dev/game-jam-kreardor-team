@@ -37,7 +37,7 @@ func _on_quit_pressed() -> void:
 @onready var zw = $zw 
 @onready var c=$c
 @onready var mute_btn = $VBoxContain/mutez
-func _on_mutezwc_toggled(toggled_on: bool) -> void:
+func _on_mutez_toggled(toggled_on: bool) -> void:
 	print("Đã click nút Mute! Trạng thái lún: ", toggled_on)
 	if toggled_on == true:
 		zw.volume_db = -80.0
