@@ -46,7 +46,6 @@ func _ready():
 	piece_layer = Node2D.new()
 	piece_layer.name = "PieceLayer"
 	add_child(piece_layer)
-	spawn_initial_army()
 	backup_player_pieces()
 	if Global.current_wave == 1:
 		SoundManager.play_bgm(SoundManager.bgm_wave1)
