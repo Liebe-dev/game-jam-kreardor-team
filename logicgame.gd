@@ -291,7 +291,7 @@ func _input(event):
 		var piece_at_click = get_piece_at(clicked_grid)
 		if piece_at_click and piece_at_click.team == 1 and not "EarthBlock" in piece_at_click.name:
 			selected_piece = piece_at_click
-			SoundManager.play_sound(SoundManager.sfx_select_pawn)
+			SoundManager.play_sound(SoundManager.sfx_select_pawn, -10)
 			show_highlights(selected_piece)
 		elif selected_piece != null:
 			var p = selected_piece 
@@ -600,6 +600,7 @@ func execute_queen_logic(queen):
 	if target:
 		create_projectile_effect(queen.global_position, target.global_position)
 		deal_damage(target, 25)
+		
 		queen.current_ammo -= 1
 		if queen.has_node("AmmoBar"):
 			queen.get_node("AmmoBar").value = queen.current_ammo

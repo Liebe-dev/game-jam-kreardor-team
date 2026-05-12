@@ -162,12 +162,12 @@ func close_book() -> void:
 	opened_book_panel.hide()
 	closed_book_btn.show()
 func turn_next_page() -> void:
-	SoundManager.play_sound(SoundManager.sfx_turnpage)
+	SoundManager.play_sound(SoundManager.sfx_turnpage, -8)
 	if current_page < tutorial_pages.size() - 1:
 		current_page += 1
 		update_page_ui()
 func turn_prev_page() -> void:
-	SoundManager.play_sound(SoundManager.sfx_turnpage)
+	SoundManager.play_sound(SoundManager.sfx_turnpage, -8)
 	if current_page > 0:
 		current_page -= 1
 		update_page_ui()

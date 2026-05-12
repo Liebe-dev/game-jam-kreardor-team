@@ -28,12 +28,17 @@ var bgm_player = AudioStreamPlayer.new()
 func _ready():
 	add_child(bgm_player)
 	bgm_player.volume_db = -15.0
-func play_sound(sound_stream: AudioStream):
+	bgm_player.finished.connect(bgm_player.play)
+func play_sound(sound_stream: AudioStream, volume_db: float = 0.0):
 	if sound_stream == null:
 		return
+		
 	var player = AudioStreamPlayer.new()
 	player.stream = sound_stream
-	player.finished.connect(player.queue_free) 
+	
+	player.volume_db = volume_db
+	
+	player.finished.connect(player.queue_free)
 	add_child(player)
 	player.play()
 func play_bgm(stream: AudioStream):

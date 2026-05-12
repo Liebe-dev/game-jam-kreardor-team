@@ -4,8 +4,8 @@
 
 [node name="pause" unique_id=1427835890 instance=ExtResource("1_45vjg")]
 
-[node name="zw" parent="." index="1" unique_id=1825500106]
-stream = null
-
-[node name="c" parent="." index="2" unique_id=1069750518]
-stream = null
+[node name="VBoxContain" parent="." index="2" unique_id=196275940]
+offset_left = -363.915
+offset_top = -259.45
+offset_right = 179.08499
+offset_bottom = 184.54999

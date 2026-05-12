@@ -30,6 +30,12 @@
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_b65qd"]
 
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ftc52"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_lutf5"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_8issi"]
+
 [node name="board" type="Node2D" unique_id=1273165699]
 script = ExtResource("1_tngv2")
 
@@ -412,6 +418,7 @@ offset_right = 288.0
 offset_bottom = 319.5
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 texture = ExtResource("14_enpss")
 
 [node name="Chơi lại 2" type="Button" parent="LosePanel" unique_id=1692811950]
@@ -441,6 +448,9 @@ offset_left = 1844.0
 offset_top = 4.0
 offset_right = 1908.0
 offset_bottom = 68.0
+theme_override_styles/normal = SubResource("StyleBoxEmpty_ftc52")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_lutf5")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_8issi")
 icon = ExtResource("17_lxheh")
 
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Attack" to="logicgame" method="_on_attack_pressed"]
