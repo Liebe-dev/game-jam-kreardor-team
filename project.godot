@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="GameJam Kreardor Team"
+config/name="AutoChessto 1.0.1"
 run/main_scene="uid://34kvupq38yxk"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="uid://xpfgrbkmo7eq"
