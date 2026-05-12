@@ -3,3 +3,9 @@
 [ext_resource type="PackedScene" uid="uid://dg0msu7bnit88" path="res://thewworldrudooo.tscn" id="1_45vjg"]
 
 [node name="pause" unique_id=1427835890 instance=ExtResource("1_45vjg")]
+
+[node name="zw" parent="." index="1" unique_id=1825500106]
+stream = null
+
+[node name="c" parent="." index="2" unique_id=1069750518]
+stream = null

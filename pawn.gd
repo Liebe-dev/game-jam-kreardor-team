@@ -60,7 +60,7 @@ func move_to_grid(new_grid_pos: Vector2i, new_world_pos: Vector2):
 		var loai_buff = "Choáng" if stun_turns > 0 else "Trói chân"
 		print("Không thể đi! Quân lính đang bị: ", loai_buff)
 		return
-		
+	SoundManager.play_sound(SoundManager.sfx_move_pawn)
 	var direction_vector = new_grid_pos - grid_pos 
 	
 	if anim_sprite:
@@ -83,6 +83,7 @@ func move_to_grid(new_grid_pos: Vector2i, new_world_pos: Vector2):
 		logic_game.check_trap_at(self, grid_pos)
 func play_attack_animation(target_pos: Vector2i):
 	if not anim_sprite: return
+	SoundManager.play_sound(SoundManager.sfx_slash)
 	var dir = target_pos - grid_pos
 	var anim_name = "attack_down"
 	var idle_name = "idle_down"
@@ -98,7 +99,7 @@ func play_attack_animation(target_pos: Vector2i):
 	anim_sprite.stop()
 	if anim_sprite.sprite_frames.has_animation(anim_name):
 		anim_sprite.play(anim_name)
-	await get_tree().create_timer(0.4).timeout
+	await get_tree().create_timer(0.6).timeout
 	if is_instance_valid(anim_sprite):
 		if anim_sprite.sprite_frames.has_animation(idle_name):
 			anim_sprite.play(idle_name)

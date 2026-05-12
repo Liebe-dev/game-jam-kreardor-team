@@ -292,6 +292,7 @@ func _input(event):
 		var piece_at_click = get_piece_at(clicked_grid)
 		if piece_at_click and piece_at_click.team == 1 and not "EarthBlock" in piece_at_click.name:
 			selected_piece = piece_at_click
+			SoundManager.play_sound(SoundManager.sfx_select_pawn)
 			show_highlights(selected_piece)
 		elif selected_piece != null:
 			var p = selected_piece 

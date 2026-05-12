@@ -17,6 +17,10 @@ var bg_fade_tween : Tween
 var text_fade_in_tween : Tween
 
 func _ready():
+	if FileAccess.file_exists("user://soujourn_save.dat"):
+		$Control/Continue.show()
+	else:
+		$Control/Continue.hide()
 	menu_buttons.hide()
 	press_start_label.hide()
 	for btn in menu_buttons.get_children():
@@ -93,7 +97,6 @@ func _input(event):
 			menu_fade_in.tween_property(menu_buttons, "modulate:a", 1.0, 0.8)
 func _on_start_pressed() -> void:
 	fade_rect.mouse_filter = Control.MOUSE_FILTER_STOP
-	
 	fade_rect.show() 
 	
 	var tween = create_tween()
@@ -101,22 +104,34 @@ func _on_start_pressed() -> void:
 	
 	tween.tween_property($Control/Continue, "modulate:a", 0.0, 0.8)
 	tween.tween_property($Control/Quit, "modulate:a", 0.0, 0.8)
-	
 	tween.tween_property(fade_rect, "modulate:a", 1.0, 1.8)
-	
 	tween.tween_property(bgm_player, "volume_db", -50.0, 2)
 	await tween.finished
+
+	# ---> FIX MÀN HÌNH XÁM: Bắt Godot đợi vẽ xong màn hình đen rồi mới tải <---
+	await get_tree().process_frame 
 
 	Global.is_continuing = false # Chắc chắn là chơi mới
 	Global.current_wave = 1      # Reset lại từ đợt 1
 	get_tree().change_scene_to_file("res://board.tscn")
 	
+
 func _on_continue_pressed() -> void:
-	if Global.load_game() == true: # Lấy dữ liệu từ ổ cứng ra
+	if Global.load_game() == true: # Lấy dữ liệu từ ổ cứng ra thành công
+		
+		# COPY HIỆU ỨNG TỪ NÚT START XUỐNG ĐỂ CHUYỂN CẢNH CHO MƯỢT
+		fade_rect.mouse_filter = Control.MOUSE_FILTER_STOP
+		fade_rect.show() 
+		
+		var tween = create_tween()
+		tween.set_parallel(true) 
+		tween.tween_property($Control/Start, "modulate:a", 0.0, 0.8)
+		tween.tween_property($Control/Quit, "modulate:a", 0.0, 0.8)
+		tween.tween_property(fade_rect, "modulate:a", 1.0, 1.8)
+		tween.tween_property(bgm_player, "volume_db", -50.0, 2)
+		await tween.finished
+		await get_tree().process_frame 
 		get_tree().change_scene_to_file("res://board.tscn")
-
-
-
 func _on_quit_pressed() -> void:
 	fade_rect.mouse_filter = Control.MOUSE_FILTER_STOP
 	

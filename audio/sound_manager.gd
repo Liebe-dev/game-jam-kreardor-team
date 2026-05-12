@@ -22,6 +22,7 @@ var bgm_wave5 = preload("res://audio/wave5.wav")
 var sfx_mantra = preload("res://audio/mantra.wav")
 var sfx_victory = preload("res://audio/victory.wav")
 var sfx_defeat = preload("res://audio/lose.wav")
+var sfx_slash = preload("res://audio/slash.wav")
 var bgm_player = AudioStreamPlayer.new()
 
 func _ready():

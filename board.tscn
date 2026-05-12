@@ -16,6 +16,7 @@
 [ext_resource type="Texture2D" uid="uid://n0dk5tnppmj3" path="res://defeat.png" id="14_enpss"]
 [ext_resource type="PackedScene" uid="uid://bmm4mnryre7f1" path="res://tutorial_overlay.tscn" id="15_enpss"]
 [ext_resource type="PackedScene" uid="uid://dg0msu7bnit88" path="res://thewworldrudooo.tscn" id="16_7plpp"]
+[ext_resource type="Texture2D" uid="uid://dlxtmmcwi3s4" path="res://mainscreen/pause.png" id="17_lxheh"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_enpss"]
 
@@ -435,6 +436,13 @@ metadata/_edit_use_anchors_ = true
 
 [node name="pause" parent="CanvasLayer2" unique_id=1427835890 instance=ExtResource("16_7plpp")]
 
+[node name="pause" type="Button" parent="." unique_id=1342215216]
+offset_left = 1844.0
+offset_top = 4.0
+offset_right = 1908.0
+offset_bottom = 68.0
+icon = ExtResource("17_lxheh")
+
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Attack" to="logicgame" method="_on_attack_pressed"]
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Defend" to="logicgame" method="_on_defend_pressed"]
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/EndTurn" to="logicgame" method="_on_end_turn_pressed"]
@@ -442,3 +450,4 @@ metadata/_edit_use_anchors_ = true
 [connection signal="pressed" from="WinPanel/Chơi Lại" to="logicgame" method="_on_chơi_lại_pressed"]
 [connection signal="pressed" from="LosePanel/Chơi lại" to="logicgame" method="_on_chơi_lại_pressed"]
 [connection signal="pressed" from="LosePanel/Chơi lại 2" to="logicgame" method="_on_chơi_lại_2_pressed"]
+[connection signal="pressed" from="pause" to="CanvasLayer2/pause" method="_on_pause_pressed"]
