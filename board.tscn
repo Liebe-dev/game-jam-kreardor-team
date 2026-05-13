@@ -443,15 +443,18 @@ metadata/_edit_use_anchors_ = true
 
 [node name="pause" parent="CanvasLayer2" unique_id=1427835890 instance=ExtResource("16_7plpp")]
 
-[node name="pause" type="Button" parent="." unique_id=1342215216]
-offset_left = 1844.0
-offset_top = 4.0
-offset_right = 1908.0
-offset_bottom = 68.0
+[node name="pause2" type="Button" parent="CanvasLayer2" unique_id=1342215216]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -56.0
+offset_bottom = 56.0
+grow_horizontal = 0
 theme_override_styles/normal = SubResource("StyleBoxEmpty_ftc52")
 theme_override_styles/pressed = SubResource("StyleBoxEmpty_lutf5")
 theme_override_styles/hover = SubResource("StyleBoxEmpty_8issi")
 icon = ExtResource("17_lxheh")
+metadata/_edit_use_anchors_ = true
 
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Attack" to="logicgame" method="_on_attack_pressed"]
 [connection signal="pressed" from="CanvasLayer/HBoxContainer/Defend" to="logicgame" method="_on_defend_pressed"]
@@ -460,4 +463,4 @@ icon = ExtResource("17_lxheh")
 [connection signal="pressed" from="WinPanel/Chơi Lại" to="logicgame" method="_on_chơi_lại_pressed"]
 [connection signal="pressed" from="LosePanel/Chơi lại" to="logicgame" method="_on_chơi_lại_pressed"]
 [connection signal="pressed" from="LosePanel/Chơi lại 2" to="logicgame" method="_on_chơi_lại_2_pressed"]
-[connection signal="pressed" from="pause" to="CanvasLayer2/pause" method="_on_pause_pressed"]
+[connection signal="pressed" from="CanvasLayer2/pause2" to="CanvasLayer2/pause" method="_on_pause_pressed"]
