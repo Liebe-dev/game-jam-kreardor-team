@@ -26,6 +26,8 @@ SoundManager="*uid://ceb5xoh4iir08"
 window/size/viewport_width=1920
 window/size/viewport_height=1080
 window/size/mode=3
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 mouse_cursor/custom_image="uid://domsf0byj8ee1"
 
 [editor_plugins]

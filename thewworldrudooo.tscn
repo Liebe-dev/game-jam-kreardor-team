@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dg0msu7bnit88"]
 
 [ext_resource type="Script" uid="uid://kn0x8uhqfemb" path="res://pause.gd" id="1_n18xh"]
-[ext_resource type="PackedScene" uid="uid://c8gsvgtxhr70p" path="res://fade_trans.tscn" id="4_y1682"]
+[ext_resource type="PackedScene" path="res://fade_trans.tscn" id="4_y1682"]
 
 [node name="pause" type="Control" unique_id=1427835890]
 process_mode = 3
@@ -16,12 +16,20 @@ grow_vertical = 2
 script = ExtResource("1_n18xh")
 
 [node name="ColorRect" type="ColorRect" parent="." unique_id=1880937970]
-layout_mode = 0
-offset_left = -1004.0
-offset_top = -552.0
-offset_right = 996.0
-offset_bottom = 548.0
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -1477.0
+offset_top = -795.5
+offset_right = 1477.0
+offset_bottom = 795.5
+grow_horizontal = 2
+grow_vertical = 2
 color = Color(0, 0, 0, 0.50980395)
+metadata/_edit_use_anchors_ = true
 
 [node name="fade_trans" parent="." unique_id=2011386021 instance=ExtResource("4_y1682")]
 process_mode = 3
