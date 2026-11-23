@@ -32,7 +32,7 @@ func _run() -> void:
 	global.is_tutorial_done = true
 	create_timer(90.0, true).timeout.connect(func(): print("TEST TIMEOUT"); quit(2))
 	seed(20261123)
-	for test_name in ["test_resources", "test_input_costs", "test_cast_validation", "test_damage", "test_status_turn", "test_tile_lifetime", "test_turn_lock", "test_wave_health", "test_checkpoint", "test_enemy_scenes", "test_wind_double_attack", "test_wind_special_attacks", "test_wind_restrictions", "test_wind_safety", "test_five_waves"]:
+	for test_name in ["test_definition_data", "test_resources", "test_input_costs", "test_cast_validation", "test_damage", "test_status_turn", "test_tile_lifetime", "test_turn_lock", "test_wave_health", "test_checkpoint", "test_enemy_scenes", "test_wind_double_attack", "test_wind_special_attacks", "test_wind_restrictions", "test_wind_safety", "test_five_waves"]:
 		var filter: String = OS.get_environment("AUTOCHESSTO_TEST_FILTER")
 		if not filter.is_empty() and filter != test_name:
 			continue
@@ -82,6 +82,37 @@ func prepare_spell(column: String = "A", row: String = "8", element: int = 0) ->
 	magic.cast_elements.append(element)
 	magic.coord_edits[0].text = column
 	magic.coord_edits[1].text = row
+
+func test_definition_data() -> bool:
+	var unit = logic.all_pieces[0]
+	var other = logic.all_pieces[1]
+	unit.definition = unit.definition.duplicate(true)
+	unit.definition.melee_damage = 17.0
+	var enemy = logic.all_pieces[9]
+	unit.is_grabbed = true
+	unit.grabbed_by = enemy
+	enemy.is_grabbed = true
+	enemy.grabbed_by = unit
+	enemy.current_health = 200
+	unit.name = "arbitrary_soldier_name"
+	await logic._on_end_turn_pressed()
+	check(enemy.current_health, 183, "definition melee damage drives real combat")
+	check(other.definition.melee_damage, 10.0, "runtime copy does not mutate shared balance data")
+	var knight = isolate_enemy("Knight", Vector2i(5, 6))
+	knight.name = "renamed_without_type_hint"
+	knight.definition = knight.definition.duplicate(true)
+	knight.definition.melee_damage = 41.0
+	await logic._on_end_turn_pressed()
+	check(logic.find_my_king(1).current_health, 359, "unit kind controls renamed Knight AI and data controls damage")
+	var custom_wave: WaveDefinition = logic.wave_definitions[0].duplicate(true)
+	custom_wave.spawns.resize(1)
+	logic.wave_definitions[0] = custom_wave
+	for p in logic.all_pieces.duplicate():
+		if p.team == 2:
+			logic.kill_piece(p)
+	logic.spawn_enemy_wave()
+	check(logic.count_enemies_alive(), 1, "wave resource controls roster without code changes")
+	return true
 
 func test_resources() -> bool:
 	input_text(magic.elem_edits[0], "ignis")

@@ -6,6 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://b2kwp7gew6sun" path="res://anim/earth.png" id="3_q4exq"]
 [ext_resource type="Texture2D" uid="uid://bygi1l82tkck6" path="res://anim/p2-sheet.png" id="4_n0igd"]
 [ext_resource type="Texture2D" uid="uid://dc3vjsw85garf" path="res://anim/p4-sheet.png" id="5_gnco5"]
+[ext_resource type="Resource" path="res://data/units/player_soldier.tres" id="99_definition"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_jhmkb"]
 atlas = ExtResource("2_u8bt4")
@@ -184,10 +185,9 @@ animations = [{
 }]
 
 [node name="Pawn" type="Node2D" unique_id=271536388]
+definition = ExtResource("99_definition")
 z_index = 50
 script = ExtResource("1_f14ny")
-max_health = 500
-damage = 200
 
 [node name="anim_sprite" type="AnimatedSprite2D" parent="." unique_id=1810919822]
 position = Vector2(0, -47)

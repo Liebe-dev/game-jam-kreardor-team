@@ -1,0 +1,50 @@
+[gd_resource type="Resource" script_class="WaveDefinition" load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/wave_definition.gd" id="1_wave"]
+[ext_resource type="Script" path="res://scripts/data/wave_spawn.gd" id="2_spawn"]
+[ext_resource type="PackedScene" path="res://enemy_pawn.tscn" id="scene_0"]
+
+[sub_resource type="Resource" id="spawn_0"]
+script = ExtResource("2_spawn")
+scene = ExtResource("scene_0")
+grid_pos = Vector2i(0, 1)
+
+[sub_resource type="Resource" id="spawn_1"]
+script = ExtResource("2_spawn")
+scene = ExtResource("scene_0")
+grid_pos = Vector2i(1, 1)
+
+[sub_resource type="Resource" id="spawn_2"]
+script = ExtResource("2_spawn")
+scene = ExtResource("scene_0")
+grid_pos = Vector2i(2, 1)
+
+[sub_resource type="Resource" id="spawn_3"]
+script = ExtResource("2_spawn")
+scene = ExtResource("scene_0")
+grid_pos = Vector2i(3, 1)
+
+[sub_resource type="Resource" id="spawn_4"]
+script = ExtResource("2_spawn")
+scene = ExtResource("scene_0")
+grid_pos = Vector2i(4, 1)
+
+[sub_resource type="Resource" id="spawn_5"]
+script = ExtResource("2_spawn")
+scene = ExtResource("scene_0")
+grid_pos = Vector2i(5, 1)
+
+[sub_resource type="Resource" id="spawn_6"]
+script = ExtResource("2_spawn")
+scene = ExtResource("scene_0")
+grid_pos = Vector2i(6, 1)
+
+[sub_resource type="Resource" id="spawn_7"]
+script = ExtResource("2_spawn")
+scene = ExtResource("scene_0")
+grid_pos = Vector2i(7, 1)
+
+[resource]
+script = ExtResource("1_wave")
+wave_index = 2
+spawns = Array[ExtResource("2_spawn")]([SubResource("spawn_0"), SubResource("spawn_1"), SubResource("spawn_2"), SubResource("spawn_3"), SubResource("spawn_4"), SubResource("spawn_5"), SubResource("spawn_6"), SubResource("spawn_7")])

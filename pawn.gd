@@ -4,8 +4,13 @@ class_name Piece
 
 @export var team: int = 0
 @export var grid_pos: Vector2i = Vector2i.ZERO
-@export var max_health: int = 250
-@export var damage: int = 20
+@export var definition: UnitDefinition = preload("res://data/units/player_soldier.tres")
+var unit_kind: UnitDefinition.Kind:
+	get: return definition.kind
+var max_health: int:
+	get: return definition.max_health
+var damage: float:
+	get: return definition.melee_damage
 @onready var current_health: int = max_health
 
 var active_buffs: Dictionary = {}
@@ -15,7 +20,8 @@ var grabbed_by: Node2D = null
 var has_moved: bool = false
 var attacks_used_this_turn: int = 0
 
-var max_ammo = 3
+var max_ammo: int:
+	get: return definition.ammo_capacity
 var current_ammo = 3
 var is_reloading = false
 var reload_turns_left = 0
@@ -27,6 +33,7 @@ var root_turns = 0
 
 @onready var anim_sprite = $anim_sprite
 func _ready():
+	current_ammo = max_ammo
 	if has_node("HealthBar"):
 		get_node("HealthBar").max_value = max_health
 		get_node("HealthBar").value = current_health

@@ -2,13 +2,13 @@
 
 [ext_resource type="PackedScene" uid="uid://qtgv1mmnvanv" path="res://Pawn.tscn" id="1_wkdk7"]
 [ext_resource type="Texture2D" uid="uid://dned8wkqao70" path="res://queen_sheet.png" id="2_6r3y7"]
+[ext_resource type="Resource" path="res://data/units/queen.tres" id="99_definition"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6r3y7"]
 bg_color = Color(0.67800784, 0.60354114, 0, 1)
 
 [node name="Queen" unique_id=271536388 instance=ExtResource("1_wkdk7")]
-max_health = 300
-damage = 35
+definition = ExtResource("99_definition")
 
 [node name="anim_sprite" parent="." index="0" unique_id=1810919822]
 visible = false

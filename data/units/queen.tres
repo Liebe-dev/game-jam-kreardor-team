@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UnitDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/unit_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"queen"
+kind = 5
+max_health = 300
+melee_damage = 35.0
+ranged_damage = 25.0
+move_range = 8
+attack_range = 7

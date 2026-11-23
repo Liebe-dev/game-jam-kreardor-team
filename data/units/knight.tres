@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="UnitDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/unit_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"knight"
+kind = 2
+max_health = 100
+melee_damage = 30.0
+counter_damage = 15.0
+impact_damage = 20
+self_impact_damage = 10
+push_distance = 2
+retreat_distance = 2

@@ -1,4 +1,5 @@
 extends Node2D
+var unit_kind: UnitDefinition.Kind = UnitDefinition.Kind.DRAGON
 
 var hp = 1000
 var is_grabbed = false

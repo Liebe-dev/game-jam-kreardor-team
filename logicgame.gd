@@ -38,7 +38,16 @@ var cell_size = 80
 var player_unit
 var player_pieces_backup = []
 const FIRE_TILE_SCENE = preload("res://fire_tile.tscn")
-var max_waves = 5
+@export var wave_definitions: Array[WaveDefinition] = [
+	preload("res://data/waves/wave_1.tres"),
+	preload("res://data/waves/wave_2.tres"),
+	preload("res://data/waves/wave_3.tres"),
+	preload("res://data/waves/wave_4.tres"),
+	preload("res://data/waves/wave_5.tres")
+]
+var max_waves: int:
+	get: return wave_definitions.size()
+
 func _ready():
 	win_screen.hide()
 	lose_screen.hide()
@@ -118,7 +127,7 @@ func transition_to_next_wave():
 			p.attacks_used_this_turn = 0
 			if p.has_node("ShieldAnim"):
 				p.get_node("ShieldAnim").hide()
-			if "King" in p.name:
+			if UnitDefinition.is_kind(p, UnitDefinition.Kind.KING):
 				king_piece = p
 			else:
 				current_pawns.append(p)
@@ -127,18 +136,18 @@ func transition_to_next_wave():
 			var p = current_pawns[i]
 			p.grid_pos = Vector2i(i, 6)
 			p.position = grid_to_pixel(p.grid_pos)
-			p.heal(30)
+			p.heal(wave_definitions[Global.current_wave - 1].survivor_heal)
 		else:
 			var new_pawn = player_pawn_scene.instantiate()
 			new_pawn.team = 1
 			piece_layer.add_child(new_pawn)
 			all_pieces.append(new_pawn)
-			new_pawn.current_health = 20
+			new_pawn.current_health = wave_definitions[Global.current_wave - 1].replacement_health
 			new_pawn.grid_pos = Vector2i(i, 6)
 			new_pawn.position = grid_to_pixel(new_pawn.grid_pos)
 			if new_pawn.has_node("HealthBar"):
 				new_pawn.get_node("HealthBar").max_value = new_pawn.max_health
-				new_pawn.get_node("HealthBar").value = 20
+				new_pawn.get_node("HealthBar").value = new_pawn.current_health
 	if is_instance_valid(king_piece):
 		king_piece.grid_pos = Vector2i(3, 7)
 		king_piece.position = grid_to_pixel(king_piece.grid_pos)
@@ -193,59 +202,19 @@ func spawn_initial_army():
 			king.grid_pos = Vector2i(3, 7)
 			if has_method("grid_to_pixel"): king.global_position = grid_to_pixel(king.grid_pos)
 	spawn_enemy_wave()
-func spawn_enemy_wave():
-	var wave_setup = []
-	match Global.current_wave:
-		1:
-			wave_setup = [
-				{"scene": enemy_pawn_scene, "pos": Vector2(1, 1)},
-				{"scene": enemy_pawn_scene, "pos": Vector2(3, 1)},
-				{"scene": enemy_pawn_scene, "pos": Vector2(5, 1)},
-				{"scene": enemy_pawn_scene, "pos": Vector2(7, 1)}
-			]
-		2:
-			for i in range(8):
-				wave_setup.append({"scene": enemy_pawn_scene, "pos": Vector2(i, 1)})
-		3:
-			wave_setup = [
-				{"scene": enemy_bishop_scene, "pos": Vector2(2, 0)},
-				{"scene": enemy_bishop_scene, "pos": Vector2(5, 0)},
-				{"scene": enemy_knight_scene, "pos": Vector2(3, 0)},
-				{"scene": enemy_knight_scene, "pos": Vector2(4, 0)}
-			]
-		4:
-			wave_setup = [
-				{"scene": enemy_rook_scene, "pos": Vector2(0, 0)},
-				{"scene": enemy_rook_scene, "pos": Vector2(7, 0)},
-				{"scene": enemy_pawn_scene, "pos": Vector2(2, 1)},
-				{"scene": enemy_pawn_scene, "pos": Vector2(3, 1)},
-				{"scene": enemy_pawn_scene, "pos": Vector2(4, 1)},
-				{"scene": enemy_pawn_scene, "pos": Vector2(5, 1)}
-			]
-		5:
-			wave_setup = [
-				{"scene": enemy_queen_scene, "pos": Vector2(3, 0)},
-				{"scene": enemy_queen_scene, "pos": Vector2(4, 0)},
-				{"scene": enemy_rook_scene, "pos": Vector2(0, 0)},
-				{"scene": enemy_rook_scene, "pos": Vector2(7, 0)},
-				{"scene": enemy_knight_scene, "pos": Vector2(1, 0)},
-				{"scene": enemy_knight_scene, "pos": Vector2(6, 0)},
-				{"scene": enemy_bishop_scene, "pos": Vector2(2, 0)},
-				{"scene": enemy_bishop_scene, "pos": Vector2(5, 0)},
-				{"scene": enemy_pawn_scene, "pos": Vector2(2, 1)},
-				{"scene": enemy_pawn_scene, "pos": Vector2(5, 1)}
-			]
-	for data in wave_setup:
-		if data["scene"] == null: continue
-		var enemy = data["scene"].instantiate()
-		# Unique readable names preserve the existing name-based AI dispatch.
-		enemy.name = "%s_%d" % [data["scene"].resource_path.get_file().get_basename(), all_pieces.size()]
+func spawn_enemy_wave() -> void:
+	if Global.current_wave < 1 or Global.current_wave > wave_definitions.size():
+		return
+	for spawn: WaveSpawn in wave_definitions[Global.current_wave - 1].spawns:
+		if spawn.scene == null:
+			continue
+		var enemy = spawn.scene.instantiate()
+		enemy.name = "%s_%d" % [spawn.scene.resource_path.get_file().get_basename(), all_pieces.size()]
 		enemy.team = 2
 		piece_layer.add_child(enemy)
 		all_pieces.append(enemy)
-		enemy.grid_pos = Vector2i(data["pos"].x, data["pos"].y)
-		if has_method("grid_to_pixel"):
-			enemy.global_position = grid_to_pixel(enemy.grid_pos)
+		enemy.grid_pos = spawn.grid_pos
+		enemy.global_position = grid_to_pixel(enemy.grid_pos)
 func spawn_final_boss():
 	boss = dragon_res.instantiate()
 	boss.hp = 1000
@@ -292,7 +261,7 @@ func _input(event):
 		var clicked_grid = calculate_grid_position(click_pos)
 		if not is_within_board(clicked_grid): return
 		var piece_at_click = get_piece_at(clicked_grid)
-		if piece_at_click and piece_at_click.team == 1 and not "EarthBlock" in piece_at_click.name:
+		if piece_at_click and piece_at_click.team == 1 and not UnitDefinition.is_kind(piece_at_click, UnitDefinition.Kind.EARTH_WALL):
 			selected_piece = piece_at_click
 			SoundManager.play_sound(SoundManager.sfx_select_pawn, -10)
 			show_highlights(selected_piece)
@@ -332,7 +301,7 @@ func move_piece(piece, target_grid: Vector2i):
 	check_and_execute_grab(piece)
 func find_my_king(my_team: int):
 	for p in all_pieces:
-		if is_instance_valid(p) and p.team == my_team and "King" in p.name:
+		if is_instance_valid(p) and p.team == my_team and UnitDefinition.is_kind(p, UnitDefinition.Kind.KING):
 			return p
 	return null
 func queen_grab_counter(queen):
@@ -351,11 +320,11 @@ func queen_grab_counter(queen):
 		var dir_to_grabber = target_to_hit.grid_pos - queen.grid_pos
 		var side_dirs = [Vector2i(-dir_to_grabber.y, dir_to_grabber.x), Vector2i(dir_to_grabber.y, -dir_to_grabber.x)]
 		var target_pos: Vector2i = target_to_hit.grid_pos
-		deal_damage(target_to_hit, 35)
+		deal_damage(target_to_hit, queen.definition.melee_damage)
 		for side in side_dirs:
 			var side_unit = get_piece_at(target_pos + side)
 			if _is_living_target(side_unit) and side_unit.team != queen.team:
-				deal_damage(side_unit, 35)
+				deal_damage(side_unit, queen.definition.melee_damage)
 func find_queen_ranged_target(queen):
 	var directions = [
 		Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT,
@@ -364,7 +333,7 @@ func find_queen_ranged_target(queen):
 	var closest_target = null
 	var min_dist = 999
 	for dir in directions:
-		for i in range(1, 8):
+		for i in range(1, queen.definition.attack_range + 1):
 			var scan_pos = queen.grid_pos + dir * i
 			if not is_within_board(scan_pos): break
 			var unit = get_piece_at(scan_pos)
@@ -436,7 +405,7 @@ func _on_end_turn_pressed() -> void:
 		%ClosedScrollButton.show()
 		process_ammo_reloads()
 		for p in all_pieces.duplicate():
-			if is_instance_valid(p) and "EarthBlock" in p.name:
+			if is_instance_valid(p) and UnitDefinition.is_kind(p, UnitDefinition.Kind.EARTH_WALL):
 				p.duration -= 1
 				if p.duration <= 0:
 					kill_piece(p)
@@ -451,23 +420,21 @@ func execute_all_combat_logic():
 		if not is_instance_valid(p) or p.is_queued_for_deletion(): continue
 		if is_tile_foggy(p.grid_pos) or ("stun_turns" in p and p.stun_turns > 0): continue
 		if p.is_grabbed:
-			var p_name = p.name.to_lower()
-			if "queen" in p_name:
+			if UnitDefinition.is_kind(p, UnitDefinition.Kind.QUEEN):
 				queen_grab_counter(p)
-			elif "knight" in p_name:
+			elif UnitDefinition.is_kind(p, UnitDefinition.Kind.KNIGHT):
 				execute_knight_logic(p)
-			elif "bishop" in p_name:
+			elif UnitDefinition.is_kind(p, UnitDefinition.Kind.BISHOP):
 				execute_bishop_logic(p)
 			else:
 				while _is_living_target(p.grabbed_by) and _begin_piece_attack(p):
 					if p.has_method("play_attack_animation"):
 						p.play_attack_animation(p.grabbed_by.grid_pos)
-					deal_damage(p.grabbed_by, 10)
+					deal_damage(p.grabbed_by, p.definition.melee_damage)
 		else:
-			var p_name = p.name.to_lower()
-			if "rook" in p_name:
+			if UnitDefinition.is_kind(p, UnitDefinition.Kind.ROOK):
 				execute_rook_logic(p)
-			elif "bishop" in p_name:
+			elif UnitDefinition.is_kind(p, UnitDefinition.Kind.BISHOP):
 				execute_bishop_logic(p, false)
 
 func _is_living_target(target) -> bool:
@@ -487,12 +454,12 @@ func move_team_logic(team_num: int):
 				force_release_all_grabs(p) 
 			else:
 				continue
-		if "King" in p.name or "boss" in p.name.to_lower() or "dragon" in p.name.to_lower():
+		if UnitDefinition.is_kind(p, UnitDefinition.Kind.KING) or UnitDefinition.is_kind(p, UnitDefinition.Kind.DRAGON):
 			continue
-		if "EarthBlock" in p.name: 
+		if UnitDefinition.is_kind(p, UnitDefinition.Kind.EARTH_WALL):
 			continue
 		if p.has_moved: continue
-		if "Rook" in p.name:
+		if UnitDefinition.is_kind(p, UnitDefinition.Kind.ROOK):
 			if not p.is_charging:
 				p.is_charging = true
 				p.has_moved = true
@@ -509,16 +476,16 @@ func move_team_logic(team_num: int):
 				continue
 		if (team_num == 1 and current_command == Command.ATTACK) or team_num == 2:
 			var acted = false
-			if "Queen" in p.name:
+			if UnitDefinition.is_kind(p, UnitDefinition.Kind.QUEEN):
 				execute_queen_logic(p)
 				acted = true
-			elif "Knight" in p.name:
+			elif UnitDefinition.is_kind(p, UnitDefinition.Kind.KNIGHT):
 				execute_knight_logic(p)
 				acted = true
-			elif "Bishop" in p.name:
+			elif UnitDefinition.is_kind(p, UnitDefinition.Kind.BISHOP):
 				execute_bishop_logic(p)
 				acted = true
-			elif "Rook" in p.name:
+			elif UnitDefinition.is_kind(p, UnitDefinition.Kind.ROOK):
 				acted = true
 			if acted: continue
 			var target = find_best_target(p)
@@ -530,7 +497,7 @@ func find_best_target(for_piece):
 	var enemy_soldiers = []
 	for p in all_pieces:
 		if is_instance_valid(p) and p.team != for_piece.team:
-			if "King" in p.name:
+			if UnitDefinition.is_kind(p, UnitDefinition.Kind.KING):
 				enemy_king = p
 			else:
 				enemy_soldiers.append(p)
@@ -578,13 +545,13 @@ func execute_queen_logic(queen):
 	var target = find_queen_ranged_target(queen)
 	while _is_living_target(target) and queen.current_ammo > 0 and not queen.is_reloading and _begin_piece_attack(queen):
 		create_projectile_effect(queen.global_position, target.global_position)
-		deal_damage(target, 25)
+		deal_damage(target, queen.definition.ranged_damage)
 		queen.current_ammo -= 1
 		if queen.has_node("AmmoBar"):
 			queen.get_node("AmmoBar").value = queen.current_ammo
 		if queen.current_ammo <= 0:
 			queen.is_reloading = true
-			queen.reload_turns_left = 2
+			queen.reload_turns_left = queen.definition.reload_turns
 		# Each shot requires a live target and spends a real round of ammunition.
 		target = find_queen_ranged_target(queen)
 func get_surrounding_cells(pos: Vector2i, dist: int) -> Array:
@@ -607,17 +574,17 @@ func execute_rook_attack(rook, target_unit) -> bool:
 		elif forward.x < 0: sprite.frame = 2
 		elif forward.y > 0: sprite.frame = 0
 		elif forward.y < 0: sprite.frame = 3
-	for i in range(1, 4):
+	for i in range(1, rook.definition.attack_range + 1):
 		var pos = rook.grid_pos + forward * i
 		var unit = get_piece_at(pos)
 		if unit and unit.team != rook.team:
-			deal_damage(unit, 20)
-			apply_knockback(unit, forward, 3, 15)
+			deal_damage(unit, rook.definition.ranged_damage)
+			apply_knockback(unit, forward, rook.definition.push_distance, rook.definition.impact_damage)
 	var sides = [rook.grid_pos + side, rook.grid_pos - side]
 	for s_pos in sides:
 		var unit = get_piece_at(s_pos)
 		if unit and unit.team != rook.team:
-			deal_damage(unit, 10)
+			deal_damage(unit, rook.definition.secondary_damage)
 	return true
 
 func _apply_rook_recoil(rook, forward: Vector2i) -> void:
@@ -626,11 +593,11 @@ func _apply_rook_recoil(rook, forward: Vector2i) -> void:
 	var back_pos = rook.grid_pos - forward
 	
 	if not is_within_board(back_pos):
-		deal_damage(rook, 5)
+		deal_damage(rook, rook.definition.self_impact_damage)
 	elif not is_cell_vacant(back_pos):
 		var back_unit = get_piece_at(back_pos)
-		deal_damage(rook, 5)
-		deal_damage(back_unit, 5)
+		deal_damage(rook, rook.definition.self_impact_damage)
+		deal_damage(back_unit, rook.definition.self_impact_damage)
 	else:
 		move_piece(rook, back_pos)
 func execute_rook_logic(rook):
@@ -661,7 +628,7 @@ func execute_rook_logic(rook):
 
 func _find_rook_target(rook):
 	for dir in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
-		for i in range(1, 4):
+		for i in range(1, rook.definition.attack_range + 1):
 			var pos: Vector2i = rook.grid_pos + dir * i
 			if not is_within_board(pos):
 				break
@@ -678,7 +645,7 @@ func execute_knight_logic(knight):
 		var grabber = knight.grabbed_by
 		if is_instance_valid(grabber):
 			while _is_living_target(grabber) and _begin_piece_attack(knight):
-				deal_damage(grabber, 15)
+				deal_damage(grabber, knight.definition.counter_damage)
 			if not _is_living_target(grabber):
 				return
 			
@@ -700,10 +667,10 @@ func execute_knight_logic(knight):
 			if grabber.has_method("update_visuals"):
 				grabber.update_visuals()
 			
-			var hit = apply_knockback(grabber, push_dir, 2, 20)
+			var hit = apply_knockback(grabber, push_dir, knight.definition.push_distance, knight.definition.impact_damage)
 			
 			if hit:
-				deal_damage(knight, 10)
+				deal_damage(knight, knight.definition.self_impact_damage)
 		return
 		
 	var target = find_best_target(knight)
@@ -712,13 +679,13 @@ func execute_knight_logic(knight):
 		if (abs(diff.x) == 2 and abs(diff.y) == 1) or (abs(diff.x) == 1 and abs(diff.y) == 2):
 			var attacked: bool = false
 			while _is_living_target(target) and _begin_piece_attack(knight):
-				deal_damage(target, 30)
+				deal_damage(target, knight.definition.melee_damage)
 				attacked = true
 			if not attacked or game_finished:
 				return
 			
 			var retreat_dir = (knight.grid_pos - target.grid_pos).sign()
-			var safe_pos = knight.grid_pos + (retreat_dir * 2)
+			var safe_pos = knight.grid_pos + (retreat_dir * knight.definition.retreat_distance)
 			
 			if is_within_board(safe_pos) and is_cell_vacant(safe_pos):
 				move_piece(knight, safe_pos)
@@ -779,7 +746,7 @@ func execute_bishop_logic(bishop, allow_movement: bool = true):
 		var grabber = bishop.grabbed_by
 		if is_instance_valid(grabber):
 			while _is_living_target(grabber) and _begin_piece_attack(bishop):
-				deal_damage(grabber, 10)
+				deal_damage(grabber, bishop.definition.counter_damage)
 			if not _is_living_target(grabber):
 				return
 			
@@ -790,14 +757,14 @@ func execute_bishop_logic(bishop, allow_movement: bool = true):
 			bishop.grabbed_by = null
 			grabber.grabbed_by = null
 			
-			apply_knockback(grabber, push_dir, 1, 5)
+			apply_knockback(grabber, push_dir, bishop.definition.push_distance, bishop.definition.impact_damage)
 		return
 		
 	var diag_dirs = [Vector2i(1,1), Vector2i(1,-1), Vector2i(-1,1), Vector2i(-1,-1)]
 	var attacked = false
 	
 	for dir in diag_dirs:
-		for i in range(1, 3):
+		for i in range(1, bishop.definition.attack_range + 1):
 			var check_pos = bishop.grid_pos + (dir * i)
 			
 			if not is_within_board(check_pos):
@@ -808,7 +775,7 @@ func execute_bishop_logic(bishop, allow_movement: bool = true):
 				if unit.team != bishop.team:
 					while _is_living_target(unit) and _begin_piece_attack(bishop):
 						create_projectile_effect(bishop.global_position, unit.global_position)
-						deal_damage(unit, 35)
+						deal_damage(unit, bishop.definition.ranged_damage)
 					attacked = true
 					
 					var csprite = bishop.get_node_or_null("Sprite2D")
@@ -892,7 +859,7 @@ func triple_fireball():
 				if unit: deal_damage(unit, 15)
 func check_and_execute_grab(pawn):
 	if pawn.is_queued_for_deletion() or ("stun_turns" in pawn and pawn.stun_turns > 0) or is_tile_foggy(pawn.grid_pos): return
-	if "King" in pawn.name or "EarthBlock" in pawn.name: return
+	if UnitDefinition.is_kind(pawn, UnitDefinition.Kind.KING) or UnitDefinition.is_kind(pawn, UnitDefinition.Kind.EARTH_WALL): return
 	if pawn.is_grabbed: return
 	
 	var directions = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
@@ -909,7 +876,7 @@ func check_and_execute_grab(pawn):
 	
 	var soldier_targets = []
 	for t in possible_targets:
-		if not "King" in t.name:
+		if not UnitDefinition.is_kind(t, UnitDefinition.Kind.KING):
 			soldier_targets.append(t)
 			
 	var chosen_target = null
@@ -918,7 +885,7 @@ func check_and_execute_grab(pawn):
 	else:
 		chosen_target = possible_targets.pick_random()
 		
-	if "EarthBlock" in pawn.name or "EarthBlock" in chosen_target.name:
+	if UnitDefinition.is_kind(pawn, UnitDefinition.Kind.EARTH_WALL) or UnitDefinition.is_kind(chosen_target, UnitDefinition.Kind.EARTH_WALL):
 		return
 		
 	pawn.is_grabbed = true
@@ -953,7 +920,7 @@ func force_release_all_grabs(piece = null):
 func kill_piece(piece) -> void:
 	if not is_instance_valid(piece) or piece.is_queued_for_deletion():
 		return
-	if "King" in piece.name:
+	if UnitDefinition.is_kind(piece, UnitDefinition.Kind.KING):
 		show_lose_screen()
 		return
 	for p in all_pieces:
@@ -1027,28 +994,28 @@ func create_projectile_effect(start_pos: Vector2, end_pos: Vector2):
 func get_valid_moves(piece) -> Array:
 	var moves = []
 	var directions = []
-	var max_dist = 1
-	if "Knight" in piece.name:
+	var max_dist = piece.definition.move_range
+	if UnitDefinition.is_kind(piece, UnitDefinition.Kind.KNIGHT):
 		var l_moves = [Vector2i(1,2), Vector2i(2,1), Vector2i(-1,2), Vector2i(-2,1),
 			Vector2i(1,-2), Vector2i(2,-1), Vector2i(-1,-2), Vector2i(-2,-1)]
 		for m in l_moves:
 			var target = piece.grid_pos + m
 			if is_within_board(target) and is_cell_vacant(target): moves.append(target)
 		return moves
-	if "Rook" in piece.name:
+	if UnitDefinition.is_kind(piece, UnitDefinition.Kind.ROOK):
 		directions = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
-		max_dist = 3
-	elif "Bishop" in piece.name:
+		max_dist = piece.definition.move_range
+	elif UnitDefinition.is_kind(piece, UnitDefinition.Kind.BISHOP):
 		directions = [Vector2i(1,1), Vector2i(1,-1), Vector2i(-1,1), Vector2i(-1,-1)]
-		max_dist = 2
-	elif "Queen" in piece.name:
+		max_dist = piece.definition.move_range
+	elif UnitDefinition.is_kind(piece, UnitDefinition.Kind.QUEEN):
 		directions = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT,
 			Vector2i(1,1), Vector2i(1,-1), Vector2i(-1,1), Vector2i(-1,-1)]
-		max_dist = 8
+		max_dist = piece.definition.move_range
 	else:
 		directions = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT,
 			Vector2i(1,1), Vector2i(1,-1), Vector2i(-1,1), Vector2i(-1,-1)]
-		max_dist = 1
+		max_dist = piece.definition.move_range
 	for d in directions:
 		for i in range(1, max_dist + 1):
 			var target = piece.grid_pos + d * i
@@ -1079,7 +1046,7 @@ func show_highlights(piece):
 			active_indicators.append(indicator)
 func process_ammo_reloads():
 	for p in all_pieces:
-		if is_instance_valid(p) and "Queen" in p.name:
+		if is_instance_valid(p) and UnitDefinition.is_kind(p, UnitDefinition.Kind.QUEEN):
 			if p.is_reloading:
 				p.reload_turns_left -= 1
 				
@@ -1436,7 +1403,7 @@ func find_unit_at(pos: Vector2i):
 	return null
 func get_king_piece():
 	for piece in all_pieces:
-		if piece.name == "EnemyKing" or piece.name == "PlayerKing":
+		if UnitDefinition.is_kind(piece, UnitDefinition.Kind.KING):
 			return piece
 	return null
 func play_spell_animation(grid_pos: Vector2i, anim_name: String, target_unit = null):
@@ -1515,8 +1482,7 @@ func add_tile_effect(grid_pos: Vector2i, effect_type: String, duration: int, spr
 		return
 	var piece = get_piece_at(grid_pos)
 	if is_instance_valid(piece):
-		var p_name = piece.name.to_lower()
-		if "wall" in p_name or "earth" in p_name or "rock" in p_name:
+		if UnitDefinition.is_kind(piece, UnitDefinition.Kind.EARTH_WALL):
 			print("Vướng cục đá/tường đất tại ", grid_pos, " -> Hủy phép!")
 			return 
 	if active_tile_effects.has(grid_pos):
@@ -1621,7 +1587,7 @@ func process_all_tile_effects():
 					if unit.has_method("heal"): unit.heal(50)
 					if unit.get("team") == 1:
 						Global.add_ink(50)
-						if "King" in unit.name or "Player" in unit.name:
+						if UnitDefinition.is_kind(unit, UnitDefinition.Kind.KING) or UnitDefinition.is_kind(unit, UnitDefinition.Kind.KING):
 							Global.add_paper(-1)
 				if effect.get("is_center", false):
 					for dir in effect.get("spread_dirs", []):
@@ -1916,5 +1882,5 @@ func _clear_wave_effects() -> void:
 	for pos in active_tile_effects.keys():
 		_remove_tile_effect(pos)
 	for p in all_pieces.duplicate():
-		if is_instance_valid(p) and "EarthBlock" in p.name:
+		if is_instance_valid(p) and UnitDefinition.is_kind(p, UnitDefinition.Kind.EARTH_WALL):
 			kill_piece(p)

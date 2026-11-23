@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://3rng8cfxr0m6" path="res://anim/pp3_sheet.png" id="3_vv6db"]
 [ext_resource type="Texture2D" uid="uid://bvks88lpmqpnm" path="res://anim/pp2-sheet.png" id="4_4dulf"]
 [ext_resource type="Texture2D" uid="uid://c2xpuq5uvl42r" path="res://anim/pp4-sheet.png" id="5_3id3n"]
+[ext_resource type="Resource" path="res://data/units/enemy_soldier.tres" id="99_definition"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_f5th0"]
 atlas = ExtResource("2_ofrva")
@@ -162,6 +163,7 @@ animations = [{
 }]
 
 [node name="Pawn" unique_id=271536388 instance=ExtResource("1_3r064")]
+definition = ExtResource("99_definition")
 
 [node name="anim_sprite" parent="." index="0" unique_id=1810919822]
 sprite_frames = SubResource("SpriteFrames_hacfv")

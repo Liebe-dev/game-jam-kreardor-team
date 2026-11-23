@@ -2,10 +2,10 @@
 
 [ext_resource type="PackedScene" uid="uid://qtgv1mmnvanv" path="res://Pawn.tscn" id="1_rmv2e"]
 [ext_resource type="Texture2D" uid="uid://b63kyim78hnse" path="res://horse_sheet.png" id="2_ii6qd"]
+[ext_resource type="Resource" path="res://data/units/knight.tres" id="99_definition"]
 
 [node name="Knight" unique_id=271536388 instance=ExtResource("1_rmv2e")]
-max_health = 100
-damage = 30
+definition = ExtResource("99_definition")
 
 [node name="anim_sprite" parent="." index="0" unique_id=1810919822]
 visible = false

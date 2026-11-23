@@ -1,0 +1,17 @@
+Balance data ownership
+
+data/units/*.tres: effective HP, melee/ranged/counter damage, impact damage,
+movement/attack range, ammunition and reload values. Piece.definition is visible
+in the Inspector. Unit identity uses UnitDefinition.Kind, independently of node names.
+
+data/waves/wave_1.tres through wave_5.tres: enemy PackedScenes, grid positions,
+survivor healing and replacement HP. The board's wave_definitions array is editable.
+
+These files preserve the values actually used before this refactor. In particular,
+the old Pawn.tscn damage=200 was not read by combat; its effective melee damage was
+10. The new soldier definition records 10, preserving gameplay rather than enabling
+the previously unused value. King's existing generic melee behaviour is preserved.
+
+Definitions are shared immutable balance data. Current HP, ammunition, buffs,
+positions and attack counts remain per-instance runtime state. Duplicate a definition
+before changing it for one instance. Save checkpoints continue to use scene paths.

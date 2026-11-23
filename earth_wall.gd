@@ -1,4 +1,5 @@
 extends AnimatedSprite2D
+var unit_kind: UnitDefinition.Kind = UnitDefinition.Kind.EARTH_WALL
 
 var grid_pos: Vector2i
 var team: int = 1      
