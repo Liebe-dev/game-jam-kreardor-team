@@ -32,7 +32,7 @@ func _run() -> void:
 	global.is_tutorial_done = true
 	create_timer(90.0, true).timeout.connect(func(): print("TEST TIMEOUT"); quit(2))
 	seed(20261123)
-	for test_name in ["test_definition_data", "test_resources", "test_input_costs", "test_cast_validation", "test_damage", "test_status_turn", "test_tile_lifetime", "test_turn_lock", "test_wave_health", "test_checkpoint", "test_enemy_scenes", "test_wind_double_attack", "test_wind_special_attacks", "test_wind_restrictions", "test_wind_safety", "test_five_waves"]:
+	for test_name in ["test_resolver_events", "test_definition_data", "test_resources", "test_input_costs", "test_cast_validation", "test_damage", "test_status_turn", "test_tile_lifetime", "test_turn_lock", "test_wave_health", "test_checkpoint", "test_enemy_scenes", "test_wind_double_attack", "test_wind_special_attacks", "test_wind_restrictions", "test_wind_safety", "test_five_waves"]:
 		var filter: String = OS.get_environment("AUTOCHESSTO_TEST_FILTER")
 		if not filter.is_empty() and filter != test_name:
 			continue
@@ -82,6 +82,27 @@ func prepare_spell(column: String = "A", row: String = "8", element: int = 0) ->
 	magic.cast_elements.append(element)
 	magic.coord_edits[0].text = column
 	magic.coord_edits[1].text = row
+
+func test_resolver_events() -> bool:
+	var damage_results: Array = []
+	var turns: Array = []
+	logic.combat_event.connect(func(result: Dictionary): damage_results.append(result))
+	logic.turn_resolved.connect(func(result: Dictionary): turns.append(result))
+	var unit = logic.all_pieces[0]
+	unit.current_health = 200
+	unit.add_buff("damage_reduction", 0.5, 1)
+	logic.combat_resolver.deal_damage(unit, 40)
+	check(damage_results.size(), 1, "combat module emits one damage result")
+	check(damage_results[0].amount, 20.0, "damage result reports actual shielded damage")
+	check(damage_results[0].remaining_health, 180.0, "damage result reports resulting health")
+	# Presentation can be disconnected without changing resolution.
+	logic.combat_resolver.attack_animation_requested.disconnect(logic.presentation.attack)
+	logic.combat_resolver.projectile_requested.disconnect(logic.presentation.projectile)
+	var result: Dictionary = await logic.turn_resolver.resolve_turn()
+	check(result.accepted, true, "turn module accepts a normal turn")
+	check(turns.size(), 1, "turn module publishes one completed result")
+	check(result.turn, logic.current_turn, "turn result matches board state without presentation")
+	return true
 
 func test_definition_data() -> bool:
 	var unit = logic.all_pieces[0]

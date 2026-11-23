@@ -1,0 +1,23 @@
+Refactor interfaces
+
+logicgame.gd composes the board and campaign. Existing scene signal handlers and
+legacy helper methods remain as compatibility entry points for existing scenes
+and regression tests; their implementations delegate to the owning module.
+
+gameplay/turn_resolver.gd
+  resolve_turn() -> Dictionary {accepted, turn, wave, finished}
+  Owns reentry lock and movement/combat/terrain/buff-expiry ordering.
+  Node lifetime follows the board, including pending asynchronous turn resolution.
+
+gameplay/combat_resolver.gd
+  Owns unit AI, attack allowance, damage, grabs, knockback and ammunition.
+  Receives board context instead of looking up /root/board.
+  attack_started and damage_resolved expose gameplay results.
+  attack_animation_requested and projectile_requested are presentation requests.
+
+presentation/battle_presentation.gd
+  Subscribes to presentation requests. It does not decide attack counts or damage.
+  Disconnecting presentation listeners leaves turn and damage results unchanged.
+
+data/unit_definition.gd, wave_definition.gd, wave_spawn.gd
+  Immutable shared definitions. Mutable runtime state remains on each Piece/board.
