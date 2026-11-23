@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="SpellDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/spell_definition.gd" id="1"]
+[ext_resource type="Texture2D" path="res://spell/water water.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"water_water"
+elements = PackedInt32Array(1, 1)
+icon = ExtResource("2")
+title = "Aqua+Aqua"
+duration = 3
+settings = {"placement_heal": 20.0, "tick_heal": 20.0, "tick_ink": 50.0, "wind_heal": 20.0}
+description = "Ấn nước gia cường: tạo ô hồi phục cho mục tiêu đứng trên ô."

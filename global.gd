@@ -1,10 +1,11 @@
 extends Node
+signal resources_changed
 @warning_ignore("unused_signal")
 signal tutorial_pawn_moved
 @warning_ignore("unused_signal")
 signal tutorial_attack_performed
 @warning_ignore("unused_signal")
-signal tutorial_scroll_opened 
+signal tutorial_scroll_opened
 @warning_ignore("unused_signal")
 signal tutorial_rune_ignis_drawn
 @warning_ignore("unused_signal")
@@ -25,7 +26,6 @@ const MAX_INK: float = 1000.0
 var current_wave = 1
 var paper_count: int = STARTING_PAPER
 var has_casted_spell: bool = false
-var magic_system: Node = null
 var current_ink: float = MAX_INK
 
 func convert_to_grid(pair: Array) -> Vector2i:
@@ -50,17 +50,15 @@ func convert_to_grid(pair: Array) -> Vector2i:
 	return Vector2i(grid_x, grid_y)
 func add_paper(amount: int) -> void:
 	paper_count = maxi(0, paper_count + amount)
-	refresh_magic_ui()
+	_notify_resources_changed()
 
 var max_ink: float = MAX_INK
 func add_ink(amount: float) -> void:
 	current_ink = clampf(current_ink + amount, 0.0, max_ink)
-	refresh_magic_ui()
+	_notify_resources_changed()
 
-func refresh_magic_ui() -> void:
-	if is_instance_valid(magic_system):
-		magic_system.update_ui()
-
+func _notify_resources_changed() -> void:
+	resources_changed.emit()
 func get_resources() -> Dictionary:
 	return {"paper": paper_count, "ink": current_ink}
 
@@ -68,7 +66,7 @@ func restore_resources(resources: Dictionary) -> void:
 	paper_count = maxi(0, int(resources.get("paper", STARTING_PAPER)))
 	current_ink = clampf(float(resources.get("ink", MAX_INK)), 0.0, max_ink)
 	has_casted_spell = false
-	refresh_magic_ui()
+	_notify_resources_changed()
 
 func reset_run() -> void:
 	current_wave = 1
@@ -77,9 +75,9 @@ func reset_run() -> void:
 	saved_resources.clear()
 	restore_resources({})
 func calculate_world_position(grid_pos: Vector2i) -> Vector2:
-	var tile_size = 120 
-	var board_offset_x = 450 
-	var board_offset_y = 150 
+	var tile_size = 120
+	var board_offset_x = 450
+	var board_offset_y = 150
 	var pixel_x = (grid_pos.x * tile_size) + board_offset_x + (tile_size / 2.0)
 	var pixel_y = (grid_pos.y * tile_size) + board_offset_y + (tile_size / 2.0)
 	return Vector2(pixel_x, pixel_y)

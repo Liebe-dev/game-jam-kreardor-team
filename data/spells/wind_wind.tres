@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="SpellDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/spell_definition.gd" id="1"]
+[ext_resource type="Texture2D" path="res://spell/wind wind.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"wind_wind"
+elements = PackedInt32Array(3, 3)
+icon = ExtResource("2")
+title = "Ventus+Ventus"
+duration = 3
+settings = {"directed_stun": 2, "push_distance": 2, "impact_damage": 15}
+description = "Ấn gió gia cường: gây choáng. Một hướng đẩy mục tiêu; nhiều hướng mở rộng vùng gây choáng."

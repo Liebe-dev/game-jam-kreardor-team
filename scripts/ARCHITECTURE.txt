@@ -21,3 +21,22 @@ presentation/battle_presentation.gd
 
 data/unit_definition.gd, wave_definition.gd, wave_spawn.gd
   Immutable shared definitions. Mutable runtime state remains on each Piece/board.
+
+gameplay/spell_resolver.gd
+  request_cast(elements, coordinates, directions) -> Dictionary {ok, reason/metadata}
+  Validates the command, pays paper and commits the once-per-turn allowance.
+  pay_for_edit(previous, proposed) owns character ink payment.
+  Legacy board effect methods delegate here for trusted internal/test use.
+
+gameplay/tile_effect_system.gd
+  Owns active_effects, periodic effects, propagation, expiry and wall creation.
+  Reads the same SpellCatalog as SpellResolver. BattlePresentation creates visuals.
+
+data/spell_definition.gd and spell_catalog.gd
+  Fourteen immutable spell definitions provide strength, lifetime, rewards, cost
+  and type-specific settings. The spellbook renders describe() from these objects.
+
+board.gd connects cast_requested to the resolver and spell_resolved back to UI.
+magic_drawing_system.gd displays drafts/results and requests input payment; it does
+not debit resources or dispatch gameplay by groups. Global.resources_changed is an
+event; Global no longer calls into a magic UI node to refresh resource displays.

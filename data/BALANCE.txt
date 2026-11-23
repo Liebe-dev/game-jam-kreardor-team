@@ -15,3 +15,12 @@ the previously unused value. King's existing generic melee behaviour is preserve
 Definitions are shared immutable balance data. Current HP, ammunition, buffs,
 positions and attack counts remain per-instance runtime state. Duplicate a definition
 before changing it for one instance. Save checkpoints continue to use scene paths.
+
+Spell data
+data/spells/*.tres and catalog.tres contain all fourteen spell combinations.
+power/duration/paper_cost/ink_reward/paper_reward are shared with the spellbook.
+settings contains named per-spell mechanics such as tick_heal, tick_damage,
+tick_ink, multi_target_reduction, directed_stun and impact_damage. Catalog controls
+ink_cost_per_character and the existing multi_target_factor. Defaults preserve the
+effective pre-refactor values. Book descriptions now report these effective values,
+including earlier discrepancies such as Terra+Terra's two-turn, 50% shield.

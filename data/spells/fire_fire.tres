@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SpellDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/spell_definition.gd" id="1"]
+[ext_resource type="Texture2D" path="res://spell/fire fire.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"fire_fire"
+elements = PackedInt32Array(0, 0)
+icon = ExtResource("2")
+title = "Ignis+Ignis"
+power = 52.5
+duration = 2
+settings = {"placement_damage": 10.0, "tick_damage": 10.0, "wind_damage": 15.0}
+description = "Ấn hỏa gia cường: gây sát thương và để lại ô lửa."

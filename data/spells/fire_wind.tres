@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="SpellDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/spell_definition.gd" id="1"]
+[ext_resource type="Texture2D" path="res://spell/wind+fire.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"fire_wind"
+elements = PackedInt32Array(0, 3)
+icon = ExtResource("2")
+title = "Ignis+Ventus"
+duration = 5
+settings = {"multi_target_reduction": 2, "placement_damage": 10.0, "tick_damage": 15.0, "wind_damage": 15.0}
+description = "Hợp ấn lốc lửa: tác động vùng 3×3, đẩy mục tiêu ra ngoài; bị chặn chịu thêm sát thương. Chọn đúng một hướng để lốc di chuyển."

@@ -5,6 +5,9 @@ signal combat_event(result: Dictionary)
 var combat_resolver: CombatResolver
 var turn_resolver: TurnResolver
 var presentation: BattlePresentation
+var spell_resolver: SpellResolver
+var tile_effects: TileEffectSystem
+signal spell_resolved(result: Dictionary)
 
 @onready var win_screen = get_node("/root/board/WinPanel")
 @onready var lose_screen = get_node("/root/board/LosePanel")
@@ -57,6 +60,8 @@ var max_waves: int:
 func _ready():
 	combat_resolver = CombatResolver.new(self)
 	presentation = BattlePresentation.new(self)
+	spell_resolver = SpellResolver.new(self)
+	tile_effects = TileEffectSystem.new(self, spell_resolver.catalog)
 	combat_resolver.attack_animation_requested.connect(presentation.attack)
 	combat_resolver.projectile_requested.connect(presentation.projectile)
 	combat_resolver.damage_resolved.connect(combat_event.emit)
@@ -76,16 +81,13 @@ func _ready():
 	if Global.current_wave == 1:
 		SoundManager.play_bgm(SoundManager.bgm_wave1)
 	if Global.is_continuing == true:
-		Global.is_continuing = false 
-		restore_from_save() 
+		Global.is_continuing = false
+		restore_from_save()
 	else:
 		spawn_initial_army()
 		backup_player_pieces()
 func _add_to_impact_map(map: Dictionary, pos: Vector2i):
-	if map.has(pos):
-		map[pos] += 1
-	else:
-		map[pos] = 1
+	return spell_resolver._add_to_impact_map(map, pos)
 func is_within_board(pos: Vector2i) -> bool:
 	return pos.x >= 0 and pos.x < 8 and pos.y >= 0 and pos.y < 8
 func count_enemies_alive() -> int:
@@ -278,7 +280,7 @@ func _input(event):
 			SoundManager.play_sound(SoundManager.sfx_select_pawn, -10)
 			show_highlights(selected_piece)
 		elif selected_piece != null:
-			var p = selected_piece 
+			var p = selected_piece
 			var valid_moves = get_valid_moves(p)
 			if clicked_grid in valid_moves:
 				if p.get("is_grabbed"):
@@ -309,7 +311,7 @@ func move_piece(piece, target_grid: Vector2i):
 	else:
 		piece.grid_pos = target_grid
 		piece.global_position = target_world
-		
+
 	check_and_execute_grab(piece)
 func find_my_king(my_team: int):
 	for p in all_pieces:
@@ -439,10 +441,10 @@ func clear_highlights():
 			p.get_node("Selector").visible = false
 func show_highlights(piece):
 	clear_highlights()
-	
+
 	if piece.has_node("Selector"):
 		piece.get_node("Selector").visible = true
-		
+
 	var moves = get_valid_moves(piece)
 	for m_pos in moves:
 		if move_indicator_scene:
@@ -468,39 +470,39 @@ func grid_to_pixel(grid_pos: Vector2i) -> Vector2:
 	var target_grid = grid_points
 	if target_grid == null:
 		target_grid = get_parent().get_node_or_null("GridPoints")
-		
+
 	if target_grid == null: return Vector2.ZERO
 	var marker_name = str(int(grid_pos.y)) + " " + str(int(grid_pos.x))
-	
+
 	for child in target_grid.get_children():
 		if child.name.strip_edges() == marker_name:
 			return child.global_position
-			
+
 	return Vector2.ZERO
 func pixel_to_grid(mouse_pixel_pos: Vector2) -> Vector2i:
 	var target_grid = grid_points
 	if target_grid == null:
 		target_grid = get_parent().get_node_or_null("GridPoints")
-		
+
 	if not target_grid: return Vector2i(-1, -1)
-	
+
 	var closest_grid = Vector2i(-1, -1)
 	var min_dist = 999999.0
-	
+
 	for marker in target_grid.get_children():
 		var dist = mouse_pixel_pos.distance_to(marker.global_position)
 		if dist < min_dist:
 			min_dist = dist
-			
+
 			var clean_name = marker.name.strip_edges()
 			var parts = clean_name.split(" ", false)
-			
+
 			if parts.size() >= 2:
 				closest_grid = Vector2i(int(parts[1]), int(parts[0]))
-				
+
 	if min_dist > 60:
 		return Vector2i(-1, -1)
-		
+
 	return closest_grid
 func calculate_world_position(grid_pos: Vector2i) -> Vector2:
 	return grid_to_pixel(grid_pos)
@@ -543,249 +545,35 @@ func get_first_unit_in_direction(start_pos: Vector2i, direction: Vector2i, max_r
 	return null
 
 func cast_complex_spell(elements, coordinates, directions):
-	if elements.is_empty() or coordinates.size() < 2:
-		print("[LogicGame] Bỏ qua vì thiếu nguyên tố hoặc tọa độ!")
-		return
-		
-	var target_grids = []
-	for i in range(0, coordinates.size(), 2):
-		if i + 1 < coordinates.size():
-			var char1 = coordinates[i]
-			var char2 = coordinates[i+1]
-			var letter = char1 if char1.to_upper() in ["A","B","C","D","E","F","G","H"] else char2
-			var number = char2 if char2 in ["1","2","3","4","5","6","7","8"] else char1
-			
-			if letter != "" and number != "":
-				var grid_pos = Global.convert_to_grid([letter, number])
-				target_grids.append(grid_pos)
-	if target_grids.is_empty():
-		print("[LogicGame] Lỗi tọa độ không hợp lệ!")
-		return
-	if elements.size() == 1:
-		match elements[0]:
-			SpellDictionary.Element.FIRE:
-				execute_new_fire_spell(target_grids, directions)
-			SpellDictionary.Element.WATER:
-				execute_new_water_spell(target_grids, directions)
-			SpellDictionary.Element.EARTH:
-				execute_new_earth_spell(target_grids, directions)
-			SpellDictionary.Element.WIND:
-				execute_new_wind_spell(target_grids, directions)
-	elif elements.size() == 2:
-		
-		if elements[0] == elements[1]:
-			match elements[0]:
-				SpellDictionary.Element.FIRE:
-					execute_new_fire_fire_spell(target_grids, directions)
-				SpellDictionary.Element.WATER:
-					execute_new_water_water_spell(target_grids, directions)
-				SpellDictionary.Element.EARTH:
-					execute_new_earth_earth_spell(target_grids, directions)
-				SpellDictionary.Element.WIND:
-					execute_new_wind_wind_spell(target_grids, directions)
-					
-		else:
-			var has_fire = SpellDictionary.Element.FIRE in elements
-			var has_water = SpellDictionary.Element.WATER in elements
-			var has_earth = SpellDictionary.Element.EARTH in elements
-			var has_wind = SpellDictionary.Element.WIND in elements
-
-			if has_fire and has_water: 
-				execute_new_fire_water_spell(target_grids, directions)
-			elif has_fire and has_earth:
-				execute_new_fire_earth_spell(target_grids, directions)
-			elif has_fire and has_wind:
-				execute_new_fire_wind_spell(target_grids, directions)
-			elif has_water and has_earth:
-				execute_new_water_earth_spell(target_grids, directions)
-			elif has_water and has_wind:
-				execute_new_water_wind_spell(target_grids, directions)
-			elif has_earth and has_wind:
-				execute_new_wind_earth_spell(target_grids, directions)
+	return spell_resolver.cast_complex_spell(elements, coordinates, directions)
 func execute_new_fire_spell(target_grids: Array, directions: Array):
-	print("[Phép Lửa] Bắt đầu gọi thiên thạch...")
-	execute_aoe_effect(target_grids, directions, 35.0, "damage", "lua")
+	return spell_resolver.execute_new_fire_spell(target_grids, directions)
 func execute_new_fire_fire_spell(target_grids: Array, directions: Array):
-	var base_damage = 52.5 
-	var impact_map = execute_aoe_effect(target_grids, directions, base_damage, "damage", "lua")
-	for grid_pos in impact_map.keys():
-		add_tile_effect(grid_pos, "fire_tile", 2)
+	return spell_resolver.execute_new_fire_fire_spell(target_grids, directions)
 func execute_new_water_spell(target_grids: Array, directions: Array):
-	print("[Phép Nước] Bắt đầu dội mưa...")
-	execute_aoe_effect(target_grids, directions, 50.0, "heal", "nuoc")
-	Global.add_ink(250)
+	return spell_resolver.execute_new_water_spell(target_grids, directions)
 func execute_new_water_water_spell(target_grids: Array, directions: Array):
-	var impact_map = execute_aoe_effect(target_grids, directions, 0, "heal", "nuoc")
-	for grid_pos in impact_map.keys():
-		add_tile_effect(grid_pos, "water_tile", 3)
+	return spell_resolver.execute_new_water_water_spell(target_grids, directions)
 func execute_new_wind_spell(target_grids: Array, directions: Array):
-	print("[Phép Gió] Kích hoạt!")
-	if target_grids.is_empty(): return
-	var has_direction = not directions.is_empty()
-	for i in range(target_grids.size()):
-		var grid_pos = target_grids[i]
-		var dir = Vector2i.ZERO
-		if has_direction:
-			dir = directions[i] if i < directions.size() else directions[0]
-		var unit = get_piece_at(grid_pos) 
-		if active_tile_effects.has(grid_pos):
-			var old_effect = active_tile_effects[grid_pos]["type"]
-			_trigger_immediate_tile_effect(grid_pos, old_effect, unit)
-		if not has_direction:
-			play_wind_visual(grid_pos, "gio")
-			if is_instance_valid(unit) and unit.has_method("add_buff"):
-				unit.add_buff("double_attack", 0, 1)
-		else:
-			play_wind_visual(grid_pos, "giogio")
-			if is_instance_valid(unit):
-				var target_push_pos = grid_pos + dir
-				var is_blocked = not is_within_board(target_push_pos) or is_instance_valid(get_piece_at(target_push_pos))
-				
-				if not is_blocked:
-					apply_knockback(unit, dir, 1, 0)
-					if unit.has_method("add_buff"):
-						unit.add_buff("stun", 0, 1)
-				else:
-					if unit.has_method("add_buff"):
-						unit.add_buff("stun", 0, 1)
+	return spell_resolver.execute_new_wind_spell(target_grids, directions)
 func execute_new_wind_wind_spell(target_grids: Array, directions: Array):
-	SoundManager.play_sound(SoundManager.sfx_wind)
-	var dir_count = directions.size()
-	if dir_count == 0:
-		for grid_pos in target_grids:
-			var target_unit = get_piece_at(grid_pos)
-			if is_instance_valid(target_unit) and target_unit.has_method("add_buff"):
-				target_unit.add_buff("stun", 0, 3)
-	elif dir_count == 1:
-		var push_dir = directions[0]
-		
-		execute_aoe_effect(target_grids, directions, 0, "none", "giogio") 
-
-		for grid_pos in target_grids:
-			var target_unit = get_piece_at(grid_pos)
-			if is_instance_valid(target_unit):
-				apply_knockback(target_unit, push_dir, 2, 15) 
-				if target_unit.has_method("add_buff"):
-					target_unit.add_buff("stun", 0, 2)
-					
-	else:
-		var aoe_grids = target_grids.duplicate()
-		for origin in target_grids:
-			for dir in directions:
-				var affected_grid = origin + dir
-				if not aoe_grids.has(affected_grid):
-					aoe_grids.append(affected_grid)
-		for grid_pos in aoe_grids:
-			var target_unit = get_piece_at(grid_pos)
-			if is_instance_valid(target_unit) and target_unit.has_method("add_buff"):
-				target_unit.add_buff("stun", 0, 2)
+	return spell_resolver.execute_new_wind_wind_spell(target_grids, directions)
 func execute_new_earth_spell(target_grids: Array, directions: Array):
-	execute_aoe_effect(target_grids, directions, 1.0, "earth_buff", "")
-	Global.add_paper(3)
+	return spell_resolver.execute_new_earth_spell(target_grids, directions)
 func execute_new_earth_earth_spell(target_grids: Array, directions: Array):
-	Global.add_paper(5)
-	execute_aoe_effect(target_grids, directions, 0.5, "earth_earth_buff", "")
+	return spell_resolver.execute_new_earth_earth_spell(target_grids, directions)
 func execute_new_fire_water_spell(target_grids: Array, directions: Array):
-	print("[Sương Mù] Kích hoạt sương mù bảo vệ!")
-	if target_grids.is_empty(): return
-	Global.add_ink(50)
-	var duration = 5
-	if target_grids.size() >= 2:
-		duration -= 2
-	duration = max(1, duration)
-	var spread_dirs = []
-	if directions.size() == 1:
-		spread_dirs = directions
-	else:
-		spread_dirs = [] 
-	var center_pos = target_grids[0]
-	add_tile_effect(center_pos, "fog_tile", duration, spread_dirs, true)
+	return spell_resolver.execute_new_fire_water_spell(target_grids, directions)
 func execute_new_fire_wind_spell(target_grids: Array, directions: Array):
-	SoundManager.play_sound(SoundManager.sfx_fire)
-	print("[Bão Lửa] Kích hoạt bão lửa 3x3!")
-	if target_grids.is_empty(): return
-	var duration = 5
-	if target_grids.size() >= 2:
-		duration -= 2
-	duration = max(1, duration)
-	var spread_dirs = []
-	if directions.size() == 1:
-		spread_dirs = directions
-	else:
-		print("[Bão Lửa] Hướng gió hỗn loạn, bão sẽ đứng im!")
-		spread_dirs = [] 
-	execute_aoe_effect(target_grids, directions, 0, "none", "")
-	for grid_pos in target_grids:
-		add_tile_effect(grid_pos, "firestorm_tile", duration, spread_dirs, true)
+	return spell_resolver.execute_new_fire_wind_spell(target_grids, directions)
 func execute_new_water_earth_spell(target_grids: Array, directions: Array):
-	print("[Đầm Lầy] Kích hoạt vũng lầy!")
-	Global.add_paper(1)
-	var duration = 10
-	var dir_count = directions.size()
-	if dir_count > 1: duration -= (dir_count - 1)
-	if target_grids.size() >= 2: duration -= 4
-	duration = max(1, duration)
-	execute_aoe_effect(target_grids, directions, 0, "none", "")
-	for grid_pos in target_grids:
-		add_tile_effect(grid_pos, "swamp_tile", duration, directions, true)
+	return spell_resolver.execute_new_water_earth_spell(target_grids, directions)
 func execute_new_fire_earth_spell(target_grids: Array, directions: Array):
-	print("[Dung Nham] Kích hoạt dòng chảy!")
-	Global.add_paper(1)
-	var duration = 10
-	var dir_count = directions.size()
-	if dir_count > 1: duration -= (dir_count - 1)
-	if target_grids.size() >= 2: duration -= 4
-	duration = max(1, duration)
-	execute_aoe_effect(target_grids, directions, 0, "none", "")
-	for grid_pos in target_grids:
-		add_tile_effect(grid_pos, "lava_tile", duration, directions)
+	return spell_resolver.execute_new_fire_earth_spell(target_grids, directions)
 func execute_new_water_wind_spell(target_grids: Array, directions: Array):
-	SoundManager.play_sound(SoundManager.sfx_water)
-	print("[Cơn Mưa] Kích hoạt đám mây di chuyển!")
-	if target_grids.is_empty(): return
-	var duration = 6
-	if target_grids.size() >= 2:
-		duration -= 2
-	duration = max(1, duration)
-	var spread_dirs = []
-	if directions.size() == 1:
-		spread_dirs = directions
-	else:
-		print("[Cơn Mưa] Gió nhiễu loạn! Đám mây sẽ đứng im.")
-		spread_dirs = [] 
-	execute_aoe_effect(target_grids, directions, 0, "none", "")
-	for grid_pos in target_grids:
-		add_tile_effect(grid_pos, "rain_tile", duration, spread_dirs)
+	return spell_resolver.execute_new_water_wind_spell(target_grids, directions)
 func execute_new_wind_earth_spell(target_grids: Array, directions: Array, aoe_value_modifier: float = 1.0):
-	SoundManager.play_sound(SoundManager.sfx_earthwind)
-	if target_grids.is_empty(): return
-	var origin = target_grids[0]
-	var dir_count = directions.size()
-	var duration = max(1, 9 - dir_count) 
-	var base_hp = 500.0
-	var final_hp = int(base_hp * aoe_value_modifier)
-	var block_grids = [origin]
-	for dir in directions:
-		var next_grid = origin + dir
-		if not block_grids.has(next_grid):
-			block_grids.append(next_grid)
-	execute_aoe_effect(block_grids, directions, 0, "none", "")
-	var adj_dirs = [Vector2i(0,1), Vector2i(0,-1), Vector2i(1,0), Vector2i(-1,0), Vector2i(1,1), Vector2i(1,-1), Vector2i(-1,1), Vector2i(-1,-1)]
-	for grid in block_grids:
-		if not is_within_board(grid): continue
-		if not is_cell_vacant(grid):
-			Global.add_paper(1)
-			print("Ô có người! Hoàn 1 giấy.")
-			continue
-		spawn_earth_block(grid, final_hp, duration)
-		for adj in adj_dirs:
-			var adj_grid = grid + adj
-			var unit = get_piece_at(adj_grid)
-			if is_instance_valid(unit) and unit.get("team") == 1:
-				Global.add_paper(1)
-				print("Buff đồng minh tại ", adj_grid, ". Nhận 1 giấy.")
-				if unit.has_method("add_buff"):
-					unit.add_buff("damage_reduction", 0.5, duration) 
+	return spell_resolver.execute_new_wind_earth_spell(target_grids, directions, aoe_value_modifier)
 func get_all_team_units(team_num: int) -> Array:
 	var units = []
 	for p in all_pieces:
@@ -803,319 +591,36 @@ func get_king_piece():
 			return piece
 	return null
 func play_spell_animation(grid_pos: Vector2i, anim_name: String, target_unit = null):
-	var effect = SPELL_EFFECT_SCENE.instantiate()
-	effect.visible = false 
-	get_tree().current_scene.add_child(effect)
-	var base_pos = Vector2.ZERO
-	if target_unit != null:
-		base_pos = target_unit.global_position
-	else:
-		base_pos = grid_to_pixel(grid_pos)
-	effect.global_position = base_pos + Vector2(0, -30) 
-	effect.play(anim_name)
-	effect.visible = true 
-	effect.animation_finished.connect(effect.queue_free)
+	return presentation.play_spell_animation(grid_pos, anim_name, target_unit)
 func execute_aoe_effect(target_grids: Array, directions: Array, base_value: float, effect_type: String, ground_anim: String) -> Dictionary:
-	var is_multi_target = target_grids.size() > 1
-	var multi_factor = 0.4 if is_multi_target else 1.0
-	var direction_factor = 1.0 / (directions.size() + 1)
-	var value_per_hit = base_value * multi_factor * direction_factor
-	var impact_map = {} 
-	for center_pos in target_grids:
-		_add_to_impact_map(impact_map, center_pos)
-		for dir in directions:
-			var offset_pos = center_pos + Vector2i(dir.x, dir.y)
-			if is_within_board(offset_pos):
-				_add_to_impact_map(impact_map, offset_pos)
-	for grid_pos in impact_map.keys():
-		var hit_count = impact_map[grid_pos]
-		var total_value = value_per_hit * hit_count
-		var target_unit = get_unit_at(grid_pos)
-		if ground_anim != "":
-			play_spell_animation(grid_pos, ground_anim, target_unit)
-		if target_unit != null:
-			var push_dir = directions[0] if directions.size() > 0 else Vector2i.ZERO
-			apply_unit_effect(target_unit, effect_type, total_value, grid_pos, push_dir)
-		else:
-			if ground_anim == "":
-				print(" -> Ô ", grid_pos, " trống. Phép bay xuyên qua, không có tác dụng.")
-	return impact_map
+	return spell_resolver.execute_aoe_effect(target_grids, directions, base_value, effect_type, ground_anim)
 func apply_unit_effect(unit, effect_type: String, value: float, grid_pos: Vector2i, dir: Vector2i = Vector2i.ZERO):
-	var unit_name = unit.name 
-	match effect_type:
-		"heal":
-			if unit.has_method("heal"):
-				unit.heal(value)
-				print(" -> Ô ", grid_pos, " Hồi ", value, " máu cho [", unit_name, "]")
-				
-		"damage":
-			deal_damage(unit, value)
-			print(" -> Ô ", grid_pos, " Nổ ", value, " sát thương lên [", unit_name, "]")
-			
-		"earth_buff":
-			if unit.has_method("add_buff"):
-				unit.add_buff("damage_reduction", value, 1) 
-				
-		"earth_earth_buff":
-			if unit.has_method("add_buff"):
-				unit.add_buff("damage_reduction", value, 2)
-				
-		"stun_1":
-			if unit.has_method("add_buff"):
-				unit.add_buff("stun", 1.0, 1)
-		"stun_2":
-			if unit.has_method("add_buff"):
-				unit.add_buff("stun", 1.0, 2)
-		"knockback_2":
-			if is_instance_valid(unit):
-				apply_knockback(unit, dir, 2, 5)
-		_:
-			print(" -> Ô ", grid_pos, " có hiệu ứng không xác định!")
-var active_tile_effects = {} 
+	return spell_resolver.apply_unit_effect(unit, effect_type, value, grid_pos, dir)
+var active_tile_effects: Dictionary:
+	get: return tile_effects.active_effects
 
 func add_tile_effect(grid_pos: Vector2i, effect_type: String, duration: int, spread_dirs: Array = [], is_center: bool = true, is_first_spawn: bool = true):
-	if duration <= 0 or not is_within_board(grid_pos):
-		return
-	var piece = get_piece_at(grid_pos)
-	if is_instance_valid(piece):
-		if UnitDefinition.is_kind(piece, UnitDefinition.Kind.EARTH_WALL):
-			print("Vướng cục đá/tường đất tại ", grid_pos, " -> Hủy phép!")
-			return 
-	if active_tile_effects.has(grid_pos):
-		return
-	var spawned_visual = SPELL_EFFECT_SCENE.instantiate()
-	get_tree().current_scene.add_child(spawned_visual)
-	var base_pos = grid_to_pixel(grid_pos)
-	var final_offset = Vector2(0, 0)
-	match effect_type:
-		"water_tile":
-			spawned_visual.play("nuocnuoc")
-			final_offset = Vector2(0, 10)
-			spawned_visual.z_index = 40
-		"fire_tile":
-			spawned_visual.play("lualua")
-			final_offset = Vector2(0, -30)
-			spawned_visual.z_index = 100
-		"rain_tile": 
-			spawned_visual.play("nuocgio")
-			spawned_visual.z_index = 100
-		"lava_tile": 
-			spawned_visual.play("luadat") 
-			final_offset = Vector2(0, -30)
-			spawned_visual.z_index = 100
-		"swamp_tile":
-			spawned_visual.play("nuocdat")
-			final_offset = Vector2(0, -10)
-			spawned_visual.z_index = 40
-		"firestorm_tile":
-			spawned_visual.play("luagio")
-			final_offset = Vector2(0, -30)
-			spawned_visual.z_index = 100
-		"fog_tile": 
-			final_offset = Vector2(0, -20)
-			spawned_visual.z_index = 150 
-			spawned_visual.play("luanuoc1")
-			if is_first_spawn:
-				spawned_visual.frame = 0
-			else:
-				spawned_visual.frame = 2 
-			var custom_loop = func():
-				if is_instance_valid(spawned_visual) and spawned_visual.animation == "luanuoc1":
-					spawned_visual.frame = 2
-			if not spawned_visual.animation_looped.is_connected(custom_loop):
-				spawned_visual.animation_looped.connect(custom_loop)
-	spawned_visual.global_position = base_pos + final_offset
-	active_tile_effects[grid_pos] = {
-		"type": effect_type,
-		"turns": duration,
-		"visual_node": spawned_visual,
-		"is_new": true,
-		"spread_dirs": spread_dirs,
-		"is_center": is_center, 
-		"age": 0              
-	}
-	if is_first_spawn and is_instance_valid(piece):
-		match effect_type:
-			"swamp_tile":
-				if piece.has_method("add_buff"): piece.add_buff("root", 0, 3)
-				print("-> Đầm lầy vừa trúng đích, trói chân ngay lập tức: ", piece.name)
-			"fire_tile", "lava_tile", "firestorm_tile":
-				if piece.has_method("take_damage"): piece.take_damage(10.0) 
-				print("-> Lửa vừa rơi trúng đầu, đốt ngay lập tức: ", piece.name)
-			"water_tile", "rain_tile":
-				if piece.has_method("heal"): piece.heal(20)
+	return tile_effects.add_tile_effect(grid_pos, effect_type, duration, spread_dirs, is_center, is_first_spawn)
 func process_all_tile_effects():
-	var grids_to_remove = []
-	var new_puddle_tiles = []
-	var new_rain_tiles = [] 
-	var new_firestorm_tiles = []
-	var new_fog_tiles = []
-	for grid_pos in active_tile_effects.keys():
-		var effect = active_tile_effects[grid_pos]
-		effect["turns"] -= 1
-		effect["is_new"] = false
-		effect["age"] = effect.get("age", 0) + 1
-		var current_age = effect["age"]
-		match effect["type"]:
-			"water_tile":
-				var unit = get_unit_at(grid_pos)
-				if unit:
-					if unit.has_method("heal"): unit.heal(20)
-					if unit.get("team") == 1: Global.add_ink(50)
-			"fire_tile", "lava_tile": 
-				var unit = get_unit_at(grid_pos)
-				if unit: 
-					deal_damage(unit, 10.0)
-					if effect["type"] == "lava_tile" and unit.get("team") == 1:
-						Global.add_paper(-1)
-			"swamp_tile":
-				var unit = get_unit_at(grid_pos)
-				if is_instance_valid(unit):
-					if unit.has_method("heal"): 
-						unit.heal(20) 
-					if unit.has_method("add_buff"):
-						unit.add_buff("root", 0, 2)
-					if unit.get("team") == 1: 
-						Global.add_ink(50)
-			"rain_tile":
-				var unit = get_unit_at(grid_pos)
-				if is_instance_valid(unit):
-					if unit.has_method("heal"): unit.heal(50)
-					if unit.get("team") == 1:
-						Global.add_ink(50)
-						if UnitDefinition.is_kind(unit, UnitDefinition.Kind.KING) or UnitDefinition.is_kind(unit, UnitDefinition.Kind.KING):
-							Global.add_paper(-1)
-				if effect.get("is_center", false):
-					for dir in effect.get("spread_dirs", []):
-						var next_pos = grid_pos + dir
-						if is_within_board(next_pos) and not active_tile_effects.has(next_pos):
-							new_rain_tiles.append({
-								"pos": next_pos,
-								"turns": effect["turns"], 
-								"dirs": [dir], 
-								"is_center": true,
-								"is_first_spawn": false
-							})
-							effect["is_center"] = false
-							effect["tail_life"] = 1 
-				else:
-					if effect.has("tail_life"):
-						effect["tail_life"] -= 1
-						if effect["tail_life"] <= 0:
-							if not grids_to_remove.has(grid_pos):
-								grids_to_remove.append(grid_pos)
-			"fog_tile":
-				if effect.get("is_center", false):
-					for dir in effect.get("spread_dirs", []):
-						var next_pos = grid_pos + dir
-						if is_within_board(next_pos) and not active_tile_effects.has(next_pos):
-							new_fog_tiles.append({
-								"pos": next_pos,
-								"turns": effect["turns"], 
-								"dirs": [dir], 
-								"is_center": true,
-								"is_first_spawn": false
-							})
-							effect["is_center"] = false
-							effect["tail_life"] = 1 
-				else:
-					if effect.has("tail_life"):
-						effect["tail_life"] -= 1
-						if effect["tail_life"] <= 0:
-							if not grids_to_remove.has(grid_pos):
-								grids_to_remove.append(grid_pos)
-			"firestorm_tile":
-				var base_dmg = 15.0
-				var center_pos_i = Vector2i(grid_pos)
-				apply_firestorm_impact(center_pos_i, base_dmg)
-				if effect.get("is_center", false):
-					for dir in effect.get("spread_dirs", []):
-						var next_pos = center_pos_i + dir
-						if is_within_board(next_pos) and not active_tile_effects.has(next_pos):
-							new_firestorm_tiles.append({
-								"pos": next_pos,
-								"turns": effect["turns"], 
-								"dirs": [dir] 
-							})
-							if not grids_to_remove.has(center_pos_i):
-								grids_to_remove.append(center_pos_i)
-
-		if effect["type"] in ["lava_tile", "swamp_tile"] and effect.get("is_center", false):
-			for dir in effect.get("spread_dirs", []):
-				var is_orthogonal = (abs(dir.x) + abs(dir.y) == 1)
-				var is_diagonal = (abs(dir.x) + abs(dir.y) == 2)
-				var should_spread = false
-				if current_age == 1 and is_orthogonal: should_spread = true
-				elif current_age == 2 and is_diagonal: should_spread = true
-				if should_spread:
-					var next_pos = grid_pos + dir
-					if is_within_board(next_pos) and not active_tile_effects.has(next_pos):
-						new_puddle_tiles.append({
-							"pos": next_pos,
-							"type": effect["type"], 
-							"turns": effect["turns"], 
-							"dirs": [] 
-						})
-		if effect["turns"] <= 0 and not grids_to_remove.has(grid_pos):
-			grids_to_remove.append(grid_pos)
-	for pos in grids_to_remove:
-		_remove_tile_effect(pos)
-		
-	for puddle in new_puddle_tiles:
-		add_tile_effect(puddle["pos"], puddle["type"], puddle["turns"], puddle["dirs"], false, false)
-		
-	for rain in new_rain_tiles:
-		add_tile_effect(rain["pos"], "rain_tile", rain["turns"], rain["dirs"], true, false)
-	for storm in new_firestorm_tiles:
-		add_tile_effect(storm["pos"], "firestorm_tile", storm["turns"], storm["dirs"], true, false)
-	for fog in new_fog_tiles:
-		add_tile_effect(fog["pos"], "fog_tile", fog["turns"], fog["dirs"], true, fog.get("is_first_spawn", true))
-	
+	return tile_effects.process_all_tile_effects()
 func _remove_tile_effect(grid_pos: Vector2i):
-	if active_tile_effects.has(grid_pos):
-		var effect_data = active_tile_effects[grid_pos]
-		if is_instance_valid(effect_data.get("visual_node")):
-			effect_data["visual_node"].queue_free()
-		active_tile_effects.erase(grid_pos)
+	return tile_effects._remove_tile_effect(grid_pos)
 func spawn_earth_block(grid_pos: Vector2i, hp: int, turns: int):
-	var block_scene = preload("res://earth_wall.tscn")
-	var block = block_scene.instantiate()
-	
-	block.name = "EarthBlock_" + str(randi() % 1000)
-	block.set("hp", hp)
-	block.set("max_hp", hp)
-	block.set("duration", turns) 
-	block.set("team", 1)
-	
-	var visual = block.get_node_or_null("giodat")
-	if is_instance_valid(visual):
-		visual.play("giodat")
-		
-	add_child(block)
-	block.global_position = grid_to_pixel(grid_pos)
-	
-	if block.has_method("set_grid_position"):
-		block.set_grid_position(grid_pos)
-	else:
-		block.set("grid_pos", grid_pos)
-		
-	all_pieces.append(block)
+	return tile_effects.spawn_earth_block(grid_pos, hp, turns)
 func is_tile_foggy(grid_pos: Vector2i) -> bool:
-	if active_tile_effects.has(grid_pos):
-		return active_tile_effects[grid_pos]["type"] == "fog_tile"
-	return false
+	return tile_effects.is_tile_foggy(grid_pos)
 func cast_random_flight(unit):
 	var empty_cells = []
-	
-	for x in range(0, 8): 
+
+	for x in range(0, 8):
 		for y in range(0, 8):
 			var test_pos = Vector2i(x, y)
-			if get_unit_at(test_pos) == null and is_within_board(test_pos): 
+			if get_unit_at(test_pos) == null and is_within_board(test_pos):
 				empty_cells.append(test_pos)
-				
+
 	if empty_cells.size() > 0:
 		var random_pos = empty_cells[randi() % empty_cells.size()]
-		
+
 		var dirs = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
 		var random_dir = dirs[randi() % dirs.size()]
 		unit.grid_pos = random_pos
@@ -1123,37 +628,9 @@ func cast_random_flight(unit):
 		if unit.get("direction") != null:
 			unit.direction = random_dir
 func _trigger_immediate_tile_effect(grid_pos: Vector2i, type: String, unit):
-	print("-> [Phép Gió] Vừa quạt trúng ô hiệu ứng: ", type)
-	
-	if active_tile_effects.has(grid_pos):
-		var visual = active_tile_effects[grid_pos].get("visual_node")
-		if is_instance_valid(visual):
-			visual.modulate = Color(2.0, 2.0, 2.0, 1) 
-			var tw = get_tree().create_tween()
-			tw.tween_property(visual, "scale", Vector2(1.4, 1.4), 0.1)
-			tw.tween_property(visual, "scale", Vector2(1.0, 1.0), 0.2)
-			tw.tween_property(visual, "modulate", Color(1, 1, 1, 1), 0.2)
-	if not is_instance_valid(unit): return
-	match type:
-		"water_tile", "swamp_tile":
-			if unit.has_method("heal"): unit.heal(20)
-			if type == "water_tile" and unit.get("team") == 1: Global.add_ink(50)
-			if type == "swamp_tile" and unit.has_method("add_buff"): unit.add_buff("root", 0, 2)
-		"fire_tile", "lava_tile", "firestorm_tile":
-			if unit.has_method("take_damage"):
-				unit.take_damage(15.0) 
-			elif has_method("deal_damage"):
-				deal_damage(unit, 15.0)
-		"rain_tile":
-			if unit.has_method("heal"): unit.heal(30)
-			if unit.get("team") == 1: Global.add_ink(50)
+	return tile_effects._trigger_immediate_tile_effect(grid_pos, type, unit)
 func play_wind_visual(grid_pos: Vector2i, anim_name: String):
-	var spawned_visual = SPELL_EFFECT_SCENE.instantiate()
-	get_tree().current_scene.add_child(spawned_visual)
-	spawned_visual.global_position = grid_to_pixel(grid_pos)
-	spawned_visual.z_index = 150 
-	spawned_visual.play(anim_name)
-	spawned_visual.animation_finished.connect(func(): spawned_visual.queue_free(), CONNECT_ONE_SHOT)
+	return presentation.play_wind_visual(grid_pos, anim_name)
 func check_trap_at(unit, grid_pos):
 	for effect_pos in active_tile_effects:
 		var effect = active_tile_effects[effect_pos]
@@ -1162,33 +639,13 @@ func check_trap_at(unit, grid_pos):
 			if abs(distance.x) <= 1 and abs(distance.y) <= 1:
 				var push_dir = distance
 func apply_firestorm_impact(center_pos_i: Vector2i, base_dmg: float):
-	for dx in range(-1, 2):
-		for dy in range(-1, 2):
-			var check_pos = center_pos_i + Vector2i(dx, dy)
-			var unit = get_unit_at(check_pos)
-			if is_instance_valid(unit):
-				if dx == 0 and dy == 0:
-					deal_damage(unit, base_dmg)
-				else:
-					var push_dir = Vector2i(dx, dy)
-					var target_push_pos = check_pos + push_dir
-					
-					var is_blocked = not is_within_board(target_push_pos) or is_instance_valid(get_unit_at(target_push_pos))
-					
-					if is_blocked:
-						deal_damage(unit, base_dmg * 2.0)
-					else:
-						if unit.has_method("move_to_grid"):
-							var target_pixel_pos = grid_to_pixel(target_push_pos)
-							unit.move_to_grid(target_push_pos, target_pixel_pos)
-						deal_damage(unit, base_dmg)
-						
+	return tile_effects.apply_firestorm_impact(center_pos_i, base_dmg)
 func backup_player_pieces():
 	player_pieces_backup.clear()
 	for p in all_pieces:
 		if is_instance_valid(p) and p.team == 1 and p is Piece:
 			var data = {
-				"scene_path": p.scene_file_path, 
+				"scene_path": p.scene_file_path,
 				"grid_pos": p.grid_pos,
 				"hp": p.current_health,
 				"name": p.name
@@ -1222,9 +679,9 @@ func restart_current_wave():
 	magic.hide()
 	%ClosedScrollButton.show()
 	clear_highlights()
-	
+
 	current_turn = 1
-	if turn_label: 
+	if turn_label:
 		turn_label.text = "Turn: 1"
 	for p in all_pieces:
 		if is_instance_valid(p):
@@ -1238,9 +695,9 @@ func restart_current_wave():
 			if has_node("PieceLayer"):
 				get_node("PieceLayer").add_child(p)
 			else:
-				add_child(p) 
+				add_child(p)
 			all_pieces.append(p)
-			
+
 			p.grid_pos = data["grid_pos"]
 			p.position = grid_to_pixel(p.grid_pos)
 			p.current_health = data["hp"]
@@ -1280,3 +737,6 @@ func _clear_wave_effects() -> void:
 	for p in all_pieces.duplicate():
 		if is_instance_valid(p) and UnitDefinition.is_kind(p, UnitDefinition.Kind.EARTH_WALL):
 			kill_piece(p)
+
+func request_cast(elements: Array, coordinates: Array, directions: Array) -> void:
+	spell_resolved.emit(spell_resolver.request_cast(elements, coordinates, directions))

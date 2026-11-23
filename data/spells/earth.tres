@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SpellDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/spell_definition.gd" id="1"]
+[ext_resource type="Texture2D" path="res://spell/earth.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"earth"
+elements = PackedInt32Array(2)
+icon = ExtResource("2")
+title = "Terra"
+power = 1.0
+duration = 1
+paper_reward = 3
+description = "Ấn đất: tạo lá chắn giảm sát thương cho mục tiêu."

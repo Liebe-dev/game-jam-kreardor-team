@@ -46,3 +46,8 @@ No enemy rosters or authored HP/damage/spell-strength constants were retuned.
 Balance and full visual playthrough remain separate work. The regression covers
 the rules listed above; it does not assert that every spellbook description and
 every other game mechanic has been fully implemented.
+
+Refactor coverage also checks editable unit/wave definitions, renamed unit identity,
+combat/turn result signals with presentation disconnected, all fourteen spell
+commands, shared spellbook data, authoritative resource payment outside UI, and
+terrain parameters read from the shared spell catalog.

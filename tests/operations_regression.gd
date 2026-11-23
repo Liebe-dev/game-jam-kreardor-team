@@ -32,7 +32,7 @@ func _run() -> void:
 	global.is_tutorial_done = true
 	create_timer(90.0, true).timeout.connect(func(): print("TEST TIMEOUT"); quit(2))
 	seed(20261123)
-	for test_name in ["test_resolver_events", "test_definition_data", "test_resources", "test_input_costs", "test_cast_validation", "test_damage", "test_status_turn", "test_tile_lifetime", "test_turn_lock", "test_wave_health", "test_checkpoint", "test_enemy_scenes", "test_wind_double_attack", "test_wind_special_attacks", "test_wind_restrictions", "test_wind_safety", "test_five_waves"]:
+	for test_name in ["test_spell_catalog", "test_spell_ui_commands", "test_terrain_definition", "test_resolver_events", "test_definition_data", "test_resources", "test_input_costs", "test_cast_validation", "test_damage", "test_status_turn", "test_tile_lifetime", "test_turn_lock", "test_wave_health", "test_checkpoint", "test_enemy_scenes", "test_wind_double_attack", "test_wind_special_attacks", "test_wind_restrictions", "test_wind_safety", "test_five_waves"]:
 		var filter: String = OS.get_environment("AUTOCHESSTO_TEST_FILTER")
 		if not filter.is_empty() and filter != test_name:
 			continue
@@ -82,6 +82,85 @@ func prepare_spell(column: String = "A", row: String = "8", element: int = 0) ->
 	magic.cast_elements.append(element)
 	magic.coord_edits[0].text = column
 	magic.coord_edits[1].text = row
+
+func copy_spell_catalog() -> SpellCatalog:
+	var catalog: SpellCatalog = logic.spell_resolver.catalog.duplicate(true)
+	for i in range(catalog.definitions.size()):
+		catalog.definitions[i] = catalog.definitions[i].duplicate(true)
+	logic.spell_resolver.catalog = catalog
+	logic.tile_effects.catalog = catalog
+	board.get_node("UI_Layer").spell_catalog = catalog
+	return catalog
+
+func test_spell_catalog() -> bool:
+	var catalog: SpellCatalog = logic.spell_resolver.catalog
+	check(catalog.definitions.size(), 14, "catalog contains all fourteen spell combinations")
+	check(catalog.get_by_elements([3, 0]).id, &"fire_wind", "combination lookup is independent of input order")
+	for definition: SpellDefinition in catalog.definitions:
+		global.restore_resources({})
+		logic._clear_wave_effects()
+		var result: Dictionary = logic.spell_resolver.request_cast(Array(definition.elements), ["D", "4"], [])
+		check(result.ok, true, "spell command resolves %s through real gameplay" % definition.id)
+		await process_frame
+	logic._clear_wave_effects()
+	global.restore_resources({})
+	catalog = copy_spell_catalog()
+	var fire: SpellDefinition = catalog.get_by_id(&"fire")
+	fire.power = 47.0
+	fire.paper_cost = 2
+	catalog.ink_cost_per_character = 3.0
+	var enemy = logic.get_piece_at(Vector2i(1, 1))
+	var health: int = enemy.current_health
+	var result: Dictionary = logic.spell_resolver.request_cast([0], ["B", "2"], [])
+	check(enemy.current_health, health - 47, "spell definition power drives actual damage")
+	check(global.paper_count, 8, "spell definition controls payment in resolver")
+	check(result.coordinates, ["B", "2"], "cast result retains exact coordinate payload")
+	var book = board.get_node("UI_Layer")
+	book.current_page = 2
+	book.update_page_ui()
+	check(book.info_label.text, fire.describe(), "spellbook uses the same edited spell definition")
+	global.has_casted_spell = false
+	global.current_ink = 100.0
+	check(logic.spell_resolver.pay_for_edit("", "ignis"), true, "resolver accepts paid text edit")
+	check(global.current_ink, 85.0, "catalog controls ink price outside UI")
+	global.has_casted_spell = false
+	var invalid: Dictionary = logic.spell_resolver.request_cast([99], ["A", "8"], [])
+	check(invalid.ok, false, "resolver rejects invalid elements directly")
+	check(global.paper_count, 8, "invalid model request spends no paper")
+	return true
+
+func test_spell_ui_commands() -> bool:
+	var requests: Array = []
+	magic.cast_requested.disconnect(logic.request_cast)
+	magic.cast_requested.connect(func(elements: Array, coordinates: Array, directions: Array): requests.append([elements.duplicate(), coordinates.duplicate(), directions.duplicate()]))
+	prepare_spell()
+	magic._on_end_turn_button_pressed()
+	check(requests.size(), 1, "spell UI emits a command")
+	check(requests[0][1], ["A", "8"], "spell UI preserves coordinates in command")
+	check(global.paper_count, 10, "disconnected UI cannot debit gameplay resources")
+	check(global.has_casted_spell, false, "UI alone cannot consume turn casting allowance")
+	magic.cast_requested.connect(logic.request_cast)
+	magic._on_end_turn_button_pressed()
+	check(global.paper_count, 9, "connected resolver commits exactly one cast")
+	check(magic.cast_elements.is_empty(), true, "accepted cast result clears UI draft")
+	return true
+
+func test_terrain_definition() -> bool:
+	var catalog: SpellCatalog = copy_spell_catalog()
+	var water: SpellDefinition = catalog.get_by_id(&"water_water")
+	water.duration = 4
+	water.settings.tick_heal = 7.0
+	water.settings.tick_ink = 13.0
+	var unit = logic.all_pieces[0]
+	unit.current_health = 100
+	global.current_ink = 200.0
+	logic.execute_new_water_water_spell([unit.grid_pos], [])
+	await logic._on_end_turn_pressed()
+	check(unit.current_health, 127, "terrain definition drives periodic healing")
+	check(global.current_ink, 213.0, "terrain definition drives periodic ink reward")
+	check(logic.active_tile_effects[unit.grid_pos].turns, 3, "spell definition controls terrain lifetime")
+	check(logic.tile_effects.active_effects.size(), 1, "terrain module owns effect state")
+	return true
 
 func test_resolver_events() -> bool:
 	var damage_results: Array = []

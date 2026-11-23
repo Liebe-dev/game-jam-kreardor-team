@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SpellDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/spell_definition.gd" id="1"]
+[ext_resource type="Texture2D" path="res://spell/water+fire.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"fire_water"
+elements = PackedInt32Array(0, 1)
+icon = ExtResource("2")
+title = "Ignis+Aqua"
+duration = 5
+ink_reward = 50.0
+settings = {"multi_target_reduction": 2}
+description = "Hợp ấn sương mù: tạo sương tại tọa độ đầu tiên. Chọn đúng một hướng để sương di chuyển."
