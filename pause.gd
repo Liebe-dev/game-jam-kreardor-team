@@ -18,14 +18,19 @@ func _on_resume_pressed() -> void:
 	SoundManager.play_sound(SoundManager.sfx_attack, -5)
 	pause_and_unpause()
 func _on_restart_pressed() -> void:
+	var logic = get_tree().get_first_node_in_group("logic_board")
+	if logic != null and logic.is_resolving_turn:
+		return
 	SoundManager.play_sound(SoundManager.sfx_attack, -5)
 	pause_and_unpause() 
-	Global.current_wave = 1 
+	Global.reset_run()
 	get_tree().reload_current_scene()
 func _on_restart_2_pressed() -> void:
 	SoundManager.play_sound(SoundManager.sfx_attack, -5)
-	pause_and_unpause()
 	var logic = get_tree().get_first_node_in_group("logic_board")
+	if logic != null and logic.is_resolving_turn:
+		return
+	pause_and_unpause()
 	if logic != null:
 		logic.restart_current_wave()
 func _on_quit_pressed() -> void:

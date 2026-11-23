@@ -20,4 +20,8 @@ func take_damage(amount: int, source = null):
 		print("[Khối Đất] Bị phá hủy tại ô: ", grid_pos)
 		die()
 func die():
-	queue_free()
+	var logic = get_tree().get_first_node_in_group("logic_board")
+	if logic != null:
+		logic.kill_piece(self)
+	else:
+		queue_free()

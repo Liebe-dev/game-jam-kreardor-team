@@ -13,6 +13,7 @@ var is_charging: bool = false
 var is_grabbed: bool = false
 var grabbed_by: Node2D = null
 var has_moved: bool = false
+var attacks_used_this_turn: int = 0
 
 var max_ammo = 3
 var current_ammo = 3
@@ -34,20 +35,19 @@ func _ready():
 			anim_sprite.play("idle_up")
 		else:
 			anim_sprite.play("idle_down")
-func take_damage(amount: float):
-	var final_damage = amount * (1.0 - damage_reduction_rate)
-	current_health -= final_damage 
-	
+func take_damage(amount: float) -> void:
+	if is_queued_for_deletion() or current_health <= 0:
+		return
+	var final_damage: int = roundi(maxf(0.0, amount) * (1.0 - clampf(damage_reduction_rate, 0.0, 1.0)))
+	current_health = maxi(0, current_health - final_damage)
 	if has_node("HealthBar"):
 		$HealthBar.value = current_health
-	
-	var t = create_tween()
-	t.tween_property(self, "modulate", Color.RED, 0.1)
-	t.tween_callback(update_visuals)
-	
 	if current_health <= 0:
 		die()
-
+		return
+	var t := create_tween()
+	t.tween_property(self, "modulate", Color.RED, 0.1)
+	t.tween_callback(update_visuals)
 func die():
 	var logic_game = get_node("/root/board/logicgame")
 	if logic_game:
@@ -112,7 +112,7 @@ func update_visuals():
 		modulate = Color(1, 1, 1)
 
 func add_buff(buff_name: String, value: float, duration_turns: int):
-	SoundManager.play_sound(SoundManager.buffspell)
+	SoundManager.play_sound(SoundManager.sfx_buffspell)
 	active_buffs[buff_name] = duration_turns
 	
 	if buff_name == "damage_reduction":
@@ -135,22 +135,41 @@ func add_buff(buff_name: String, value: float, duration_turns: int):
 		effect.play("gio") 
 		self.current_wind_visual = effect
 
-func on_turn_end():
+func get_attack_limit() -> int:
+	return 2 if int(active_buffs.get("double_attack", 0)) > 0 else 1
+
+func try_begin_attack() -> bool:
+	if is_queued_for_deletion() or current_health <= 0 or stun_turns > 0:
+		return false
+	if attacks_used_this_turn >= get_attack_limit():
+		return false
+	attacks_used_this_turn += 1
+	return true
+
+func on_turn_end() -> void:
+	# Durations expire after the turn's movement, combat and tile effects.
+	attacks_used_this_turn = 0
+	if active_buffs.has("double_attack"):
+		active_buffs["double_attack"] -= 1
+		if active_buffs["double_attack"] <= 0:
+			active_buffs.erase("double_attack")
 	if active_buffs.has("damage_reduction"):
-		active_buffs["damage_reduction"] -= 1 
-		
+		active_buffs["damage_reduction"] -= 1
 		if active_buffs["damage_reduction"] <= 0:
 			active_buffs.erase("damage_reduction")
 			damage_reduction_rate = 0.0
 			if has_node("ShieldAnim"):
-				$ShieldAnim.visible = false
+				$ShieldAnim.hide()
 				$ShieldAnim.stop()
-				
-	if stun_turns > 0:
-		if stun_turns == 0:
-			if is_instance_valid(current_wind_visual):
-				current_wind_visual.queue_free()
-
+	stun_turns = maxi(0, stun_turns - 1)
+	root_turns = maxi(0, root_turns - 1)
+	if stun_turns == 0:
+		active_buffs.erase("stun")
+	if root_turns == 0:
+		active_buffs.erase("root")
+	if stun_turns == 0 and root_turns == 0 and is_instance_valid(current_wind_visual):
+		current_wind_visual.queue_free()
+		current_wind_visual = null
 func process_buffs():
 	if active_buffs.has("burn"):
 		take_damage(10)

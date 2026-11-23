@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dg0msu7bnit88"]
 
 [ext_resource type="Script" uid="uid://kn0x8uhqfemb" path="res://pause.gd" id="1_n18xh"]
-[ext_resource type="PackedScene" path="res://fade_trans.tscn" id="4_y1682"]
+[ext_resource type="PackedScene" uid="uid://c8gsvgtxhr70p" path="res://fade_trans.tscn" id="4_y1682"]
 
 [node name="pause" type="Control" unique_id=1427835890]
 process_mode = 3

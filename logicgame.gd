@@ -20,7 +20,7 @@ var enemy_queen_scene = preload("res://Queen.tscn")
 @onready var wave_label = $"../CanvasLayer/WaveLabel"
 @onready var turn_label = $"../CanvasLayer/TurnLabel"
 var dragon_res = load("res://boss_dragon.tscn")
-var boss = dragon_res.instantiate()
+var boss: Node2D
 var current_turn = 1
 enum Command { ATTACK, DEFEND, IDLE }
 var current_command = Command.IDLE
@@ -30,6 +30,9 @@ var piece_layer: Node2D
 var all_pieces = []
 var selected_piece = null
 var is_player_turn = true
+var is_resolving_turn: bool = false
+var game_finished: bool = false
+var wave_resources_backup: Dictionary = {}
 var board_origin = Vector2(450, 250)
 var cell_size = 80
 var player_unit
@@ -46,7 +49,6 @@ func _ready():
 	piece_layer = Node2D.new()
 	piece_layer.name = "PieceLayer"
 	add_child(piece_layer)
-	backup_player_pieces()
 	if Global.current_wave == 1:
 		SoundManager.play_bgm(SoundManager.bgm_wave1)
 	if Global.is_continuing == true:
@@ -69,6 +71,13 @@ func count_enemies_alive() -> int:
 			enemy_count += 1
 	return enemy_count
 func transition_to_next_wave():
+	_clear_wave_effects()
+	force_release_all_grabs()
+	Global.has_casted_spell = false
+	has_moved_main_piece = false
+	selected_piece = null
+	clear_highlights()
+	%ClosedScrollButton.show()
 	Global.current_wave += 1
 	current_turn = 1
 	if wave_label: wave_label.text = "Wave: " + str(Global.current_wave)
@@ -96,7 +105,19 @@ func transition_to_next_wave():
 	var current_pawns = []
 	var king_piece = null
 	for p in all_pieces:
-		if is_instance_valid(p) and p.team == 1:
+		if is_instance_valid(p) and p.team == 1 and p is Piece:
+			p.active_buffs.clear()
+			p.stun_turns = 0
+			p.root_turns = 0
+			p.damage_reduction_rate = 0.0
+			if is_instance_valid(p.current_wind_visual):
+				p.current_wind_visual.queue_free()
+				p.current_wind_visual = null
+			p.is_charging = false
+			p.has_moved = false
+			p.attacks_used_this_turn = 0
+			if p.has_node("ShieldAnim"):
+				p.get_node("ShieldAnim").hide()
 			if "King" in p.name:
 				king_piece = p
 			else:
@@ -106,22 +127,17 @@ func transition_to_next_wave():
 			var p = current_pawns[i]
 			p.grid_pos = Vector2i(i, 6)
 			p.position = grid_to_pixel(p.grid_pos)
-			if "hp" in p:
-				p.hp += 30
-				if p.has_node("HealthBar"):
-					var bar = p.get_node("HealthBar")
-					bar.max_value = max(bar.max_value, p.hp)
-					bar.value = p.hp
+			p.heal(30)
 		else:
 			var new_pawn = player_pawn_scene.instantiate()
 			new_pawn.team = 1
 			piece_layer.add_child(new_pawn)
 			all_pieces.append(new_pawn)
-			new_pawn.set("hp", 20)
+			new_pawn.current_health = 20
 			new_pawn.grid_pos = Vector2i(i, 6)
 			new_pawn.position = grid_to_pixel(new_pawn.grid_pos)
 			if new_pawn.has_node("HealthBar"):
-				new_pawn.get_node("HealthBar").max_value = 50
+				new_pawn.get_node("HealthBar").max_value = new_pawn.max_health
 				new_pawn.get_node("HealthBar").value = 20
 	if is_instance_valid(king_piece):
 		king_piece.grid_pos = Vector2i(3, 7)
@@ -149,17 +165,17 @@ func transition_to_next_wave():
 						if child.sprite_frames.has_animation("idle_down"):
 							child.play("idle_down")
 	backup_player_pieces()
-func check_and_trigger_next_wave():
-	if count_enemies_alive() <= 0:
-		if Global.current_wave >= max_waves:
-			SoundManager.stop_bgm()
-			SoundManager.play_sound(SoundManager.sfx_victory)
-			win_screen.show()
-			get_tree().paused = true
-		else:
-			transition_to_next_wave()
-	get_tree().paused = false
-	force_release_all_grabs()
+func check_and_trigger_next_wave() -> void:
+	if game_finished or count_enemies_alive() > 0:
+		return
+	if Global.current_wave >= max_waves:
+		game_finished = true
+		SoundManager.stop_bgm()
+		SoundManager.play_sound(SoundManager.sfx_victory)
+		win_screen.show()
+		get_tree().paused = true
+	else:
+		await transition_to_next_wave()
 func spawn_initial_army():
 	if Global.current_wave == 1:
 		for i in range(8):
@@ -222,6 +238,8 @@ func spawn_enemy_wave():
 	for data in wave_setup:
 		if data["scene"] == null: continue
 		var enemy = data["scene"].instantiate()
+		# Unique readable names preserve the existing name-based AI dispatch.
+		enemy.name = "%s_%d" % [data["scene"].resource_path.get_file().get_basename(), all_pieces.size()]
 		enemy.team = 2
 		piece_layer.add_child(enemy)
 		all_pieces.append(enemy)
@@ -229,6 +247,7 @@ func spawn_enemy_wave():
 		if has_method("grid_to_pixel"):
 			enemy.global_position = grid_to_pixel(enemy.grid_pos)
 func spawn_final_boss():
+	boss = dragon_res.instantiate()
 	boss.hp = 1000
 	boss.grid_pos = Vector2i(3, 0)
 	boss.position = grid_to_pixel(boss.grid_pos)
@@ -261,29 +280,13 @@ func create_piece(grid_pos: Vector2i, team: int, scene: PackedScene):
 		if new_unit.has_node("HealthBar"):
 			new_unit.get_node("HealthBar").modulate = Color(1, 0, 0)
 	all_pieces.append(new_unit)
-func deal_damage(unit, amount):
-	if not is_instance_valid(unit): return
-	unit.current_health -= amount
-	if unit.has_node("HealthBar"):
-		unit.get_node("HealthBar").value = unit.current_health
-	if unit.current_health <= 0:
-		if "King" in unit.name:
-			show_lose_screen()
-		else:
-			for p in all_pieces:
-				if is_instance_valid(p):
-					if p.get("grabbed_by") == unit or p == unit.get("grabbed_by"):
-						p.set("is_grabbed", false)
-						p.set("grabbed_by", null)
-						p.z_index = 0
-						if "grid_pos" in p and p.has_method("grid_to_pixel"):
-							p.position = grid_to_pixel(p.grid_pos)
-						if p.has_method("update_visuals"):
-							p.update_visuals()
-			all_pieces.erase(unit)
-			unit.queue_free()
+func deal_damage(unit, amount: float) -> void:
+	if not is_instance_valid(unit) or unit.is_queued_for_deletion():
+		return
+	if unit.has_method("take_damage"):
+		unit.take_damage(amount)
 func _input(event):
-	if has_moved_main_piece: return
+	if is_resolving_turn or game_finished or has_moved_main_piece: return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var click_pos = get_global_mouse_position()
 		var clicked_grid = calculate_grid_position(click_pos)
@@ -334,28 +337,25 @@ func find_my_king(my_team: int):
 	return null
 func queen_grab_counter(queen):
 	var grabber = queen.grabbed_by
-	if is_instance_valid(grabber):
-		var aim_dir = grabber.grid_pos - queen.grid_pos
-		var sprite = queen.get_node_or_null("Sprite2D")
-		if sprite:
-			if abs(aim_dir.x) > abs(aim_dir.y):
-				sprite.frame = 1 if aim_dir.x > 0 else 2
-			else:
-				sprite.frame = 0 if aim_dir.y > 0 else 3
-				
-	var target_to_hit = queen.grabbed_by
-	if not is_instance_valid(target_to_hit): return
-	var dir_to_grabber = target_to_hit.grid_pos - queen.grid_pos
-	var side_dirs = [
-		Vector2i(-dir_to_grabber.y, dir_to_grabber.x),
-		Vector2i(dir_to_grabber.y, -dir_to_grabber.x)
-	]
-	deal_damage(target_to_hit, 35)
-	for side in side_dirs:
-		var side_pos = target_to_hit.grid_pos + side
-		var side_unit = get_piece_at(side_pos)
-		if side_unit and side_unit.team != queen.team:
-			deal_damage(side_unit, 35)
+	if not _is_living_target(grabber):
+		return
+	var aim_dir = grabber.grid_pos - queen.grid_pos
+	var sprite = queen.get_node_or_null("Sprite2D")
+	if sprite:
+		if abs(aim_dir.x) > abs(aim_dir.y):
+			sprite.frame = 1 if aim_dir.x > 0 else 2
+		else:
+			sprite.frame = 0 if aim_dir.y > 0 else 3
+	while _is_living_target(queen.grabbed_by) and _begin_piece_attack(queen):
+		var target_to_hit = queen.grabbed_by
+		var dir_to_grabber = target_to_hit.grid_pos - queen.grid_pos
+		var side_dirs = [Vector2i(-dir_to_grabber.y, dir_to_grabber.x), Vector2i(dir_to_grabber.y, -dir_to_grabber.x)]
+		var target_pos: Vector2i = target_to_hit.grid_pos
+		deal_damage(target_to_hit, 35)
+		for side in side_dirs:
+			var side_unit = get_piece_at(target_pos + side)
+			if _is_living_target(side_unit) and side_unit.team != queen.team:
+				deal_damage(side_unit, 35)
 func find_queen_ranged_target(queen):
 	var directions = [
 		Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT,
@@ -376,6 +376,8 @@ func find_queen_ranged_target(queen):
 				break
 	return closest_target
 func _on_attack_pressed():
+	if is_resolving_turn or game_finished:
+		return
 	SoundManager.play_sound(SoundManager.sfx_attack)
 	if current_command == Command.ATTACK:
 		current_command = Command.IDLE
@@ -386,6 +388,8 @@ func _on_attack_pressed():
 		btn_defend.modulate = Color(1, 1, 1)
 		Global.tutorial_attack_performed.emit()
 func _on_defend_pressed():
+	if is_resolving_turn or game_finished:
+		return
 	SoundManager.play_sound(SoundManager.sfx_defend)
 	if current_command == Command.DEFEND:
 		current_command = Command.IDLE
@@ -394,76 +398,58 @@ func _on_defend_pressed():
 		current_command = Command.DEFEND
 		btn_defend.modulate = Color(0.5, 0.5, 1)
 		btn_attack.modulate = Color(1, 1, 1)
-func _on_end_turn_pressed():
+func _on_end_turn_pressed() -> void:
+	if is_resolving_turn or game_finished or get_tree().paused:
+		return
+	is_resolving_turn = true
+	is_player_turn = false
 	SoundManager.play_sound(SoundManager.sfx_end_turn)
-	for p in all_pieces:
-		if is_instance_valid(p):
-			if "stun_turns" in p and p.stun_turns > 0:
-				p.stun_turns -= 1
-		if "root_turns" in p and p.root_turns > 0:
-			p.root_turns -= 1
-		var s_turns = p.stun_turns if "stun_turns" in p else 0
-		var r_turns = p.root_turns if "root_turns" in p else 0
-		if s_turns <= 0 and r_turns <= 0:
-			if "current_wind_visual" in p:
-				var wind_visual = p.current_wind_visual
-				if is_instance_valid(wind_visual):
-					wind_visual.queue_free()
-				p.current_wind_visual = null
-	process_all_tile_effects()
-	for x in range(8):
-		for y in range(8):
-			var pos = Vector2i(x, y)
-			var unit = get_piece_at(pos)
-			if unit != null and unit.has_method("on_turn_end"):
-				unit.on_turn_end()
-	move_team_logic(1)
-	await get_tree().create_timer(0.3).timeout
-	move_team_logic(2)
-	await get_tree().create_timer(0.2).timeout
-	for p in all_pieces:
-		if is_instance_valid(p):
-			check_and_execute_grab(p)
-	execute_all_combat_logic()
-	for p in all_pieces:
-		if is_instance_valid(p):
+	var turn_pieces: Array = all_pieces.duplicate()
+	if not game_finished:
+		move_team_logic(1)
+		await get_tree().create_timer(0.3).timeout
+	if not game_finished:
+		move_team_logic(2)
+		await get_tree().create_timer(0.2).timeout
+	if not game_finished:
+		for p in all_pieces.duplicate():
+			if is_instance_valid(p) and not p.is_queued_for_deletion():
+				check_and_execute_grab(p)
+		execute_all_combat_logic()
+	# One tile phase after actions; fog/shields remain active through combat.
+	if not game_finished:
+		process_all_tile_effects()
+	for p in turn_pieces:
+		if is_instance_valid(p) and not p.is_queued_for_deletion():
+			if p.has_method("on_turn_end"):
+				p.on_turn_end()
 			if "has_moved" in p:
 				p.has_moved = false
 	has_moved_main_piece = false
 	selected_piece = null
-	current_turn += 1
-	if turn_label:
-		turn_label.text = "Turn: " + str(current_turn)
-	Global.has_casted_spell = false
-	%ClosedScrollButton.show()
-	process_ammo_reloads()
-	if count_enemies_alive() <= 0:
-		check_and_trigger_next_wave()
-	process_all_tile_effects()
-	var pieces_to_remove = []
-	for p in all_pieces:
-		if is_instance_valid(p) and "EarthBlock" in p.name:
-			if "duration" in p:
+	clear_highlights()
+	if not game_finished:
+		current_turn += 1
+		if turn_label:
+			turn_label.text = "Turn: " + str(current_turn)
+		Global.has_casted_spell = false
+		%ClosedScrollButton.show()
+		process_ammo_reloads()
+		for p in all_pieces.duplicate():
+			if is_instance_valid(p) and "EarthBlock" in p.name:
 				p.duration -= 1
-				print("[Khối Đất] Thời gian còn: ", p.duration, " lượt")
 				if p.duration <= 0:
-					print("[Khối Đất] Tường đã sụp đổ!")
-					pieces_to_remove.append(p)
+					kill_piece(p)
+		if count_enemies_alive() == 0:
+			await check_and_trigger_next_wave()
+	is_resolving_turn = false
+	is_player_turn = not game_finished
 	Global.tutorial_end_turn_pressed.emit()
-	for p in pieces_to_remove:
-		all_pieces.erase(p)
-		p.queue_free()
 func execute_all_combat_logic():
-	for p in all_pieces:
-		if not is_instance_valid(p): continue
-		
-		if is_tile_foggy(p.grid_pos):
-			print(p.name, " đang ở trong Sương Mù, mất lượt tấn công/grab!")
-			continue
-		if "stun_turns" in p and p.stun_turns > 0:
-			continue
-	for p in all_pieces:
-		if not is_instance_valid(p): continue
+	for p in all_pieces.duplicate():
+		if game_finished: return
+		if not is_instance_valid(p) or p.is_queued_for_deletion(): continue
+		if is_tile_foggy(p.grid_pos) or ("stun_turns" in p and p.stun_turns > 0): continue
 		if p.is_grabbed:
 			var p_name = p.name.to_lower()
 			if "queen" in p_name:
@@ -473,7 +459,7 @@ func execute_all_combat_logic():
 			elif "bishop" in p_name:
 				execute_bishop_logic(p)
 			else:
-				if is_instance_valid(p.grabbed_by):
+				while _is_living_target(p.grabbed_by) and _begin_piece_attack(p):
 					if p.has_method("play_attack_animation"):
 						p.play_attack_animation(p.grabbed_by.grid_pos)
 					deal_damage(p.grabbed_by, 10)
@@ -482,27 +468,20 @@ func execute_all_combat_logic():
 			if "rook" in p_name:
 				execute_rook_logic(p)
 			elif "bishop" in p_name:
-				execute_bishop_logic(p)
+				execute_bishop_logic(p, false)
+
+func _is_living_target(target) -> bool:
+	return is_instance_valid(target) and not target.is_queued_for_deletion()
+
+func _begin_piece_attack(piece: Piece) -> bool:
+	if game_finished or not _is_living_target(piece) or is_tile_foggy(piece.grid_pos):
+		return false
+	return piece.try_begin_attack()
 func move_team_logic(team_num: int):
-	for p in all_pieces:
-		if not is_instance_valid(p) or p.team != team_num: continue
-		var is_stunned = "stun_turns" in p and p.stun_turns > 0
-		var is_rooted = "root_turns" in p and p.root_turns > 0
-		if is_stunned or is_rooted:
-			var reason = "Choáng (Gió)" if is_stunned else "Trói chân (Đầm lầy)"
-			print("Lính ", p.name, " đang bị ", reason, " -> AI bỏ qua di chuyển!")
-			if is_stunned:
-				p.stun_turns -= 1
-				if p.stun_turns <= 0:
-					var wind_visual = p.get("current_wind_visual")
-					if is_instance_valid(wind_visual):
-						wind_visual.queue_free()
-						p.set("current_wind_visual", null)
-			if is_rooted:
-				p.root_turns -= 1
-			continue
-	for p in all_pieces:
-		if not is_instance_valid(p) or p.team != team_num: continue
+	for p in all_pieces.duplicate():
+		if game_finished: return
+		if not is_instance_valid(p) or p.is_queued_for_deletion() or p.team != team_num: continue
+		if ("stun_turns" in p and p.stun_turns > 0) or ("root_turns" in p and p.root_turns > 0): continue
 		if p.get("is_grabbed") == true:
 			if team_num == 1 and current_command == Command.DEFEND:
 				force_release_all_grabs(p) 
@@ -597,17 +576,17 @@ func execute_queen_logic(queen):
 	if queen.is_reloading:
 		return
 	var target = find_queen_ranged_target(queen)
-	if target:
+	while _is_living_target(target) and queen.current_ammo > 0 and not queen.is_reloading and _begin_piece_attack(queen):
 		create_projectile_effect(queen.global_position, target.global_position)
 		deal_damage(target, 25)
-		
 		queen.current_ammo -= 1
 		if queen.has_node("AmmoBar"):
 			queen.get_node("AmmoBar").value = queen.current_ammo
-			
 		if queen.current_ammo <= 0:
 			queen.is_reloading = true
 			queen.reload_turns_left = 2
+		# Each shot requires a live target and spends a real round of ammunition.
+		target = find_queen_ranged_target(queen)
 func get_surrounding_cells(pos: Vector2i, dist: int) -> Array:
 	var cells = []
 	for x in range(-dist, dist + 1):
@@ -616,7 +595,9 @@ func get_surrounding_cells(pos: Vector2i, dist: int) -> Array:
 			var c = pos + Vector2i(x, y)
 			if is_within_board(c): cells.append(c)
 	return cells
-func execute_rook_attack(rook, target_unit):
+func execute_rook_attack(rook, target_unit) -> bool:
+	if not _is_living_target(target_unit) or not _begin_piece_attack(rook):
+		return false
 	var dir = (target_unit.grid_pos - rook.grid_pos)
 	var forward = Vector2i(sign(dir.x), sign(dir.y))
 	var side = Vector2i(-forward.y, forward.x)
@@ -637,6 +618,11 @@ func execute_rook_attack(rook, target_unit):
 		var unit = get_piece_at(s_pos)
 		if unit and unit.team != rook.team:
 			deal_damage(unit, 10)
+	return true
+
+func _apply_rook_recoil(rook, forward: Vector2i) -> void:
+	if game_finished or not _is_living_target(rook):
+		return
 	var back_pos = rook.grid_pos - forward
 	
 	if not is_within_board(back_pos):
@@ -650,42 +636,51 @@ func execute_rook_attack(rook, target_unit):
 func execute_rook_logic(rook):
 	if not rook.is_charging:
 		return
-		
 	if rook.has_meta("just_charged") and rook.get_meta("just_charged") == true:
 		rook.set_meta("just_charged", false)
 		return
-		
-	var directions = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
-	
-	for dir in directions:
-		for i in range(1, 4):
-			var check_pos = rook.grid_pos + (dir * i)
-			
-			if not is_within_board(check_pos):
-				break
-				
-			var target = get_piece_at(check_pos)
-			if target:
-				if target.team != rook.team:
-					execute_rook_attack(rook, target)
-					rook.is_charging = false
-					if rook.has_method("update_visuals"):
-						rook.update_visuals()
-					return
-				else:
-					break
-
+	var target = _find_rook_target(rook)
+	if target != null:
+		var recoil_dir: Vector2i = (target.grid_pos - rook.grid_pos).sign()
+		var attacked: bool = false
+		while _is_living_target(target) and execute_rook_attack(rook, target):
+			attacked = true
+			target = _find_rook_target(rook)
+		if attacked:
+			rook.is_charging = false
+			if rook.has_method("update_visuals"):
+				rook.update_visuals()
+			# Volley count changes; the normal recoil movement happens only once.
+			_apply_rook_recoil(rook, recoil_dir)
+		return
 	var best_target = find_best_target(rook)
 	if best_target:
 		var next_step = get_next_step_towards(rook.grid_pos, best_target.grid_pos)
 		if is_cell_vacant(next_step):
 			move_piece(rook, next_step)
 
+func _find_rook_target(rook):
+	for dir in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
+		for i in range(1, 4):
+			var pos: Vector2i = rook.grid_pos + dir * i
+			if not is_within_board(pos):
+				break
+			var target = get_piece_at(pos)
+			if target != null:
+				if _is_living_target(target) and target.team != rook.team:
+					return target
+				break
+	return null
 func execute_knight_logic(knight):
+	if knight.attacks_used_this_turn >= knight.get_attack_limit():
+		return
 	if knight.is_grabbed:
 		var grabber = knight.grabbed_by
 		if is_instance_valid(grabber):
-			deal_damage(grabber, 15)
+			while _is_living_target(grabber) and _begin_piece_attack(knight):
+				deal_damage(grabber, 15)
+			if not _is_living_target(grabber):
+				return
 			
 			var push_dir = (grabber.grid_pos - knight.grid_pos).sign()
 			
@@ -715,7 +710,12 @@ func execute_knight_logic(knight):
 	if target:
 		var diff = target.grid_pos - knight.grid_pos
 		if (abs(diff.x) == 2 and abs(diff.y) == 1) or (abs(diff.x) == 1 and abs(diff.y) == 2):
-			deal_damage(target, 30)
+			var attacked: bool = false
+			while _is_living_target(target) and _begin_piece_attack(knight):
+				deal_damage(target, 30)
+				attacked = true
+			if not attacked or game_finished:
+				return
 			
 			var retreat_dir = (knight.grid_pos - target.grid_pos).sign()
 			var safe_pos = knight.grid_pos + (retreat_dir * 2)
@@ -772,11 +772,16 @@ func find_safest_pos(piece):
 					
 	return best_pos
 
-func execute_bishop_logic(bishop):
+func execute_bishop_logic(bishop, allow_movement: bool = true):
+	if bishop.attacks_used_this_turn >= bishop.get_attack_limit():
+		return
 	if bishop.is_grabbed:
 		var grabber = bishop.grabbed_by
 		if is_instance_valid(grabber):
-			deal_damage(grabber, 10)
+			while _is_living_target(grabber) and _begin_piece_attack(bishop):
+				deal_damage(grabber, 10)
+			if not _is_living_target(grabber):
+				return
 			
 			var push_dir = (grabber.grid_pos - bishop.grid_pos).sign()
 			
@@ -801,8 +806,9 @@ func execute_bishop_logic(bishop):
 			var unit = get_piece_at(check_pos)
 			if unit:
 				if unit.team != bishop.team:
-					create_projectile_effect(bishop.global_position, unit.global_position)
-					deal_damage(unit, 35)
+					while _is_living_target(unit) and _begin_piece_attack(bishop):
+						create_projectile_effect(bishop.global_position, unit.global_position)
+						deal_damage(unit, 35)
 					attacked = true
 					
 					var csprite = bishop.get_node_or_null("Sprite2D")
@@ -815,6 +821,8 @@ func execute_bishop_logic(bishop):
 				
 		if attacked: return
 
+	if not allow_movement:
+		return
 	var target = find_best_target(bishop)
 	if not target: return
 	
@@ -883,6 +891,7 @@ func triple_fireball():
 				var unit = find_unit_at(center + Vector2i(x, y))
 				if unit: deal_damage(unit, 15)
 func check_and_execute_grab(pawn):
+	if pawn.is_queued_for_deletion() or ("stun_turns" in pawn and pawn.stun_turns > 0) or is_tile_foggy(pawn.grid_pos): return
 	if "King" in pawn.name or "EarthBlock" in pawn.name: return
 	if pawn.is_grabbed: return
 	
@@ -941,17 +950,20 @@ func force_release_all_grabs(piece = null):
 				p.position = grid_to_pixel(p.grid_pos)
 			if p.has_method("update_visuals"):
 				p.update_visuals()
-func kill_piece(piece):
+func kill_piece(piece) -> void:
+	if not is_instance_valid(piece) or piece.is_queued_for_deletion():
+		return
+	if "King" in piece.name:
+		show_lose_screen()
+		return
 	for p in all_pieces:
-		if is_instance_valid(p) and p.grabbed_by == piece:
-			p.is_grabbed = false
-			p.grabbed_by = null
-			if p.has_method("update_visuals"): p.update_visuals()
-	if piece in all_pieces:
-		all_pieces.erase(piece)
-	
+		if is_instance_valid(p) and p.get("grabbed_by") == piece:
+			p.set("is_grabbed", false)
+			p.set("grabbed_by", null)
+			if p.has_method("update_visuals"):
+				p.update_visuals()
+	all_pieces.erase(piece)
 	piece.queue_free()
-
 func apply_knockback(unit, push_dir: Vector2i, max_dist: int, impact_damage: int = 0) -> bool:
 	if not is_instance_valid(unit): return false
 	
@@ -1344,7 +1356,7 @@ func execute_new_fire_wind_spell(target_grids: Array, directions: Array):
 		add_tile_effect(grid_pos, "firestorm_tile", duration, spread_dirs, true)
 func execute_new_water_earth_spell(target_grids: Array, directions: Array):
 	print("[Đầm Lầy] Kích hoạt vũng lầy!")
-	Global.paper_count += 1
+	Global.add_paper(1)
 	var duration = 10
 	var dir_count = directions.size()
 	if dir_count > 1: duration -= (dir_count - 1)
@@ -1355,7 +1367,7 @@ func execute_new_water_earth_spell(target_grids: Array, directions: Array):
 		add_tile_effect(grid_pos, "swamp_tile", duration, directions, true)
 func execute_new_fire_earth_spell(target_grids: Array, directions: Array):
 	print("[Dung Nham] Kích hoạt dòng chảy!")
-	Global.paper_count += 1
+	Global.add_paper(1)
 	var duration = 10
 	var dir_count = directions.size()
 	if dir_count > 1: duration -= (dir_count - 1)
@@ -1399,7 +1411,7 @@ func execute_new_wind_earth_spell(target_grids: Array, directions: Array, aoe_va
 	for grid in block_grids:
 		if not is_within_board(grid): continue
 		if not is_cell_vacant(grid):
-			Global.paper_count += 1
+			Global.add_paper(1)
 			print("Ô có người! Hoàn 1 giấy.")
 			continue
 		spawn_earth_block(grid, final_hp, duration)
@@ -1407,7 +1419,7 @@ func execute_new_wind_earth_spell(target_grids: Array, directions: Array, aoe_va
 			var adj_grid = grid + adj
 			var unit = get_piece_at(adj_grid)
 			if is_instance_valid(unit) and unit.get("team") == 1:
-				Global.paper_count += 1
+				Global.add_paper(1)
 				print("Buff đồng minh tại ", adj_grid, ". Nhận 1 giấy.")
 				if unit.has_method("add_buff"):
 					unit.add_buff("damage_reduction", 0.5, duration) 
@@ -1499,6 +1511,8 @@ func apply_unit_effect(unit, effect_type: String, value: float, grid_pos: Vector
 var active_tile_effects = {} 
 
 func add_tile_effect(grid_pos: Vector2i, effect_type: String, duration: int, spread_dirs: Array = [], is_center: bool = true, is_first_spawn: bool = true):
+	if duration <= 0 or not is_within_board(grid_pos):
+		return
 	var piece = get_piece_at(grid_pos)
 	if is_instance_valid(piece):
 		var p_name = piece.name.to_lower()
@@ -1577,12 +1591,7 @@ func process_all_tile_effects():
 	for grid_pos in active_tile_effects.keys():
 		var effect = active_tile_effects[grid_pos]
 		effect["turns"] -= 1
-		if effect["turns"] <= 0: 
-			grids_to_remove.append(grid_pos)
-			continue
-		if effect.get("is_new", false):
-			effect["is_new"] = false
-			continue
+		effect["is_new"] = false
 		effect["age"] = effect.get("age", 0) + 1
 		var current_age = effect["age"]
 		match effect["type"]:
@@ -1596,7 +1605,7 @@ func process_all_tile_effects():
 				if unit: 
 					deal_damage(unit, 10.0)
 					if effect["type"] == "lava_tile" and unit.get("team") == 1:
-						Global.paper_count -= 1
+						Global.add_paper(-1)
 			"swamp_tile":
 				var unit = get_unit_at(grid_pos)
 				if is_instance_valid(unit):
@@ -1613,7 +1622,7 @@ func process_all_tile_effects():
 					if unit.get("team") == 1:
 						Global.add_ink(50)
 						if "King" in unit.name or "Player" in unit.name:
-							Global.paper_count -= 1
+							Global.add_paper(-1)
 				if effect.get("is_center", false):
 					for dir in effect.get("spread_dirs", []):
 						var next_pos = grid_pos + dir
@@ -1666,20 +1675,9 @@ func process_all_tile_effects():
 								"turns": effect["turns"], 
 								"dirs": [dir] 
 							})
-							apply_firestorm_impact(next_pos, base_dmg)
 							if not grids_to_remove.has(center_pos_i):
 								grids_to_remove.append(center_pos_i)
-				if effect.get("is_center", false):
-					for dir in effect.get("spread_dirs", []):
-						var next_pos = center_pos_i + dir
-						if is_within_board(next_pos) and not active_tile_effects.has(next_pos):
-							new_firestorm_tiles.append({
-								"pos": next_pos,
-								"turns": effect["turns"], 
-								"dirs": [dir] 
-							})
-							if not grids_to_remove.has(center_pos_i):
-								grids_to_remove.append(center_pos_i)
+
 		if effect["type"] in ["lava_tile", "swamp_tile"] and effect.get("is_center", false):
 			for dir in effect.get("spread_dirs", []):
 				var is_orthogonal = (abs(dir.x) + abs(dir.y) == 1)
@@ -1696,16 +1694,18 @@ func process_all_tile_effects():
 							"turns": effect["turns"], 
 							"dirs": [] 
 						})
+		if effect["turns"] <= 0 and not grids_to_remove.has(grid_pos):
+			grids_to_remove.append(grid_pos)
 	for pos in grids_to_remove:
 		_remove_tile_effect(pos)
 		
 	for puddle in new_puddle_tiles:
-		add_tile_effect(puddle["pos"], puddle["type"], puddle["turns"], puddle["dirs"], false)
+		add_tile_effect(puddle["pos"], puddle["type"], puddle["turns"], puddle["dirs"], false, false)
 		
 	for rain in new_rain_tiles:
-		add_tile_effect(rain["pos"], "rain_tile", rain["turns"], rain["dirs"], true)
+		add_tile_effect(rain["pos"], "rain_tile", rain["turns"], rain["dirs"], true, false)
 	for storm in new_firestorm_tiles:
-		add_tile_effect(storm["pos"], "firestorm_tile", storm["turns"], storm["dirs"], true)
+		add_tile_effect(storm["pos"], "firestorm_tile", storm["turns"], storm["dirs"], true, false)
 	for fog in new_fog_tiles:
 		add_tile_effect(fog["pos"], "fog_tile", fog["turns"], fog["dirs"], true, fog.get("is_first_spawn", true))
 	
@@ -1824,7 +1824,7 @@ func apply_firestorm_impact(center_pos_i: Vector2i, base_dmg: float):
 func backup_player_pieces():
 	player_pieces_backup.clear()
 	for p in all_pieces:
-		if is_instance_valid(p) and p.team == 1:
+		if is_instance_valid(p) and p.team == 1 and p is Piece:
 			var data = {
 				"scene_path": p.scene_file_path, 
 				"grid_pos": p.grid_pos,
@@ -1833,15 +1833,33 @@ func backup_player_pieces():
 			}
 			player_pieces_backup.append(data)
 	print("Đã lưu trạng thái lính! Số lượng: ", player_pieces_backup.size())
+	wave_resources_backup = Global.get_resources()
 	Global.save_game(player_pieces_backup)
 func _on_chơi_lại_pressed():
-	Global.current_wave = 1
+	Global.reset_run()
 	get_tree().paused = false
 	get_tree().reload_current_scene()
 func _on_chơi_lại_2_pressed() :
 	restart_current_wave()
 func restart_current_wave():
+	if is_resolving_turn:
+		return
+	_clear_wave_effects()
 	force_release_all_grabs()
+	game_finished = false
+	is_player_turn = true
+	has_moved_main_piece = false
+	current_command = Command.IDLE
+	btn_attack.modulate = Color.WHITE
+	btn_defend.modulate = Color.WHITE
+	Global.restore_resources(wave_resources_backup)
+	var magic = get_parent().get_node("MagicDrawingSystem")
+	# Continue runs from this node's _ready, before the sibling UI is ready.
+	if magic.is_node_ready():
+		magic.clear_all_inputs()
+	magic.hide()
+	%ClosedScrollButton.show()
+	clear_highlights()
 	
 	current_turn = 1
 	if turn_label: 
@@ -1871,9 +1889,13 @@ func restart_current_wave():
 				p.update_visuals()
 	spawn_enemy_wave()
 	if lose_screen: lose_screen.hide()
+	if win_screen: win_screen.hide()
 	set("can_interact", true)
 	get_tree().paused = false
 func show_lose_screen():
+	if game_finished:
+		return
+	game_finished = true
 	print("Vua đã băng hà! GAME OVER!")
 	SoundManager.stop_bgm()
 	SoundManager.play_sound(SoundManager.sfx_defeat)
@@ -1887,4 +1909,12 @@ func show_lose_screen():
 
 func restore_from_save():
 	player_pieces_backup = Global.saved_pieces.duplicate(true)
+	wave_resources_backup = Global.saved_resources.duplicate(true)
 	restart_current_wave()
+
+func _clear_wave_effects() -> void:
+	for pos in active_tile_effects.keys():
+		_remove_tile_effect(pos)
+	for p in all_pieces.duplicate():
+		if is_instance_valid(p) and "EarthBlock" in p.name:
+			kill_piece(p)

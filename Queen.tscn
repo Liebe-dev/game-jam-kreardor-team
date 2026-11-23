@@ -6,13 +6,17 @@
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6r3y7"]
 bg_color = Color(0.67800784, 0.60354114, 0, 1)
 
-[node name="Pawn" unique_id=271536388 instance=ExtResource("1_wkdk7")]
+[node name="Queen" unique_id=271536388 instance=ExtResource("1_wkdk7")]
 max_health = 300
 damage = 35
 
-[node name="Sprite2D" parent="." index="0" unique_id=286426425]
+[node name="anim_sprite" parent="." index="0" unique_id=1810919822]
+visible = false
+
+[node name="Sprite2D" type="Sprite2D" parent="." index="3" unique_id=286426425]
 position = Vector2(-5, -47)
 texture = ExtResource("2_6r3y7")
+hframes = 4
 frame = 3
 
 [node name="AmmoBar" type="ProgressBar" parent="." index="2" unique_id=2002497187]

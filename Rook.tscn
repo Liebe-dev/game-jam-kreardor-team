@@ -6,12 +6,16 @@
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tl03q"]
 bg_color = Color(0.67800784, 0.60354114, 0, 1)
 
-[node name="Pawn" unique_id=271536388 instance=ExtResource("1_k1fmh")]
+[node name="Rook" unique_id=271536388 instance=ExtResource("1_k1fmh")]
 max_health = 200
 
-[node name="Sprite2D" parent="." index="0" unique_id=286426425]
+[node name="anim_sprite" parent="." index="0" unique_id=1810919822]
+visible = false
+
+[node name="Sprite2D" type="Sprite2D" parent="." index="3" unique_id=286426425]
 position = Vector2(-7, -47)
 texture = ExtResource("2_tl03q")
+hframes = 4
 frame = 3
 
 [node name="AmmoBar" type="ProgressBar" parent="." index="2" unique_id=465388895]

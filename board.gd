@@ -4,9 +4,11 @@ extends Node2D
 func _ready():
 	magic_system.scroll_closed.connect(_on_magic_scroll_closed)
 func _on_magic_scroll_closed():
-	if not Global.has_casted_spell:
+	if magic_system.can_prepare_spell():
 		closed_scroll_btn.show()
 func _on_closed_scroll_button_pressed():
+	if not magic_system.can_prepare_spell():
+		return
 	SoundManager.play_sound(SoundManager.sfx_open_scroll)
 	closed_scroll_btn.hide()
 	magic_system.show_scroll()

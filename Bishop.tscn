@@ -3,13 +3,17 @@
 [ext_resource type="PackedScene" uid="uid://qtgv1mmnvanv" path="res://Pawn.tscn" id="1_n4auy"]
 [ext_resource type="Texture2D" uid="uid://cyaime1fw8wgx" path="res://bishop_sheet.png" id="2_wqw4l"]
 
-[node name="Pawn" unique_id=271536388 instance=ExtResource("1_n4auy")]
+[node name="Bishop" unique_id=271536388 instance=ExtResource("1_n4auy")]
 max_health = 75
 damage = 35
 
-[node name="Sprite2D" parent="." index="0" unique_id=286426425]
+[node name="anim_sprite" parent="." index="0" unique_id=1810919822]
+visible = false
+
+[node name="Sprite2D" type="Sprite2D" parent="." index="3" unique_id=286426425]
 position = Vector2(4, -47)
 texture = ExtResource("2_wqw4l")
+hframes = 4
 frame = 3
 
 [node name="HealthBar" parent="." index="1" unique_id=1792561652]

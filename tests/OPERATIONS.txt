@@ -1,0 +1,48 @@
+AutoChessto operational regression
+
+Run from PowerShell with an absolute scratch directory (outside the game checkout):
+  ./tests/run_operations.ps1 -GodotPath 'C:/path/to/Godot_console.exe' -TestDataDir 'D:/scratch/autochessto-tests'
+Use -Import for a new checkout or after changing assets. Godot 4.7.2 was used for validation.
+
+The runner uses real board/unit/spell scenes. It writes checkpoints only to the
+supplied scratch directory, never the normal player save. Runtime errors fail the
+PowerShell wrapper even when Godot itself returns exit code 0.
+
+Coverage: shared ink/paper and UI, input charges, undo, invalid/duplicate casts,
+damage and shields, status expiry, tile duration/propagation, turn reentry,
+wave healing/replacements, terrain cleanup, retry/continue/legacy saves,
+special enemy identity/sprites, wind double attacks and restrictions, all five
+wave rosters and final victory.
+
+The five-wave smoke runs six turns in each wave, then removes the remaining
+enemies with test damage to exercise automatic progression. It is NOT a normal
+winning playthrough or evidence of difficulty balance.
+
+Rules established by the fixes:
+- Input spends 20 ink per inserted character (the previous effective cost).
+  Undo clears the draft and does not refund spent ink. An unaffordable edit is
+  rejected without spending the remaining ink. Already-paid spells can cast at 0 ink.
+- A valid cast costs one paper and consumes the single cast for that turn.
+- One End Turn resolves movement/combat, then one terrain phase, then expires
+  unit buffs. A terrain duration N produces N terrain phases; placement impacts
+  remain separate. Status/shield durations are not decremented before actions.
+- Damage uses one shared unit path with shield reduction and rounds to nearest
+  integer HP once. Soldier/king/wall death consistently updates game state.
+- Surviving soldiers heal 30 (capped at max_health); replacements start at 20 HP,
+  following the values already present in the original transition code.
+- Checkpoints represent the start of a wave, including player units and resources.
+  Retry restores that snapshot and removes temporary terrain. Original two-value
+  saves still load, with starting resources because the old format stored none.
+- Special enemies retain unique readable AI names and their existing artwork.
+- Nondirectional Ventus grants a total of two actual attacks in the next resolved
+  turn, and expires at that turn's end even if no attack is possible. Reapplying
+  refreshes duration; it does not stack additional attacks. Both shots use normal
+  damage, shields and ammunition. Stun, fog, range and charge/reload still apply.
+  Extra shots do not repeat AI movement; Knight retreat and Rook recoil happen
+  once after a burst. A shared per-turn quota also prevents Bishop from attacking
+  twice just because both movement and combat phases call its behavior.
+
+No enemy rosters or authored HP/damage/spell-strength constants were retuned.
+Balance and full visual playthrough remain separate work. The regression covers
+the rules listed above; it does not assert that every spellbook description and
+every other game mechanic has been fully implemented.

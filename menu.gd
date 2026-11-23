@@ -17,7 +17,7 @@ var bg_fade_tween : Tween
 var text_fade_in_tween : Tween
 
 func _ready():
-	if FileAccess.file_exists("user://soujourn_save.dat"):
+	if FileAccess.file_exists(Global.save_path):
 		$Control/Continue.show()
 	else:
 		$Control/Continue.hide()
@@ -111,8 +111,7 @@ func _on_start_pressed() -> void:
 
 	await get_tree().process_frame 
 
-	Global.is_continuing = false 
-	Global.current_wave = 1      
+	Global.reset_run()
 	get_tree().change_scene_to_file("res://board.tscn")
 	
 

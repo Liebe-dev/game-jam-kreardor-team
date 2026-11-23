@@ -20,11 +20,13 @@ signal tutorial_spell_cast
 @warning_ignore("unused_signal")
 signal tutorial_end_turn_pressed
 var is_tutorial_done: bool = false
+const STARTING_PAPER: int = 10
+const MAX_INK: float = 1000.0
 var current_wave = 1
-var paper_count: int = 10
+var paper_count: int = STARTING_PAPER
 var has_casted_spell: bool = false
 var magic_system: Node = null
-var current_ink : float = 1000.0
+var current_ink: float = MAX_INK
 
 func convert_to_grid(pair: Array) -> Vector2i:
 	if pair.size() < 2:
@@ -46,17 +48,34 @@ func convert_to_grid(pair: Array) -> Vector2i:
 		print("[LỖI] Tọa độ không hợp lệ: ", pair)
 
 	return Vector2i(grid_x, grid_y)
-func add_paper(amount: int):
-	paper_count += amount
-	print("[Global] Đã nhận thêm ", amount, " giấy. Tổng cộng: ", paper_count)
-	if magic_system and magic_system.has_method("update_paper_ui"):
-		magic_system.update_paper_ui(paper_count)
-var max_ink: float = 1000.0
-func add_ink(amount: float):
-	current_ink = clamp(current_ink + amount, 0.0, max_ink)
-	print("[Global] Đã nhận mực. Mực hiện tại: ", current_ink)
-	if magic_system != null and magic_system.has_method("update_ui"):
+func add_paper(amount: int) -> void:
+	paper_count = maxi(0, paper_count + amount)
+	refresh_magic_ui()
+
+var max_ink: float = MAX_INK
+func add_ink(amount: float) -> void:
+	current_ink = clampf(current_ink + amount, 0.0, max_ink)
+	refresh_magic_ui()
+
+func refresh_magic_ui() -> void:
+	if is_instance_valid(magic_system):
 		magic_system.update_ui()
+
+func get_resources() -> Dictionary:
+	return {"paper": paper_count, "ink": current_ink}
+
+func restore_resources(resources: Dictionary) -> void:
+	paper_count = maxi(0, int(resources.get("paper", STARTING_PAPER)))
+	current_ink = clampf(float(resources.get("ink", MAX_INK)), 0.0, max_ink)
+	has_casted_spell = false
+	refresh_magic_ui()
+
+func reset_run() -> void:
+	current_wave = 1
+	is_continuing = false
+	saved_pieces.clear()
+	saved_resources.clear()
+	restore_resources({})
 func calculate_world_position(grid_pos: Vector2i) -> Vector2:
 	var tile_size = 120 
 	var board_offset_x = 450 
@@ -68,17 +87,36 @@ func calculate_world_position(grid_pos: Vector2i) -> Vector2:
 
 var is_continuing = false
 var saved_pieces = []
+var saved_resources: Dictionary = {}
+# Tests override only the destination; the normal player save path is unchanged.
+var save_path: String = "user://soujourn_save.dat"
 
-func save_game(pieces_backup: Array):
-	var file = FileAccess.open("user://soujourn_save.dat", FileAccess.WRITE)
-	file.store_var(current_wave) 
-	file.store_var(pieces_backup) 
-
+func save_game(pieces_backup: Array) -> void:
+	var file := FileAccess.open(save_path, FileAccess.WRITE)
+	if file == null:
+		push_warning("Could not write checkpoint: %s" % FileAccess.get_open_error())
+		return
+	file.store_var(current_wave)
+	file.store_var(pieces_backup)
+	file.store_var(get_resources())
 func load_game() -> bool:
-	if FileAccess.file_exists("user://soujourn_save.dat"):
-		var file = FileAccess.open("user://soujourn_save.dat", FileAccess.READ)
-		current_wave = file.get_var()
-		saved_pieces = file.get_var()
-		is_continuing = true
-		return true
-	return false
+	if not FileAccess.file_exists(save_path):
+		return false
+	var file := FileAccess.open(save_path, FileAccess.READ)
+	if file == null:
+		return false
+	var wave = file.get_var()
+	var pieces = file.get_var()
+	if not wave is int or wave < 1 or wave > 5 or not pieces is Array or pieces.is_empty():
+		return false
+	var resources: Dictionary = {}
+	# Old checkpoints contain only the first two values.
+	if file.get_position() < file.get_length():
+		var stored_resources = file.get_var()
+		if stored_resources is Dictionary:
+			resources = stored_resources
+	current_wave = wave
+	saved_pieces = pieces
+	saved_resources = resources
+	is_continuing = true
+	return true
