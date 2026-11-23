@@ -11,3 +11,11 @@ icon = ExtResource("2")
 title = "Ignis"
 power = 35.0
 description = "Ấn lửa: gây sát thương tại tọa độ và các hướng đã chọn."
+
+ink_cost = 70
+
+paper_cost = 1
+
+paper_reward = 0
+
+ink_reward = 0.0

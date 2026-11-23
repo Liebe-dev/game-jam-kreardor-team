@@ -9,7 +9,13 @@ id = &"earth"
 elements = PackedInt32Array(2)
 icon = ExtResource("2")
 title = "Terra"
-power = 1.0
-duration = 1
-paper_reward = 3
+power = 0.6
+duration = 2
+paper_reward = 0
 description = "Ấn đất: tạo lá chắn giảm sát thương cho mục tiêu."
+
+ink_cost = 70
+
+paper_cost = 1
+
+ink_reward = 0.0

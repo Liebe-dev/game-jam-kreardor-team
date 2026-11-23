@@ -9,6 +9,14 @@ id = &"water_wind"
 elements = PackedInt32Array(1, 3)
 icon = ExtResource("2")
 title = "Aqua+Ventus"
-duration = 6
-settings = {"multi_target_reduction": 2, "placement_heal": 20.0, "tick_heal": 50.0, "tick_ink": 50.0, "king_paper_penalty": 1, "wind_heal": 30.0}
-description = "Hợp ấn mưa: hồi phục trên ô; pháp sư đứng trên ô mất giấy. Chọn đúng một hướng để đám mây di chuyển."
+duration = 4
+settings = {"multi_target_reduction": 1, "placement_heal": 20.0, "tick_heal": 20.0, "tick_ink": 0.0, "king_paper_penalty": 0, "wind_heal": 30.0}
+description = "Hợp ấn mưa: hồi phục trên ô. Chọn đúng một hướng để đám mây di chuyển."
+
+ink_cost = 140
+
+paper_cost = 2
+
+paper_reward = 0
+
+ink_reward = 0.0

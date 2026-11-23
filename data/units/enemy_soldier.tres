@@ -5,3 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = &"enemy_soldier"
+
+max_health = 150
+
+melee_damage = 12.0

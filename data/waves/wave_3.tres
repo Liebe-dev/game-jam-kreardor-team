@@ -29,3 +29,7 @@ grid_pos = Vector2i(4, 0)
 script = ExtResource("1_wave")
 wave_index = 3
 spawns = Array[ExtResource("2_spawn")]([SubResource("spawn_0"), SubResource("spawn_1"), SubResource("spawn_2"), SubResource("spawn_3")])
+
+survivor_heal = 60
+
+replacement_health = 120

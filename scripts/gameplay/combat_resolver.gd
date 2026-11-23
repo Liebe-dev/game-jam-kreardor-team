@@ -34,7 +34,7 @@ func queen_grab_counter(queen):
 			sprite.frame = 1 if aim_dir.x > 0 else 2
 		else:
 			sprite.frame = 0 if aim_dir.y > 0 else 3
-	while _is_living_target(queen.grabbed_by) and _begin_piece_attack(queen):
+	while _is_attackable_target(queen.grabbed_by) and _begin_piece_attack(queen):
 		var target_to_hit = queen.grabbed_by
 		var dir_to_grabber = target_to_hit.grid_pos - queen.grid_pos
 		var side_dirs = [Vector2i(-dir_to_grabber.y, dir_to_grabber.x), Vector2i(dir_to_grabber.y, -dir_to_grabber.x)]
@@ -42,7 +42,7 @@ func queen_grab_counter(queen):
 		deal_damage(target_to_hit, queen.definition.melee_damage)
 		for side in side_dirs:
 			var side_unit = board.get_piece_at(target_pos + side)
-			if _is_living_target(side_unit) and side_unit.team != queen.team:
+			if _is_attackable_target(side_unit) and side_unit.team != queen.team:
 				deal_damage(side_unit, queen.definition.melee_damage)
 
 func find_queen_ranged_target(queen):
@@ -58,7 +58,7 @@ func find_queen_ranged_target(queen):
 			if not board.is_within_board(scan_pos): break
 			var unit = board.get_piece_at(scan_pos)
 			if unit:
-				if unit.team != queen.team:
+				if unit.team != queen.team and _is_attackable_target(unit):
 					if i < min_dist:
 						min_dist = i
 						closest_target = unit
@@ -78,7 +78,7 @@ func execute_all_combat_logic():
 			elif UnitDefinition.is_kind(p, UnitDefinition.Kind.BISHOP):
 				execute_bishop_logic(p)
 			else:
-				while _is_living_target(p.grabbed_by) and _begin_piece_attack(p):
+				while _is_attackable_target(p.grabbed_by) and _begin_piece_attack(p):
 					if p.has_method("play_attack_animation"):
 						attack_animation_requested.emit(p, p.grabbed_by.grid_pos)
 					deal_damage(p.grabbed_by, p.definition.melee_damage)
@@ -91,6 +91,9 @@ func execute_all_combat_logic():
 
 func _is_living_target(target) -> bool:
 	return is_instance_valid(target) and not target.is_queued_for_deletion()
+
+func _is_attackable_target(target) -> bool:
+	return _is_living_target(target) and not board.is_tile_foggy(target.grid_pos)
 
 
 func _begin_piece_attack(piece: Piece) -> bool:
@@ -204,7 +207,7 @@ func execute_queen_logic(queen):
 	if queen.is_reloading:
 		return
 	var target = find_queen_ranged_target(queen)
-	while _is_living_target(target) and queen.current_ammo > 0 and not queen.is_reloading and _begin_piece_attack(queen):
+	while _is_attackable_target(target) and queen.current_ammo > 0 and not queen.is_reloading and _begin_piece_attack(queen):
 		projectile_requested.emit(queen.global_position, target.global_position)
 		deal_damage(target, queen.definition.ranged_damage)
 		queen.current_ammo -= 1
@@ -212,7 +215,7 @@ func execute_queen_logic(queen):
 			queen.get_node("AmmoBar").value = queen.current_ammo
 		if queen.current_ammo <= 0:
 			queen.is_reloading = true
-			queen.reload_turns_left = queen.definition.reload_turns
+			queen.reload_turns_left = queen.definition.reload_turns + 1
 		# Each shot requires a live target and spends a real round of ammunition.
 		target = find_queen_ranged_target(queen)
 
@@ -226,7 +229,7 @@ func get_surrounding_cells(pos: Vector2i, dist: int) -> Array:
 	return cells
 
 func execute_rook_attack(rook, target_unit) -> bool:
-	if not _is_living_target(target_unit) or not _begin_piece_attack(rook):
+	if not _is_attackable_target(target_unit) or not _begin_piece_attack(rook):
 		return false
 	var dir = (target_unit.grid_pos - rook.grid_pos)
 	var forward = Vector2i(sign(dir.x), sign(dir.y))
@@ -240,13 +243,13 @@ func execute_rook_attack(rook, target_unit) -> bool:
 	for i in range(1, rook.definition.attack_range + 1):
 		var pos = rook.grid_pos + forward * i
 		var unit = board.get_piece_at(pos)
-		if unit and unit.team != rook.team:
+		if unit and unit.team != rook.team and _is_attackable_target(unit):
 			deal_damage(unit, rook.definition.ranged_damage)
 			apply_knockback(unit, forward, rook.definition.push_distance, rook.definition.impact_damage)
 	var sides = [rook.grid_pos + side, rook.grid_pos - side]
 	for s_pos in sides:
 		var unit = board.get_piece_at(s_pos)
-		if unit and unit.team != rook.team:
+		if unit and unit.team != rook.team and _is_attackable_target(unit):
 			deal_damage(unit, rook.definition.secondary_damage)
 	return true
 
@@ -300,7 +303,7 @@ func _find_rook_target(rook):
 				break
 			var target = board.get_piece_at(pos)
 			if target != null:
-				if _is_living_target(target) and target.team != rook.team:
+				if _is_attackable_target(target) and target.team != rook.team:
 					return target
 				break
 	return null
@@ -311,9 +314,9 @@ func execute_knight_logic(knight):
 	if knight.is_grabbed:
 		var grabber = knight.grabbed_by
 		if is_instance_valid(grabber):
-			while _is_living_target(grabber) and _begin_piece_attack(knight):
+			while _is_attackable_target(grabber) and _begin_piece_attack(knight):
 				deal_damage(grabber, knight.definition.counter_damage)
-			if not _is_living_target(grabber):
+			if not _is_attackable_target(grabber):
 				return
 
 			var push_dir = (grabber.grid_pos - knight.grid_pos).sign()
@@ -345,7 +348,7 @@ func execute_knight_logic(knight):
 		var diff = target.grid_pos - knight.grid_pos
 		if (abs(diff.x) == 2 and abs(diff.y) == 1) or (abs(diff.x) == 1 and abs(diff.y) == 2):
 			var attacked: bool = false
-			while _is_living_target(target) and _begin_piece_attack(knight):
+			while _is_attackable_target(target) and _begin_piece_attack(knight):
 				deal_damage(target, knight.definition.melee_damage)
 				attacked = true
 			if not attacked or board.game_finished:
@@ -414,9 +417,9 @@ func execute_bishop_logic(bishop, allow_movement: bool = true):
 	if bishop.is_grabbed:
 		var grabber = bishop.grabbed_by
 		if is_instance_valid(grabber):
-			while _is_living_target(grabber) and _begin_piece_attack(bishop):
+			while _is_attackable_target(grabber) and _begin_piece_attack(bishop):
 				deal_damage(grabber, bishop.definition.counter_damage)
-			if not _is_living_target(grabber):
+			if not _is_attackable_target(grabber):
 				return
 
 			var push_dir = (grabber.grid_pos - bishop.grid_pos).sign()
@@ -441,8 +444,8 @@ func execute_bishop_logic(bishop, allow_movement: bool = true):
 
 			var unit = board.get_piece_at(check_pos)
 			if unit:
-				if unit.team != bishop.team:
-					while _is_living_target(unit) and _begin_piece_attack(bishop):
+				if unit.team != bishop.team and _is_attackable_target(unit):
+					while _is_attackable_target(unit) and _begin_piece_attack(bishop):
 						projectile_requested.emit(bishop.global_position, unit.global_position)
 						deal_damage(unit, bishop.definition.ranged_damage)
 					attacked = true
@@ -544,7 +547,7 @@ func check_and_execute_grab(pawn):
 		var target_pos = pawn.grid_pos + dir
 		var target_unit = board.get_piece_at(target_pos)
 
-		if target_unit and target_unit.team != pawn.team:
+		if target_unit and target_unit.team != pawn.team and _is_attackable_target(target_unit):
 			possible_targets.append(target_unit)
 
 	if possible_targets.size() == 0: return

@@ -9,6 +9,7 @@ extends Resource
 @export var icon: Texture2D
 @export var power: float = 0.0
 @export var duration: int = 0
+@export var ink_cost: int = 70
 @export var paper_cost: int = 1
 @export var paper_reward: int = 0
 @export var ink_reward: float = 0.0
@@ -40,5 +41,5 @@ func describe() -> String:
 		lines.append("Hồi máu ô mỗi lượt: %s." % settings.tick_heal)
 	if settings.has("tick_ink"):
 		lines.append("Đồng minh trên ô nhận %s mực mỗi lượt." % settings.tick_ink)
-	lines.append("Chi phí: %d giấy, thêm mực khi nhập chú ngữ." % paper_cost)
+	lines.append("Chi phí: %d mực, %d giấy; thêm 20 mực mỗi tọa độ thứ hai hoặc hướng." % [ink_cost, paper_cost])
 	return "\n".join(lines)

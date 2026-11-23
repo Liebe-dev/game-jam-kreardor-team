@@ -13,3 +13,11 @@ power = 52.5
 duration = 2
 settings = {"placement_damage": 10.0, "tick_damage": 10.0, "wind_damage": 15.0}
 description = "Ấn hỏa gia cường: gây sát thương và để lại ô lửa."
+
+ink_cost = 120
+
+paper_cost = 2
+
+paper_reward = 0
+
+ink_reward = 0.0

@@ -9,6 +9,14 @@ id = &"wind_wind"
 elements = PackedInt32Array(3, 3)
 icon = ExtResource("2")
 title = "Ventus+Ventus"
-duration = 3
+duration = 2
 settings = {"directed_stun": 2, "push_distance": 2, "impact_damage": 15}
 description = "Ấn gió gia cường: gây choáng. Một hướng đẩy mục tiêu; nhiều hướng mở rộng vùng gây choáng."
+
+ink_cost = 130
+
+paper_cost = 2
+
+paper_reward = 0
+
+ink_reward = 0.0

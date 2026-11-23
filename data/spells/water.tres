@@ -10,5 +10,11 @@ elements = PackedInt32Array(1)
 icon = ExtResource("2")
 title = "Aqua"
 power = 50.0
-ink_reward = 250.0
+ink_reward = 0.0
 description = "Ấn nước: hồi phục sinh lực cho mục tiêu."
+
+ink_cost = 70
+
+paper_cost = 1
+
+paper_reward = 0

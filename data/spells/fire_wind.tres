@@ -9,6 +9,14 @@ id = &"fire_wind"
 elements = PackedInt32Array(0, 3)
 icon = ExtResource("2")
 title = "Ignis+Ventus"
-duration = 5
-settings = {"multi_target_reduction": 2, "placement_damage": 10.0, "tick_damage": 15.0, "wind_damage": 15.0}
+duration = 3
+settings = {"multi_target_reduction": 1, "placement_damage": 10.0, "tick_damage": 12.0, "wind_damage": 15.0}
 description = "Hợp ấn lốc lửa: tác động vùng 3×3, đẩy mục tiêu ra ngoài; bị chặn chịu thêm sát thương. Chọn đúng một hướng để lốc di chuyển."
+
+ink_cost = 160
+
+paper_cost = 2
+
+paper_reward = 0
+
+ink_reward = 0.0

@@ -6,8 +6,8 @@
 script = ExtResource("1")
 id = &"queen"
 kind = 5
-max_health = 300
-melee_damage = 35.0
-ranged_damage = 25.0
+max_health = 240
+melee_damage = 30.0
+ranged_damage = 24.0
 move_range = 8
 attack_range = 7

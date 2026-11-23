@@ -14,21 +14,11 @@ func _definition(id: StringName) -> SpellDefinition:
 func can_prepare() -> bool:
 	return not Global.has_casted_spell and not board.is_resolving_turn and not board.game_finished
 
-func pay_for_edit(previous: String, proposed: String) -> bool:
-	if not can_prepare():
-		return false
-	var prefix: int = 0
-	while prefix < mini(previous.length(), proposed.length()) and previous[prefix] == proposed[prefix]:
-		prefix += 1
-	var suffix: int = 0
-	while suffix < mini(previous.length(), proposed.length()) - prefix and previous[previous.length() - 1 - suffix] == proposed[proposed.length() - 1 - suffix]:
-		suffix += 1
-	var cost: float = (proposed.length() - prefix - suffix) * catalog.ink_cost_per_character
-	if cost > Global.current_ink:
-		return false
-	if cost > 0.0:
-		Global.add_ink(-cost)
-	return true
+func pay_for_edit(_previous: String, _proposed: String) -> bool:
+	return can_prepare()
+
+func quote_cost(definition: SpellDefinition, coordinates: Array, directions: Array) -> int:
+	return definition.ink_cost + (20 if coordinates.size() == 4 else 0) + 20 * directions.size()
 
 func request_cast(elements: Array, coordinates: Array, directions: Array) -> Dictionary:
 	if not can_prepare():
@@ -54,12 +44,28 @@ func request_cast(elements: Array, coordinates: Array, directions: Array) -> Dic
 		var vector := Vector2(direction)
 		if vector == Vector2.ZERO or absf(vector.x) > 1.0 or absf(vector.y) > 1.0 or vector != vector.round():
 			return {"ok": false, "reason": "direction"}
+	if coordinates.size() == 4 and Global.convert_to_grid(coordinates.slice(0, 2)) == Global.convert_to_grid(coordinates.slice(2, 4)):
+		return {"ok": false, "reason": "duplicate_target"}
+	if coordinates.size() == 4 and definition.id in [&"fire_water", &"wind_earth"]:
+		return {"ok": false, "reason": "unsupported_target"}
+	var seen_directions: Array[Vector2i] = []
+	for direction in directions:
+		var vector := Vector2i(direction)
+		if vector in seen_directions:
+			return {"ok": false, "reason": "duplicate_direction"}
+		seen_directions.append(vector)
+	if definition.id == &"wind_earth" and not board.is_cell_vacant(Global.convert_to_grid(coordinates.slice(0, 2))):
+		return {"ok": false, "reason": "occupied"}
+	var ink_cost := quote_cost(definition, coordinates, directions)
+	if Global.current_ink < ink_cost:
+		return {"ok": false, "reason": "ink"}
 	if definition.paper_cost < 0 or Global.paper_count < definition.paper_cost:
 		return {"ok": false, "reason": "paper"}
+	Global.add_ink(-ink_cost)
 	Global.add_paper(-definition.paper_cost)
 	Global.has_casted_spell = true
 	cast_complex_spell(elements, coordinates, directions)
-	return {"ok": true, "spell_id": definition.id, "paper_cost": definition.paper_cost, "elements": elements.duplicate(), "coordinates": coordinates.duplicate(), "directions": directions.duplicate()}
+	return {"ok": true, "spell_id": definition.id, "paper_cost": definition.paper_cost, "ink_cost": ink_cost, "elements": elements.duplicate(), "coordinates": coordinates.duplicate(), "directions": directions.duplicate()}
 
 func _add_to_impact_map(map: Dictionary, pos: Vector2i):
 	if map.has(pos):
@@ -313,16 +319,14 @@ func execute_new_wind_earth_spell(target_grids: Array, directions: Array, aoe_va
 	for grid in block_grids:
 		if not board.is_within_board(grid): continue
 		if not board.is_cell_vacant(grid):
-			Global.add_paper(_definition("wind_earth").param("occupied_refund", 1))
-			print("Ô có người! Hoàn 1 giấy.")
+			print("Ô có người! Không tạo tường.")
 			continue
 		board.spawn_earth_block(grid, final_hp, duration)
 		for adj in adj_dirs:
 			var adj_grid = grid + adj
 			var unit = board.get_piece_at(adj_grid)
 			if is_instance_valid(unit) and unit.get("team") == 1:
-				Global.add_paper(_definition("wind_earth").param("paper_per_adjacent", 1))
-				print("Buff đồng minh tại ", adj_grid, ". Nhận 1 giấy.")
+				print("Buff đồng minh tại ", adj_grid)
 				if unit.has_method("add_buff"):
 					unit.add_buff("damage_reduction", _definition("wind_earth").param("shield_rate", 0.5), duration)
 

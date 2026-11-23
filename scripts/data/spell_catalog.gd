@@ -3,7 +3,7 @@ extends Resource
 
 @export var definitions: Array[SpellDefinition] = []
 @export var ink_cost_per_character: float = 20.0
-@export var multi_target_factor: float = 0.4
+@export var multi_target_factor: float = 0.65
 
 func get_by_id(id: StringName) -> SpellDefinition:
 	for definition in definitions:

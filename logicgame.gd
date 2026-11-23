@@ -201,6 +201,11 @@ func check_and_trigger_next_wave() -> void:
 		win_screen.show()
 		get_tree().paused = true
 	else:
+		Global.add_paper(3)
+		Global.add_ink(250.0)
+		var king = find_my_king(1)
+		if is_instance_valid(king):
+			king.heal(20)
 		await transition_to_next_wave()
 func spawn_initial_army():
 	if Global.current_wave == 1:
@@ -228,10 +233,30 @@ func spawn_enemy_wave() -> void:
 		var enemy = spawn.scene.instantiate()
 		enemy.name = "%s_%d" % [spawn.scene.resource_path.get_file().get_basename(), all_pieces.size()]
 		enemy.team = 2
+		_apply_wave_enemy_stats(enemy)
 		piece_layer.add_child(enemy)
 		all_pieces.append(enemy)
 		enemy.grid_pos = spawn.grid_pos
 		enemy.global_position = grid_to_pixel(enemy.grid_pos)
+# Per-wave copies keep the shared definitions and other units unchanged.
+func _apply_wave_enemy_stats(enemy: Piece) -> void:
+	var overrides := {
+		1: {"enemy_soldier": [150, 12]},
+		2: {"enemy_soldier": [105, 9]},
+		3: {"knight": [150, 28], "bishop": [120, 28]},
+		4: {"enemy_soldier": [150, 12], "rook": [180, 24]},
+		5: {"enemy_soldier": [135, 10], "knight": [110, 24], "bishop": [85, 24], "rook": [150, 20], "queen": [160, 18]}
+	}
+	var entry: Dictionary = overrides.get(Global.current_wave, {})
+	var id := String(enemy.definition.id)
+	if not entry.has(id):
+		return
+	enemy.definition = enemy.definition.duplicate()
+	enemy.definition.max_health = entry[id][0]
+	if id in ["bishop", "rook", "queen"]:
+		enemy.definition.ranged_damage = entry[id][1]
+	else:
+		enemy.definition.melee_damage = entry[id][1]
 func spawn_final_boss():
 	boss = dragon_res.instantiate()
 	boss.hp = 1000
@@ -700,7 +725,7 @@ func restart_current_wave():
 
 			p.grid_pos = data["grid_pos"]
 			p.position = grid_to_pixel(p.grid_pos)
-			p.current_health = data["hp"]
+			p.current_health = clampi(int(data["hp"]), 0, p.max_health)
 			p.name = data["name"]
 			if p.has_node("HealthBar"):
 				p.get_node("HealthBar").value = p.current_health

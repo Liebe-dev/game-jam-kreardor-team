@@ -9,6 +9,14 @@ id = &"wind"
 elements = PackedInt32Array(3)
 icon = ExtResource("2")
 title = "Ventus"
-duration = 1
+duration = 2
 settings = {"direction_stun": 1, "push_distance": 1}
-description = "Không chọn hướng: mục tiêu đánh hai đòn trong lượt kế tiếp. Có hướng: đẩy mục tiêu và gây choáng. Buff hết hạn ở cuối lượt dù không đánh được."
+description = "Không chọn hướng: mục tiêu đánh hai đòn mỗi lượt trong hai lượt. Có hướng: đẩy mục tiêu và gây choáng. Buff hết hạn ở cuối lượt dù không đánh được."
+
+ink_cost = 70
+
+paper_cost = 1
+
+paper_reward = 0
+
+ink_reward = 0.0

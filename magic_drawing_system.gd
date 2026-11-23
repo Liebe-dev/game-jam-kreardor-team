@@ -8,6 +8,7 @@ signal spell_casted(elements, coordinates, directions_list)
 
 @onready var ink_bar = %InkBar
 @onready var paper_label = %PaperLabel
+@onready var cost_label = %SpellCostLabel
 @onready var spell_scroll = %SpellScroll
 @onready var elem_edits = [%ElemEdit1, %ElemEdit2]
 @onready var elem_icons = [%ElemIcon1, %ElemIcon2]
@@ -41,6 +42,7 @@ var current_ink: float:
 	get:
 		return Global.current_ink
 var max_scroll_width: float = 0.0
+var cast_error: String = ""
 var cast_elements = []
 var cast_directions = []
 var cast_elements_str = []
@@ -172,6 +174,8 @@ func _on_end_turn_button_pressed() -> void:
 
 func apply_cast_result(result: Dictionary) -> void:
 	if not result.get("ok", false):
+		cast_error = "Phép không hợp lệ hoặc thiếu tài nguyên"
+		update_ui()
 		return
 	SoundManager.play_sound(SoundManager.sfx_castingspell)
 	spell_casted.emit(result.elements, result.coordinates, result.directions)
@@ -180,8 +184,20 @@ func apply_cast_result(result: Dictionary) -> void:
 	Global.tutorial_spell_cast.emit()
 func can_prepare_spell() -> bool:
 	return spell_resolver != null and spell_resolver.can_prepare()
+func _process(_delta: float) -> void:
+	if visible:
+		update_ui()
+
 func update_ui():
 	if paper_label: paper_label.text = "Giấy: " + str(Global.paper_count)
+	if cost_label:
+		var label := ""
+		if spell_resolver != null and not cast_elements.is_empty():
+			var definition = spell_resolver.catalog.get_by_elements(cast_elements)
+			if definition:
+				var cost: int = definition.ink_cost + (20 if not coord_edits[2].text.is_empty() and not coord_edits[3].text.is_empty() else 0) + 20 * cast_directions.size()
+				label = "Phép: %d mực, %d giấy" % [cost, definition.paper_cost]
+		cost_label.text = cast_error if not cast_error.is_empty() else label
 	if ink_bar: ink_bar.value = (current_ink / max_ink) * 100
 func show_scroll() -> void:
 	if not can_prepare_spell():
@@ -192,6 +208,7 @@ func close_scroll():
 	self.hide()
 	scroll_closed.emit()
 func _on_any_text_changed(new_text: String, edit_node: LineEdit) -> void:
+	cast_error = ""
 	var previous: String = edit_node.get_meta("prev_text", "")
 	if spell_resolver == null or not spell_resolver.pay_for_edit(previous, new_text):
 		edit_node.text = previous
@@ -202,6 +219,7 @@ func _clear_edit(edit_node: LineEdit) -> void:
 	edit_node.text = ""
 	edit_node.set_meta("prev_text", "")
 func clear_all_inputs() -> void:
+	cast_error = ""
 	cast_elements.clear()
 	cast_directions.clear()
 	cast_elements_str.clear()

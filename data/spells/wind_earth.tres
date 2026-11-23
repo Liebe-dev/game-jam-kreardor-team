@@ -9,7 +9,15 @@ id = &"wind_earth"
 elements = PackedInt32Array(2, 3)
 icon = ExtResource("2")
 title = "Terra+Ventus"
-power = 500.0
-duration = 9
-settings = {"direction_reduction": 1, "shield_rate": 0.5, "paper_per_adjacent": 1, "occupied_refund": 1}
-description = "Hợp ấn ngọn núi: tạo tường tại ô trống và ô cạnh theo hướng chọn. Mỗi hướng giảm thời hạn; đồng minh quanh tường nhận lá chắn và tạo giấy."
+power = 150.0
+duration = 4
+settings = {"direction_reduction": 1, "shield_rate": 0.4, "paper_per_adjacent": 0, "occupied_refund": 0}
+description = "Hợp ấn ngọn núi: tạo tường tại ô trống và ô cạnh theo hướng chọn. Mỗi hướng giảm thời hạn; đồng minh quanh tường nhận lá chắn."
+
+ink_cost = 150
+
+paper_cost = 2
+
+paper_reward = 0
+
+ink_reward = 0.0

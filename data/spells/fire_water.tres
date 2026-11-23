@@ -9,7 +9,12 @@ id = &"fire_water"
 elements = PackedInt32Array(0, 1)
 icon = ExtResource("2")
 title = "Ignis+Aqua"
-duration = 5
-ink_reward = 50.0
-settings = {"multi_target_reduction": 2}
-description = "Hợp ấn sương mù: tạo sương tại tọa độ đầu tiên. Chọn đúng một hướng để sương di chuyển."
+duration = 2
+ink_reward = 0.0
+description = "Hợp ấn sương mù: quân trong sương không đánh thường và không bị chọn bởi đòn thường; phép và địa hình vẫn gây tác dụng. Chọn đúng một hướng để sương di chuyển."
+
+ink_cost = 100
+
+paper_cost = 1
+
+paper_reward = 0

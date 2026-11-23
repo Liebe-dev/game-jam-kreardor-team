@@ -6,8 +6,8 @@
 script = ExtResource("1")
 id = &"bishop"
 kind = 3
-max_health = 75
-ranged_damage = 35.0
+max_health = 90
+ranged_damage = 28.0
 impact_damage = 5
 push_distance = 1
 attack_range = 2
